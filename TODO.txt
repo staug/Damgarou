@@ -1,0 +1,10 @@
+List of things to be done
+
+1/ Basics:
+* Map generation
+- Internal: caves, tunnels
+- External: town, open spaces
+* Player movement
+* Load/save
+* Event system
+* Time system
