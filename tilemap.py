@@ -11,8 +11,12 @@ class Tile:
     A tile of the map and its properties
     """
     T_VOID = '0'
-    T_WALL = '1'
-    T_FLOOR = '2'
+    T_WALL = '1'  # Might be the wall of a grotto or of a room
+    T_FLOOR = '2'  # Generic - can be grass as well.
+    T_GRASS = '3'  # A specific division of the floor
+    T_TREE = '4'
+    T_WATER = '5'  # Only Aquatics will be able to cross
+    T_LAVA = '6'
 
     def __init__(self, tile_type=T_VOID, room=None):
         self.tile_type = tile_type
@@ -25,7 +29,7 @@ class Tile:
                 return True
             else:
                 return False
-        elif self.tile_type in (Tile.T_VOID, Tile.T_WALL):
+        elif self.tile_type in (Tile.T_VOID, Tile.T_WALL, Tile.T_TREE):  # Default blocking list
             return True
         return False
 
@@ -35,7 +39,7 @@ class Tile:
                 return True
             else:
                 return False
-        elif self.tile_type in (Tile.T_VOID, Tile.T_WALL):
+        elif self.tile_type in (Tile.T_VOID, Tile.T_WALL, Tile.T_TREE):  # Default blocking list
             return True
         return False
 
@@ -85,11 +89,29 @@ class Room:
 
 class DungeonMapFactory:
     """
-    Used to generate one of the predefined dungeon map type
+    Used to generate one of the predefined map type
     """
 
-    def __init__(self, name,
-                 seed=None, filename=None, dimension=(81, 121)):
+    MAP_TYPE_CELLULAR = "CELLULAR"
+    MAP_TYPE_DUNGEON = "DUNGEON"
+
+    def __init__(self,
+                 name,
+                 seed=None,
+                 map_type=None,
+                 map_subtype=None,
+                 filename=None,
+                 dimension=(81, 121)):
+        """
+
+        :param name: The name of the map. Can be used as a future reference
+        :param seed: All maps are generated using random things. This is to define the seed of the map.
+        :param filename: Use to generate the map from a file representation
+        :param dimension: The dimension of the map
+        :param map_type: Type of the map. So far, can be CELLULAR for Cellular Family or DUNGEON for Dungeon Family
+        :param map_subtype: Subtype of the map. For Cellular, can be SURFACE (Tree, water, grass...) or GROTTO (Walls, lava,
+        """
+        #TODO the map reference blocking tile can be a WALL, a TREE, a LAKE...
 
         random.seed(seed)
 
@@ -100,9 +122,9 @@ class DungeonMapFactory:
             self.map = FileMap(name, filename)
         else:
             while not map_correctly_initialized:
-                print(" *** GENERATING DUNGEON *** ")
+                print(" *** GENERATING MAP *** ")
                 map_type = utilities.roll(4)
-                self.map = CaveMap(name, dimension)
+                self.map = CellularMap(name, dimension)
 
                 '''
                 if map_type == 1:
@@ -123,7 +145,7 @@ class DungeonMapFactory:
                     len(self.map.get_all_available_tiles(Tile.T_FLOOR, [],
                                                          without_objects=True)) > int(all_size / 4)
                 # TODO: also flood to test that all the stuff is connected
-                map_correctly_initialized = map_correctly_initialized and print(self.map._check_all_tile_connected())
+                map_correctly_initialized = map_correctly_initialized and self.map._check_all_tile_connected()
 
         # Make it a bit more beautiful
         self.map.remove_extra_walls()
@@ -178,7 +200,7 @@ class Map:
                     if count == 8:
                         self.tiles[x][y].tile_type = Tile.T_VOID
 
-    def wall_weight(self, x, y, door_list, tile_type=Tile.T_WALL):
+    def tile_weight(self, x, y, door_list, tile_type=Tile.T_WALL):
         """
         Taken from http://www.angryfishstudios.com/2011/04/adventures-in-bitmasking/
         :param x:
@@ -295,7 +317,7 @@ class Map:
 
         for x in range(self.tile_width):
             for y in range(self.tile_height):
-                if self.tiles[x][y].tile_type == tile_type:
+                if self.tiles[x][y].tile_type in tile_type:
                     if without_objects:
                         if (x, y) not in entity_pos_listing and (x, y) not in self.doors_pos:
                             listing.append((x, y))
@@ -308,7 +330,7 @@ class Map:
         """
         Return all tile matching the characteristics: given tile type, surrounded by 8 cells of same type
         Used to get a spawning position...
-        :param tile_type: the type of tile that we look for
+        :param tile_type: the types of tile that we look for
         :param without_objects: set to True to remove objects overlap
         :param game_objects: the list of current game objects
         :param surrounded: the number of tiles of same type that the tile should have around
@@ -374,8 +396,8 @@ class Map:
                     for room in self.rooms:
                         for door_pos in room.doors:
                             door_list.append(door_pos)
-                weight_wall = self.wall_weight(x, y, door_list)
-                weight_floor = self.wall_weight(x, y, door_list, tile_type=Tile.T_FLOOR)
+                weight_wall = self.tile_weight(x, y, door_list)
+                weight_floor = self.tile_weight(x, y, door_list, tile_type=Tile.T_FLOOR)
 
                 if self.tiles[x][y].tile_type == Tile.T_WALL:
                     # We always blit a floor... but using the wall as reference for weight
@@ -892,9 +914,9 @@ class RoomAndMazeMap(Map, _RoomExtension):
         return None
 
 
-class CaveMap(Map):
+class CellularMap(Map):
     """
-    A cavelike dungeon
+    A map which is based on a cellular automaton
     """
 
     def __init__(self, name, dimension):
@@ -903,7 +925,7 @@ class CaveMap(Map):
 
         Map.__init__(self, name, dimension)  # dimensions doivent être impair!
 
-        print(" CAVE: Initialization")
+        print(" CELLULAR MAP: Initialization")
 
         self.tiles = [[Tile(Tile.T_FLOOR)
                        for y in range(self.tile_height)]

@@ -3,6 +3,8 @@ import thorpy
 import sys
 import os
 import default
+import guiwidget
+
 from shared import GLOBAL
 from tilemap import DungeonMapFactory, Minimap
 
@@ -19,18 +21,33 @@ class Game:
         self.game_state = Game.GAME_STATE_PLAYING
         self.player_took_action = False
         self.minimap_enabled = False
+        self.game_running = True
 
     def new(self):
         self.objects = []
         self.level = 1
 
         #self.map = DungeonMapFactory("MerchantRogue Caves - Level {}".format(self.level)).map
+        guiwidget.display_single_message_on_screen("Building level")
         DungeonMapFactory("MerchantRogue Caves - Level {}".format(self.level))
+        guiwidget.display_single_message_on_screen("Level ok")
 
         self.minimap = Minimap(self)
 
     def start(self):
-        pass
+        self.run()
+
+    def run(self):
+        while self.game_running:
+            for event in pg.event.get():
+                if event.type == pg.QUIT:
+                    Game.quit()
+
+    @staticmethod
+    def quit():
+        pg.quit()
+        sys.exit()
+
 
 class Launcher:
     """
@@ -43,7 +60,7 @@ class Launcher:
         self.widgets = None
         self.init_pygame_subsystem()
         self.load_data()
-        self.running = True
+        self.launcher_running = True
 
     def init_pygame_subsystem(self):
         GLOBAL.logger.trace("Initializing Pygame")
@@ -95,14 +112,14 @@ class Launcher:
 
     def run(self):
         self.implement_menu()
-        while self.running:
+        while self.launcher_running:
             for event in pg.event.get():
                 if event.type == pg.QUIT:
                     Launcher.quit()
                 self.widgets.react(event)
 
     def start(self):
-        self.running = False
+        self.launcher_running = False
         GLOBAL.game = Game()
         GLOBAL.game.new()
         GLOBAL.game.start()

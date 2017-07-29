@@ -2,7 +2,7 @@ import os
 
 # List of fix data and variable
 # GAME
-GAME_TITLE = "Merchant Rogue"
+GAME_TITLE = "Damgarou"
 GAME_VER = "0.01"
 
 # define some colors (R, G, B)
