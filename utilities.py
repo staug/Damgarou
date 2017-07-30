@@ -315,6 +315,39 @@ def load_floor_structure_dawnlike(image_src_list, folder, image_name):
             image_set.append(dict_image)
     return image_set
 
+def load_tree_structure_dawnlike(image_src_list, folder, image_name):
+    """
+    Load the set of walls from dawnlike file and put it in a dictionary
+    :param image_src_list: the actual dictionary that may already contain the source
+    :param folder: the folder from which the image will be loaded
+    :param the name of teh image file
+    :return: a list of dictionary item following convention
+    http://www.angryfishstudios.com/2011/04/adventures-in-bitmasking/
+    """
+    image_src = get_image(image_src_list, folder, image_name)
+    image_set = []
+
+    ref_tuples = {0: (3, 0), 1: (1, 2),
+                  2: (0, 1), 3: (5, 0),
+                  4: (1, 0), 5: (3, 0),
+                  6: (5, 1), 7: (0, 1),
+                  8: (2, 1), 9: (4, 0),
+                  10: (3, 0), 11: (1, 2),
+                  12: (4, 1), 13: (2, 1),
+                  14: (1, 0), 15: (1, 1)}
+    for line in range(11):
+        for column in range(2):
+            top_x = column * (6 * 16)
+            top_y = line * (3 * 16) + 3 * 16
+            dict_image = {}
+            for key in ref_tuples:
+                delta_x = ref_tuples[key][0] * 16 + top_x
+                delta_y = ref_tuples[key][1] * 16 + top_y
+                dict_image[key] = pg.transform.scale(image_src.subsurface(pg.Rect(delta_x, delta_y, 16, 16)),
+                                                     TILESIZE_SCREEN)
+            image_set.append(dict_image)
+    return image_set
+
 
 def _load_player(image_src_list, folder, image_name, width=16, height=16):
     result = {"S": [load_image(image_src_list, folder, image_name, i, 0, width=width, height=height) for i in range(4)],
@@ -340,6 +373,8 @@ def load_all_images():
     # Floor & Wall
     images["FLOOR"] = load_floor_structure_dawnlike(image_src_list, OBJECT_FOLDER, "Floor.png")
     images["WALLS"] = load_wall_structure_dawnlike(image_src_list, OBJECT_FOLDER, "Wall.png")
+    images["TREES"] = load_tree_structure_dawnlike(image_src_list, OBJECT_FOLDER, "Tree0.png")
+
     # Doors
     images["DOOR_V_OPEN"] = load_image(image_src_list, OBJECT_FOLDER, "Door1.png", 1, 0)
     images["DOOR_V_CLOSED"] = load_image(image_src_list, OBJECT_FOLDER, "Door0.png", 1, 0)
