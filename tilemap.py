@@ -17,11 +17,13 @@ class Tile:
     T_LIQUID = '3'  # A specific division of the floor
 
     # Sub Types
+    S_VOID = '0_0'
     # Border
     S_TREE = '1_1'
     S_WALL = '1_2'
     S_BOULDER = '1_3'
     # Floor
+    S_FLOOR = '2_0'  # Regular dirt
     S_PATH = '2_1'
     S_GRASS = '2_2'
     S_CARPET = '2_3'
@@ -29,8 +31,9 @@ class Tile:
     S_WATER = '3_1'  # Only Aquatics will be able to cross
     S_LAVA = '3_2'
 
-    def __init__(self, tile_type=T_VOID, room=None):
+    def __init__(self, tile_type=T_VOID, sub_type=S_VOID, room=None):
         self.tile_type = tile_type
+        self.tile_subtype = sub_type
         self.explored = False
         self.room = room
 
@@ -425,17 +428,32 @@ class Map:
 class CellularMap(Map):
     """
     A map which is based on a cellular automaton
+    This map can be used for:
+    - Grotto type: ground is dark. Borders are made of hills. Not a lot of smoothing, so the algo is stopped very
+    quickly (in the repeat). If there is liquid (Pit) it is lava style.
+    - Surface Town: ground can be dirt or grass. Borders are made of trees. Very smooth, at least 6 repetition to get
+    large surface of ground.
+    - Subterran Town:
+    - Forest type: ground is lighter, with dirt or grass. Borders are made of trees. Not a lot of smoothing. Liquid is
+    made of Water (pit)
+    - Aquatic: the border is replaced by water from the Pit
     """
+    TYPE_GROTTO = "Grotto"
+    TYPE_FOREST = "Forest"
+    TYPE_SURFACE_TOWN = "Town_surface"
+    TYPE_SUBTERRAN_TOWN = "Town_under"
+    TYPE_AQUATIC_TOWN = "Town_aquatic"
 
-    def __init__(self, name, dimension):
+    def __init__(self,
+                 name,
+                 dimension,
+                 map_type,
+                 with_liquid=False):
 
         assert dimension[0] % 2 == 1 and dimension[1] % 2 == 1, "Maze dimensions must be odd"
-
         Map.__init__(self, name, dimension)  # dimensions doivent être impair!
 
-        print(" CELLULAR MAP: Initialization")
-
-        self.tiles = [[Tile(Tile.T_FLOOR)
+        self.tiles = [[Tile(Tile.T_FLOOR, sub_type=Tile.S_FLOOR)
                        for y in range(self.tile_height)]
                       for x in range(self.tile_width)]
 
@@ -445,7 +463,7 @@ class CellularMap(Map):
                 if x in [0, self.tile_width - 1] or y in [0, self.tile_height - 1] or random.randint(0, 100) <= 40:
                     self.tiles[x][y].tile_type = Tile.T_BORDER
 
-        for repeat in range(5):
+        for repeat in range(6):  # 6 is a good value for a town, 3 is a good value for a wild forest
             for y in range(1, self.tile_height - 1):
                 for x in range(1, self.tile_width - 1):
                     count = self._count_border_tile(x, y)
@@ -463,7 +481,7 @@ class CellularMap(Map):
                     else:
                         self.tiles[x][y].tile_type = Tile.T_FLOOR
 
-        # Now add some extra stuff
+        # Now add some extra stuff depending on the type of map
         # Grass on the floor
         # Some Aquatics
         # Some Extra Blocks like trees
