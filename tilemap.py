@@ -96,7 +96,7 @@ class DungeonMapFactory:
             while not map_correctly_initialized:
                 print(" *** GENERATING MAP *** ")
                 map_type = utilities.roll(4)
-                self.map = CellularMap(name, dimension)
+                self.map = CellularMap(name, dimension, CellularMap.TYPE_FOREST)
 
                 '''
                 if map_type == 1:
@@ -146,11 +146,11 @@ class Map:
     @property
     def doors_pos(self):
         if self._doors_pos is None:
-            self._doors_pos = []
+            self._doors_pos = set()
             for room in self.rooms:
                 for door in room.doors:
                     if door not in self._doors_pos:
-                        self._doors_pos.append(door)
+                        self._doors_pos.add(door)
         return self._doors_pos
 
     def clean_before_save(self):
@@ -217,11 +217,11 @@ class Map:
         :param game_objects: the list of current objects in the game
         :return: a tile position (tuple)
         """
-        entity_pos_listing = []
+        entity_pos_listing = set()
 
         if without_objects:
             for entity in game_objects:
-                entity_pos_listing.append((entity.x, entity.y))
+                entity_pos_listing.add((entity.x, entity.y))
 
         while True:
             x = random.randint(0, self.tile_width - 1)
@@ -242,11 +242,11 @@ class Map:
         :param game_objects: the list of current objects in the game
         :return: a tile position (tuple) that matches free, the ref pos if none is found
         """
-        entity_pos_listing = []
+        entity_pos_listing = set()
 
         if without_objects:
             for entity in game_objects:
-                entity_pos_listing.append((entity.x, entity.y))
+                entity_pos_listing.add((entity.x, entity.y))
 
         delta = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
         random.shuffle(delta)
@@ -272,11 +272,11 @@ class Map:
         :return: a list of tile positions (tuple)
         """
         listing = []
-        entity_pos_listing = []
+        entity_pos_listing = set()
 
         if without_objects:
             for entity in game_objects:
-                entity_pos_listing.append((entity.x, entity.y))
+                entity_pos_listing.add((entity.x, entity.y))
 
         for x in range(self.tile_width):
             for y in range(self.tile_height):
@@ -299,7 +299,7 @@ class Map:
         :param surrounded: the number of tiles of same type that the tile should have around
         :return: a list of tile positions (tuple)
         """
-        listing = self.get_all_available_tiles(tile_type, game_objects, without_objects=without_objects)
+        listing = set(self.get_all_available_tiles(tile_type, game_objects, without_objects=without_objects))
         result = []
         for pos in listing:
             x, y = pos
@@ -378,8 +378,8 @@ class Map:
         Make sure that all tile of same type are connected.
         :return: true if ok
         """
-        tiles_flooded = []
-        tiles_to_flood = []
+        tiles_flooded = set()
+        tiles_to_flood = set()
 
         # First, we find a random tile:
         starting_pos = None
@@ -389,12 +389,12 @@ class Map:
             if self.tiles[x][y].tile_type == starting_type_type:
                 starting_pos = (x, y)
 
-        tiles_to_flood.append(starting_pos)
+        tiles_to_flood.add(starting_pos)
 
         # Now we flood in brutal manner
         while len(tiles_to_flood) > 0:
             (current_position_x, current_position_y) = tiles_to_flood.pop()
-            tiles_flooded.append((current_position_x, current_position_y))
+            tiles_flooded.add((current_position_x, current_position_y))
             # Let's go in all direction
             for (delta_x, delta_y) in ((-1,-1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1,-1), (1,0), (1,1)):
                 if 0 <= current_position_x + delta_x < self.tile_width and\
@@ -403,7 +403,7 @@ class Map:
                             starting_type_type:
                         pos_to_add = (current_position_x + delta_x, current_position_y + delta_y)
                         if pos_to_add not in tiles_to_flood and pos_to_add not in tiles_flooded:
-                            tiles_to_flood.append(pos_to_add)
+                            tiles_to_flood.add(pos_to_add)
 
 
         # Last part: we check the length...
@@ -457,42 +457,104 @@ class CellularMap(Map):
                        for y in range(self.tile_height)]
                       for x in range(self.tile_width)]
 
-        # Initial Random Noise
+        reftiles = CellularMap._generate_algo(self.tile_width, self.tile_height, 40, ((3,5,1),(2,5,-1)), empty_center=True)
+
         for y in range(self.tile_height):
             for x in range(self.tile_width):
-                if x in [0, self.tile_width - 1] or y in [0, self.tile_height - 1] or random.randint(0, 100) <= 40:
+                if reftiles[x][y] == 1:
                     self.tiles[x][y].tile_type = Tile.T_BORDER
 
-        for repeat in range(6):  # 6 is a good value for a town, 3 is a good value for a wild forest
-            for y in range(1, self.tile_height - 1):
-                for x in range(1, self.tile_width - 1):
-                    count = self._count_border_tile(x, y)
-                    if count >= 5 or count <= 1:
-                        self.tiles[x][y].tile_type = Tile.T_BORDER
-                    else:
-                        self.tiles[x][y].tile_type = Tile.T_FLOOR
-
-        for repeat in range(3):
-            for y in range(1, self.tile_height - 1):
-                for x in range(1, self.tile_width - 1):
-                    count = self._count_border_tile(x, y)
-                    if count >= 5:
-                        self.tiles[x][y].tile_type = Tile.T_BORDER
-                    else:
-                        self.tiles[x][y].tile_type = Tile.T_FLOOR
-
         # Now add some extra stuff depending on the type of map
-        # Grass on the floor
-        # Some Aquatics
-        # Some Extra Blocks like trees
+        # Grass on the floor - to implement we construct a totally new map. We will apply the previous as a mask.
+        # Now we add some rooms
+        # And we add some path on the floor to connect teh room
+        # Some Aquatics - must be on non blocking and not on path!
+        # Some Extra Blocks like trees or boulders
 
-    def _count_border_tile(self, posx, posy):
+    @staticmethod
+    def _generate_algo(width, height, initial_noise, repeat_parameters, empty_center=False):
+        """
+        Create a map, with 1 and 0. See algo at
+        http://www.roguebasin.com/index.php?title=Cellular_Automata_Method_for_Generating_Random_Cave-Like_Levels
+        :param width: width of the map
+        :param height: height of the map
+        :param initial_noise: initial "wall" probability (40 for 40%)
+        :param repeat_parameters: list of wall generation, it is a list of triple containing
+        - first parameter, how many time do we repeat over the procedure (3 means 3 iteration)
+        - second parameter, minimum number of wall around the tile to keep the tile as wall (5 means 5 tiles around)
+        - third parameter, if there are less than this number of walls around, we make a wall (-1 to skip)
+        the third parameter make sit more likely to have "island" in the center
+        :param empty_center: remove any wall at the center
+        :return:a [][] containing 1 (wall) or 0 (floor)
+        """
+
+        tiles = [[0 for y in range(height)] for x in range(width)]
+
+        # Initial Random Noise
+        for y in range(height):
+            for x in range(width):
+                if x in [0, width - 1] or y in [0, height - 1] or random.randint(0, 100) <= initial_noise:
+                    tiles[x][y] = 1
+
+        # And do the rounding
+        for (number_repeat, number_to_keep, number_to_be_born) in repeat_parameters:
+            for repeat in range(number_repeat):
+                for y in range(1, height - 1):
+                    for x in range(1, width - 1):
+                        count = CellularMap._count_border_tile(tiles, x, y, 1)
+                        if count >= number_to_keep:
+                            tiles[x][y] = 1
+                        elif number_to_be_born >= 0 and count <= number_to_be_born:
+                            tiles[x][y] = 1
+                        else:
+                            tiles[x][y] = 0
+
+        if empty_center:
+            CellularMap._eliminate_center_border(tiles, width, height)  # A bit brutal
+            for y in range(1, height - 1):  # We smooth a bit the result
+                for x in range(1, width - 1):
+                    count = CellularMap._count_border_tile(tiles, x, y, 1)
+                    if count >= number_to_keep:
+                        tiles[x][y] = 1
+                    else:
+                        tiles[x][y] = 0
+
+        return tiles
+
+    @staticmethod
+    def _count_border_tile(tiles, posx, posy, comparison_value):
         count = 0
-        for x in [posx - 1, posx, posx + 1]:
-            for y in [posy - 1, posy, posy + 1]:
-                if self.tiles[x][y].tile_type == Tile.T_BORDER:
+        for x in {posx - 1, posx, posx + 1}:
+            for y in {posy - 1, posy, posy + 1}:
+                if tiles[x][y] == comparison_value:
                     count += 1
         return count
+
+    @staticmethod
+    def _eliminate_center_border(tiles, width, height, value_to_keep=1, value_to_fill=0):
+        """
+        Assuming a tiles[][] structure, eliminate any value in the "center" which is not the value to keep
+        :param tiles:
+        :param value_to_keep: the value that won't be erased - typically the walls
+        :return: nothing, but changes the tiles
+        """
+        half_width_min = int(width / 2)
+        half_width_max = int(width / 2) + 1
+
+        for y in range(int(height / 6), int(height - height / 6)):
+            x_left = 1
+            x_right = width - 1
+            for x in range(2, half_width_max):
+                if tiles[x][y] != value_to_keep:
+                    x_left = x - 1
+                    break
+            for x in range(width - 2, half_width_min, -1):
+                if tiles[x][y] != value_to_keep:
+                    x_right = x + 1
+                    break
+            for x in range(x_left, x_right):
+                tiles[x][y] = value_to_fill
+
 
     def _build_background_dawnlike(self):
         """
