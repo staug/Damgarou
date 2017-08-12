@@ -14,7 +14,7 @@ class Tile:
     T_VOID = '0'
     T_BORDER = '1'  # Might be the wall of a grotto or of a room, trees or boulders
     T_FLOOR = '2'  # Generic - can be grass as well.
-    T_LIQUID = '3'  # A specific division of the floor
+    T_PIT = '3'  # Either a pit, lava or deep water
 
     # Sub Types
     S_VOID = '0_0'
@@ -24,12 +24,15 @@ class Tile:
     S_BOULDER = '1_3'
     # Floor
     S_FLOOR = '2_0'  # Regular dirt
-    S_PATH = '2_1'
+    S_PATH = '2_1'  # Path, road...
     S_GRASS = '2_2'
     S_CARPET = '2_3'
-    # Liquid
+    S_ROOM_INTERIOR = '2_4'  # Inside the room
+
+    # Pit
     S_WATER = '3_1'  # Only Aquatics will be able to cross
-    S_LAVA = '3_2'
+    S_LAVA = '3_2'  # Deals damage
+    S_SOLID = '3_3'  # Solid pit in the floor
 
     def __init__(self, tile_type=T_VOID, sub_type=S_VOID, room=None):
         self.tile_type = tile_type
@@ -372,7 +375,7 @@ class Map:
                     self._background.blit(GLOBAL.img('FLOOR')[floor_series][weight_floor],
                                           (x * TILESIZE_SCREEN[0], y * TILESIZE_SCREEN[1]))
 
-    def check_all_tile_connected(self, starting_type_type = Tile.T_FLOOR):
+    def check_all_tile_connected(self, starting_type_type=Tile.T_FLOOR):
         """
         Flood the map, starting at one randomly.
         Make sure that all tile of same type are connected.
@@ -457,7 +460,9 @@ class CellularMap(Map):
                        for y in range(self.tile_height)]
                       for x in range(self.tile_width)]
 
-        reftiles = CellularMap._generate_algo(self.tile_width, self.tile_height, 40, ((3,5,1),(2,5,-1)), empty_center=True)
+        reftiles = CellularMap._generate_algo(self.tile_width, self.tile_height, 40,
+                                              ((3, 5, 1), (2, 5, -1)),
+                                              empty_center=True)
 
         for y in range(self.tile_height):
             for x in range(self.tile_width):
@@ -509,15 +514,15 @@ class CellularMap(Map):
                         else:
                             tiles[x][y] = 0
 
-        if empty_center:
-            CellularMap._eliminate_center_border(tiles, width, height)  # A bit brutal
-            for y in range(1, height - 1):  # We smooth a bit the result
-                for x in range(1, width - 1):
-                    count = CellularMap._count_border_tile(tiles, x, y, 1)
-                    if count >= number_to_keep:
-                        tiles[x][y] = 1
-                    else:
-                        tiles[x][y] = 0
+                if repeat == number_repeat - 1 and empty_center:
+                    CellularMap._eliminate_center_border(tiles, width, height)  # A bit brutal
+                    for y in range(1, height - 1):  # We smooth a bit the result
+                        for x in range(1, width - 1):
+                            count = CellularMap._count_border_tile(tiles, x, y, 1)
+                            if count >= number_to_keep:
+                                tiles[x][y] = 1
+                            else:
+                                tiles[x][y] = 0
 
         return tiles
 
@@ -582,7 +587,7 @@ class CellularMap(Map):
                     # We always blit a floor... but using the wall as reference for weight
                     self._background.blit(GLOBAL.img('FLOOR')[floor_series][weight_wall],
                                           (x * TILESIZE_SCREEN[0], y * TILESIZE_SCREEN[1]))
-                    #self._background.blit(GLOBAL.img('WALLS')[wall_series][weight_wall],
+                    # self._background.blit(GLOBAL.img('WALLS')[wall_series][weight_wall],
                     #                      (x * TILESIZE_SCREEN[0], y * TILESIZE_SCREEN[1]))
                     self._background.blit(GLOBAL.img('TREES')[tree_series][weight_wall],
                                           (x * TILESIZE_SCREEN[0], y * TILESIZE_SCREEN[1]))
