@@ -6,7 +6,7 @@ import default
 import guiwidget
 
 from shared import GLOBAL
-from tilemap import DungeonMapFactory
+from tilemap import MapFactory
 
 
 class Game:
@@ -29,7 +29,7 @@ class Game:
 
         #self.map = DungeonMapFactory("MerchantRogue Caves - Level {}".format(self.level)).map
         guiwidget.display_single_message_on_screen("Building level")
-        DungeonMapFactory("MerchantRogue Caves - Level {}".format(self.level))
+        MapFactory("MerchantRogue Caves - Level {}".format(self.level))
         guiwidget.display_single_message_on_screen("Level ok")
 
         #self.minimap = Minimap(self)
