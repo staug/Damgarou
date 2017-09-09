@@ -4,7 +4,8 @@ from os import path
 import utilities
 from default import *
 from shared import GLOBAL
-
+from town import Town
+from utilities import AStar, SQ_Location, SQ_MapHandler
 
 class Tile:
     """
@@ -52,16 +53,12 @@ class MapFactory:
     def __init__(self,
                  name,
                  state=None,
-                 map_type=None,
-                 map_subtype=None,
                  dimension=(81, 121)):
         """
 
         :param name: The name of the map. Can be used as a future reference
         :param state: All maps are generated using random things. This is to define the seed of the map.
         :param dimension: The dimension of the map
-        :param map_type: Type of the map. So far, can be CELLULAR for Cellular Family or DUNGEON for Dungeon Family
-        :param map_subtype: Subtype of the map. For Cellular, can be SURFACE (Tree, water, grass...) or GROTTO (Walls, lava,
         """
         if state is not None:
             random.setstate(state)
@@ -71,7 +68,7 @@ class MapFactory:
         self.map = None
 
         while not map_correctly_initialized:
-            self.map = WildernessMap(name, dimension, with_liquid=True)
+            self.map = WildernessMap(name, dimension, town_list=(Town(), Town(), Town()), with_liquid=True)
             map_correctly_initialized = self.map.is_valid_map()
             print("MAP CORRECT: " + str(map_correctly_initialized))
 
@@ -207,6 +204,8 @@ class Map:
             y = random.randint(0, self.tile_height - 1)
             if self.tiles[x][y].tile_type == tile_type:
                 if without_objects and ((x, y) not in entity_pos_listing):
+                    return x, y
+                elif not without_objects:
                     return x, y
 
 
@@ -397,12 +396,28 @@ class WildernessMap(Map):
 
 
         # Now we add some towns in the center. These rooms are connected by path.
+        self.town_list = town_list  # TODO: Remove this line later
 
+        for town in town_list:
+            town.pos = self.get_random_available_tile(Tile.T_GROUND, town_list)
+            print("Town pos: " + str(town.pos))
 
         # And we add some path on the floor to connect the towns
+        for index_origin, town_origin in enumerate(town_list[:]):
+            for index_destination, town_destination in enumerate(town_list[:]):
+                if index_destination > index_origin:
+                    print("Generating road from {} to {}".format(town_origin.name, town_destination.name))
 
-        # Make it a bit more beautiful - warning, needs to be the very last step
-        print("All tiles ok, now cleaning up")
+                    astar = AStar(SQ_MapHandler(self.tiles, dimension[0], dimension[1]))
+                    p = astar.findPath(SQ_Location(town_origin.x, town_origin.y),
+                                       SQ_Location(town_destination.x, town_destination.y))
+
+                    if p:
+                        for n in p.nodes:
+                            self.tiles[n.location.x][n.location.y].tile_subtype = Tile.S_PATH
+
+
+        # Make it a bit more beautiful - warning, needs to be the very last step and may be not usefull...
         self.remove_extra_blocks()
 
     @staticmethod
@@ -547,6 +562,9 @@ class WildernessMap(Map):
                         elif self.tiles[x][y].tile_subtype == Tile.S_GRASS:
                             self._background.blit(GLOBAL.img('FLOOR')[grass_serie][weight],
                                                   (x * TILESIZE_SCREEN[0], y * TILESIZE_SCREEN[1]))
+                        elif self.tiles[x][y].tile_subtype == Tile.S_PATH:
+                            self._background.blit(GLOBAL.img('FLOOR')[path_serie][weight],
+                                                  (x * TILESIZE_SCREEN[0], y * TILESIZE_SCREEN[1]))
                     elif self.tiles[x][y].tile_type == Tile.T_LIQUID:
                         if self.tiles[x][y].tile_subtype == Tile.S_WATER:
                             self._background.blit(GLOBAL.img('FLOOR')[water_serie][weight],
@@ -555,6 +573,9 @@ class WildernessMap(Map):
                         print("Unknown type {} subtype {}".format(self.tiles[x][y].tile_type,
                                                                   self.tiles[x][y].tile_subtype))
 
+        # TODO: Remove later
+        for town in self.town_list:
+            self._background.blit(GLOBAL.img('TOWN'), (town.x * TILESIZE_SCREEN[0], town.y * TILESIZE_SCREEN[1]))
+
     def is_valid_map(self):
-        print("In base valid")
         return self.check_all_tile_connected()
