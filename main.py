@@ -7,7 +7,7 @@ import guiwidget
 
 from shared import GLOBAL
 from tilemap import MapFactory
-
+from screen import PlayingScreen
 
 class Game:
 
@@ -22,6 +22,7 @@ class Game:
         self.player_took_action = False
         self.minimap_enabled = False
         self.game_running = True
+        self.screens = {Game.GAME_STATE_PLAYING: PlayingScreen()}
 
     def new(self):
         self.objects = []
@@ -29,7 +30,7 @@ class Game:
 
         #self.map = DungeonMapFactory("MerchantRogue Caves - Level {}".format(self.level)).map
         guiwidget.display_single_message_on_screen("Building level")
-        MapFactory("MerchantRogue Caves - Level {}".format(self.level))
+        MapFactory("Damgarou Caves - Level {}".format(self.level))
         guiwidget.display_single_message_on_screen("Level ok")
 
         #self.minimap = Minimap(self)
@@ -38,10 +39,13 @@ class Game:
         self.run()
 
     def run(self):
+        clock = pg.time.Clock()
+
         while self.game_running:
-            for event in pg.event.get():
-                if event.type == pg.QUIT:
-                    Game.quit()
+            self.screens[self.game_state].events()
+            self.screens[self.game_state].update()
+            self.screens[self.game_state].draw()
+            clock.tick(40)  # the program will never run at more than 40 frames per second
 
     @staticmethod
     def quit():
