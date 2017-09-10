@@ -23,6 +23,7 @@ class Game:
         self.minimap_enabled = False
         self.game_running = True
         self.screens = {Game.GAME_STATE_PLAYING: PlayingScreen()}
+        self.current_map = None
 
     def new(self):
         self.objects = []
@@ -30,7 +31,7 @@ class Game:
 
         #self.map = DungeonMapFactory("MerchantRogue Caves - Level {}".format(self.level)).map
         guiwidget.display_single_message_on_screen("Building level")
-        MapFactory("Damgarou Caves - Level {}".format(self.level))
+        self.current_map = MapFactory.generate("Damgarou Caves - Level {}".format(self.level))
         guiwidget.display_single_message_on_screen("Level ok")
 
         #self.minimap = Minimap(self)
@@ -70,7 +71,7 @@ class Launcher:
         GLOBAL.logger.trace("Initializing Pygame")
         pg.display.init()
         pg.font.init()
-        pg.display.set_mode((800, 600), pg.RESIZABLE)
+        pg.display.set_mode((default.GAME_WIDTH, default.GAME_HEIGHT), pg.RESIZABLE)
         pg.display.set_caption(default.GAME_TITLE + "-" + default.GAME_VER)
         thorpy.set_theme("human")
         GLOBAL.logger.trace("Initializing Pygame - Done")

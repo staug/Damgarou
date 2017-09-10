@@ -50,8 +50,8 @@ class MapFactory:
     MAP_TYPE_CELLULAR = "CELLULAR"
     MAP_TYPE_DUNGEON = "DUNGEON"
 
-    def __init__(self,
-                 name,
+    @staticmethod
+    def generate(name,
                  state=None,
                  dimension=(81, 121)):
         """
@@ -62,19 +62,18 @@ class MapFactory:
         """
         if state is not None:
             random.setstate(state)
-        self.state = random.getstate()
 
         map_correctly_initialized = False
-        self.map = None
+        map = None
 
         while not map_correctly_initialized:
-            self.map = WildernessMap(name, dimension, town_list=(Town(), Town(), Town()), with_liquid=True)
-            map_correctly_initialized = self.map.is_valid_map()
+            map = WildernessMap(name, dimension, town_list=(Town(), Town(), Town()), with_liquid=True)
+            map_correctly_initialized = map.is_valid_map()
             print("MAP CORRECT: " + str(map_correctly_initialized))
 
         # TODO: remove the following
-        self.map._build_background("Test.png")
-
+        map._build_background("Test.png")
+        return map
 
 
 class Map:
