@@ -39,3 +39,13 @@ class Tile:
             # We apply the default list... We base ourselves only on the subtype
             return self.tile_subtype in {Tile.S_WATER}
         return self.tile_subtype in entity.blocking_tile_list
+
+    def block_view_for(self, entity):
+        if hasattr(entity, "blocking_view_tile_list"):
+            if self.tile_type in entity.blocking_view_tile_list:
+                return True
+            else:
+                return False
+        elif self.tile_type in {Tile.T_VOID, Tile.T_BLOCK}:
+            return True
+        return False

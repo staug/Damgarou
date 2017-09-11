@@ -1,6 +1,7 @@
 import pygame as pg
 from shared import GLOBAL
 from default import *
+from utilities import FieldOfView
 
 
 class Screen:
@@ -77,6 +78,7 @@ class PlayingScreen(Screen):
             self.top_left = top_left
             self.dimension = (PLAYABLE_WIDTH, PLAYABLE_HEIGHT)
             self.camera = PlayingScreen.Camera()
+            self.fog_of_war_mask = None
 
         def update(self):
             for sprite_group in GLOBAL.game.current_region.all_groups:
@@ -94,6 +96,27 @@ class PlayingScreen(Screen):
             for sprite_group in GLOBAL.game.current_region.all_groups:
                 for entity in sprite_group:
                     playable_background.blit(entity.image, self.camera.apply(entity))
+
+            # FOW
+            if GLOBAL.game.invalidate_fog_of_war or self.fog_of_war_mask is None:
+                # Recompute the player vision matrix, that flag the explored part
+                FieldOfView.get_vision_matrix_for(GLOBAL.game.player, GLOBAL.game.current_region, flag_explored=True)
+
+                self.fog_of_war_mask = pg.Surface((PLAYABLE_WIDTH, PLAYABLE_HEIGHT), pg.SRCALPHA, 32)
+
+                black = pg.Surface(TILESIZE_SCREEN)
+                black.fill(BGCOLOR)
+                gray = pg.Surface(TILESIZE_SCREEN, pg.SRCALPHA, 32)
+                gray.fill((0, 0, 0, 120))
+                for x in range(GLOBAL.game.current_region.tile_width):
+                    for y in range(GLOBAL.game.current_region.tile_height):
+                        if GLOBAL.game.current_region.tiles[x][y].explored:
+                            self.fog_of_war_mask.blit(gray, self.camera.apply_rect(pg.Rect((x * TILESIZE_SCREEN[0], y * TILESIZE_SCREEN[1]), TILESIZE_SCREEN)))
+                        else:
+                            self.fog_of_war_mask.blit(black, self.camera.apply_rect(pg.Rect((x * TILESIZE_SCREEN[0], y * TILESIZE_SCREEN[1]), TILESIZE_SCREEN)))
+                GLOBAL.game.invalidate_fog_of_war = False
+
+            playable_background.blit(self.fog_of_war_mask, (0, 0))
 
             # Playable background commit
             screen.blit(playable_background, pg.Rect(self.top_left, (PLAYABLE_WIDTH, PLAYABLE_HEIGHT)))

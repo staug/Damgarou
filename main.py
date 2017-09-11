@@ -29,16 +29,23 @@ class Game:
         self.screens = {Game.GAME_STATE_PLAYING: PlayingScreen()}
         self.current_region = None
         self.player = None
+        self.invalidate_fog_of_war = True
 
     def new(self):
-        self.objects = []
-        self.level = 1
 
-        guiwidget.display_single_message_on_screen("Building level")
-        self.current_region = RegionFactory.generate("Damgarou Wilderness - Level {}".format(self.level),
+        self.world = []  # The world contains all the wilderness regions, all the town maps...
+
+        guiwidget.display_single_message_on_screen("Generating World")
+        for i in range(2):
+            self.world.append(RegionFactory.generate("Damgarou Wilderness - Region {}".format(i),
                                                      region_type=RegionFactory.REGION_WILDERNESS,
-                                                     town_list=(Town(), Town(), Town()))
-        guiwidget.display_single_message_on_screen("Level ok")
+                                                     town_list=(Town(wilderness_index=i),
+                                                                Town(wilderness_index=i),
+                                                                Town(wilderness_index=i))))
+        guiwidget.display_single_message_on_screen("World ok")
+
+        self.current_region = self.world[0]
+        # We start the player, and we add it somewhere
         self.player = Player()
         self.player.assign_entity_to_region(self.current_region)
         (self.player.x, self.player.y) = self.current_region.get_all_available_tiles(Tile.T_GROUND, self.current_region.region_entities).pop()

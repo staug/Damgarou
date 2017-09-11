@@ -74,6 +74,8 @@ class Region:
         for i in range(5):
             self.all_groups.append(pg.sprite.Group())
 
+        self.last_player_position = None
+
     def _build_background(self, name=None):
         """
         Build the image from the map.

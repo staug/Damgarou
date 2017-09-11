@@ -7,13 +7,16 @@ class Player(GameEntity):
     def __init__(self):
         GameEntity.__init__(self, pos=(1,1), image_ref="PLAYER_PALADIN", z_level=2)
 
+        self.mule_list = []
+        self.fighter_list = []
+
     def move(self, dx=0, dy=0):
         """
         Try to move the player.
         Return True if an action was done (either move or attack)
         """
         # We keep the old position
-        old_pos = self.pos
+        GLOBAL.game.current_region.last_player_position = self.pos
 
         # Test if we enter the actionable zone of an entity
         for entity in GLOBAL.game.current_region.region_entities:
@@ -26,7 +29,6 @@ class Player(GameEntity):
                 self.y -= dy
                 if result is not None and not result:
                     # We triggered an object, it prevented the move (like a door not opening)
-
                     return False
 
         # Test if we collide with an other enemy, then we enter in a fight mode
@@ -44,7 +46,7 @@ class Player(GameEntity):
             if self.animated and (dx != 0 or dy != 0):
                 self.last_direction = (dx, dy)
 
-            #self.invalidate_fog_of_war = True
+            GLOBAL.game.invalidate_fog_of_war = True
             #self.game.ticker.ticks_to_advance += self.speed_cost_for(c.AC_ENV_MOVE)
             return True
 
