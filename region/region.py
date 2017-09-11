@@ -1,44 +1,12 @@
-import pygame as pg
 import random
 from os import path
+
+import pygame as pg
+
 from default import *
+from region.tile import Tile
 from shared import GLOBAL
 from utilities import AStar, SQ_Location, SQ_MapHandler
-
-
-class Tile:
-    """
-    A tile of the map and its properties
-    """
-    # Main types
-    T_VOID = '0'
-    T_BLOCK = '1'  # Might be the wall of a grotto or of a room, trees or boulders
-    T_GROUND = '2'  # Generic - can be grass as well.
-    T_LIQUID = '3'  # A specific division of the floor
-
-    # Sub Types
-    S_VOID = '0_0'
-
-    # Blocking / High elevation types or deep water. Nobody can pass.
-    S_TREE = '1_1'
-    S_WALL = '1_2'
-    S_BOULDER = '1_3'
-    S_DEEP_WATER = '1_4'
-
-    # Floor fro regular ground
-    S_FLOOR = '2_0'  # Regular dirt
-    S_PATH = '2_1'
-    S_GRASS = '2_2'
-    S_CARPET = '2_3'
-
-    # Liquid - for non blocking ground
-    S_WATER = '3_1'  # Only Aquatics will be able to cross
-    S_LAVA = '3_2'
-
-    def __init__(self, tile_type=T_VOID, sub_type=S_VOID):
-        self.tile_type = tile_type
-        self.tile_subtype = sub_type
-        self.explored = False
 
 
 class RegionFactory:
@@ -75,7 +43,7 @@ class RegionFactory:
                     # Now we register the entities on the "region"
                     for town in attributes["town_list"]:
                         region.region_entities.add(town)
-                        town.assign_entity_to_region_spritegroup(region)
+                        town.assign_entity_to_region(region)
                 print("MAP CORRECT: " + str(region_correctly_initialized))
 
         return region

@@ -12,7 +12,15 @@ Most of the object base code will go there
 
 class GameEntity(Sprite):
 
-    def __init__(self, pos=None, image_ref=None, z_level=2):
+    def __init__(self,
+                 pos=None,
+                 image_ref=None,
+                 z_level=2,
+                 blocking_tile_list=None,
+                 blocking_view_list=None,
+                 vision=1,
+                 blocks=False):
+
         Sprite.__init__(self)
         if not pos:
             pos = (-1, -1)
@@ -24,6 +32,12 @@ class GameEntity(Sprite):
         self.image = None
         self.animated = False
         self.init_graphics()
+
+        # Blocking: what the object can go over, what it can see over, and if the object prevents movement upon itself
+        self.blocking_tile_list = blocking_tile_list
+        self.blocking_view_list = blocking_view_list
+        self.blocks = blocks
+        self.base_vision_radius = vision
 
     @property
     def pos(self):
@@ -64,11 +78,13 @@ class GameEntity(Sprite):
         self.rect.centerx = self.x * TILESIZE_SCREEN[0] + int(TILESIZE_SCREEN[1] / 2)  # initial position for the camera
         self.rect.centery = self.y * TILESIZE_SCREEN[0] + int(TILESIZE_SCREEN[1] / 2)
 
-    def assign_entity_to_region_spritegroup(self, region):
+    def assign_entity_to_region(self, region):
         self.add(region.all_groups[self.z_level])
+        region.region_entities.add(self)
 
-    def remove_entity_from_region_spritegroup(self, region):
+    def remove_entity_from_region(self, region):
         self.remove(map.all_groups[self.z_level])
+        region.region_entities.remove(self)
 
     def animate(self):
         now = pg.time.get_ticks()

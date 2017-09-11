@@ -9,9 +9,9 @@ from entity.player import Player
 from entity.town import Town
 from gui import guiwidget
 from gui.screen import PlayingScreen
-from region.tilemap import RegionFactory
+from region.region import RegionFactory
+from region.tile import Tile
 from shared import GLOBAL
-
 
 class Game:
 
@@ -34,14 +34,14 @@ class Game:
         self.objects = []
         self.level = 1
 
-        #self.map = DungeonMapFactory("MerchantRogue Caves - Level {}".format(self.level)).map
         guiwidget.display_single_message_on_screen("Building level")
         self.current_region = RegionFactory.generate("Damgarou Wilderness - Level {}".format(self.level),
                                                      region_type=RegionFactory.REGION_WILDERNESS,
                                                      town_list=(Town(), Town(), Town()))
         guiwidget.display_single_message_on_screen("Level ok")
         self.player = Player()
-        self.player.assign_entity_to_region_spritegroup(self.current_region)
+        self.player.assign_entity_to_region(self.current_region)
+        (self.player.x, self.player.y) = self.current_region.get_all_available_tiles(Tile.T_GROUND, self.current_region.region_entities).pop()
         #self.minimap = Minimap(self)
 
     def start(self):

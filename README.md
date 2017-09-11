@@ -1,14 +1,18 @@
 # Damgarou
-Roguelike in Python and Pygame, centered around merchant and exchanges
+Roguelike in Python and Pygame, centered around merchant and exchanges.
 Idea from roguebasin.
 
 Synopsis:
-The player is a young merchant ? a turn of fortune has pushed him to choose this carrier. He is travelling from town to town ? the passages from town to town are mostly via subterrans parts (which forms the dungeon), selling equipments. The dungeon also offers him the opportunity to loot enemies or discover treasure, but he has to be careful as he is ultra weak? He may also do quests (mainly carry object from point A to B) to earn more money and experience.
+The player is a young merchant, from a poor class. A turn of fortune has pushed him to choose this carrier. 
+He is travelling from town to town to make profit by seeling equipments. Towns and dungeons are scattered in the wilderness; dungeons lead to magic portals between wilderness (once a new wilderness or new town has been visited, the player will be able to move between towns using magic portals for a small fee).
+The dungeons also offer him the opportunity to loot enemies or discover treasure, but he has to be careful as he is ultra weak.
+He may also do quests (mainly carry object from point A to B) to earn more money and experience.
 
 Game goal:
-The game is time limited (X turns, configurable at the start). The player has to become the richest possible in this time limit. And survive. A turn is materialized by a town.
-
-phase 2: game may be affected at teh beginning depending at HOW we want it to be played: nb of terms limited, exploration (with a set of quests)
+The player has to become the richest possible. And survive. During his life, he will be able to buy a house, marry and attain the nobility status.
+The game may end:
+* If the player dies (either due to age, sickness, combat...), without heir
+* If the player reaches a certain nobility status
 
 Setup:
 Initial screen: start new game, load game, options, exit.
@@ -19,6 +23,8 @@ Rules:
 
 Become richer
 The base is to buy goods in some places, while selling them elsewhere. The number of slots a player has is limited ? in order to expand he has to hire some mules or buy some objects (better handbags for example). Each good takes x slot - if the player buys huge quantities the quantity can be spread across multiple, but the individual good cannot be split.
+The player may have an heir - if he dies, his "son" will be able to carry on. In order to get an heir, he needs to have a house and be married.
+
 Resources
 Two resources are to be managed:
 ?       Gold ? this is the basic trading quantity. Gold is decreased by taxes (each turn), by salary to allies, when losing battles (paying ranson), or by special events. Not being able to pay taxes will trigger bad events. Not being able to pay salary will trigger bad events (worst: the ally leaves the player)
