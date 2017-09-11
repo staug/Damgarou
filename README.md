@@ -1,19 +1,27 @@
 # Damgarou
 Roguelike in Python and Pygame, centered around merchant and exchanges.
-Idea from roguebasin.
+Idea from roguebasin (http://www.roguebasin.com/index.php?title=TraderRL).
 
-Synopsis:
-The player is a young merchant, from a poor class. A turn of fortune has pushed him to choose this carrier. 
-He is travelling from town to town to make profit by seeling equipments. Towns and dungeons are scattered in the wilderness; dungeons lead to magic portals between wilderness (once a new wilderness or new town has been visited, the player will be able to move between towns using magic portals for a small fee).
-The dungeons also offer him the opportunity to loot enemies or discover treasure, but he has to be careful as he is ultra weak.
+**Synopsis**
+
+_Story_
+
+The player is a young merchant, from a poor class. A turn of fortune has pushed him to choose this carrier, but he wants to get back to nobility (for himself or his family). 
+He is travelling from town to town to make profit by selling equipments. However, as he is weak he needs to hire other to carry the equipments.
+Towns and dungeons are scattered in the wilderness; dungeons lead to magic portals between wilderness (once a new wilderness or new town has been visited, the player will be able to move between towns using magic portals for a small fee).
+The dungeons also offer him the opportunity to loot enemies or discover treasure, but he has to be careful as he is ultra weak - so he needs to hire fighters.
 He may also do quests (mainly carry object from point A to B) to earn more money and experience.
 
-Game goal:
+The player may be in situation to find a partner, get married and eventually have a child. Having a child will allow for a future in case of death.
+
+_Game goal_
+
 The player has to become the richest possible. And survive. During his life, he will be able to buy a house, marry and attain the nobility status.
 The game may end:
 * If the player dies (either due to age, sickness, combat...), without heir
 * If the player reaches a certain nobility status
 
+#
 Setup:
 Initial screen: start new game, load game, options, exit.
 Start new game -> player setup screen, then regular game.
@@ -95,7 +103,7 @@ twon may undergo special condition that drives price up.
 town have alignment that specifies the type of good that can be offered/sold.
 
 Places in town:
-[temple] -> Heal, remove curse, bless
+[temple] -> Heal, remove curse, bless, get married :-)
 [trading place] -> buy/sell
 [shops] buy equipment, repair equipment(?), craft equipment(?)
 [guild] hire friends.
