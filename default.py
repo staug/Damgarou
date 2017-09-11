@@ -32,8 +32,8 @@ PLAYER_FOLDER = os.path.join(IMG_FOLDER, "Player")
 TILESIZE_SCREEN = (16, 16)
 
 # game settings
-PLAYABLE_WIDTH = 256   # 16 * 64 or 32 * 32 or 64 * 16
-PLAYABLE_HEIGHT = 256  # 16 * 48 or 32 * 24 or 64 * 12
+PLAYABLE_WIDTH = 512   # 16 * 64 or 32 * 32 or 64 * 16
+PLAYABLE_HEIGHT = 512  # 16 * 48 or 32 * 24 or 64 * 12
 FPS = 60
 BGCOLOR = BLACK
 

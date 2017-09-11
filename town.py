@@ -10,7 +10,7 @@ class Town(GameEntity):
     TOWN_INDEX = 1
 
     def __init__(self, name=None, pos=None):
-        GameEntity.__init__(self, pos=pos)  # dimensions doivent être impair!
+        GameEntity.__init__(self, pos=pos, image_ref="TOWN", z_level=0)
 
         if name:
             self.name = name

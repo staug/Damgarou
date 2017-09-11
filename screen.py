@@ -78,6 +78,11 @@ class PlayingScreen(Screen):
                                                                      TILESIZE_SCREEN[0],
                                                                      TILESIZE_SCREEN[1]
                                                                      )))
+
+        for sprite_group in GLOBAL.game.current_map.all_groups:
+            for entity in sprite_group:
+                playable_background.blit(entity.image, self.camera.apply(entity))
+
         # Playable background commit
         screen.blit(playable_background, pg.Rect(self.top_playable_position, (PLAYABLE_WIDTH, PLAYABLE_HEIGHT)))
         pg.display.flip()

@@ -8,6 +8,7 @@ import guiwidget
 from shared import GLOBAL
 from tilemap import MapFactory
 from screen import PlayingScreen
+from town import Town
 
 class Game:
 
@@ -31,7 +32,9 @@ class Game:
 
         #self.map = DungeonMapFactory("MerchantRogue Caves - Level {}".format(self.level)).map
         guiwidget.display_single_message_on_screen("Building level")
-        self.current_map = MapFactory.generate("Damgarou Caves - Level {}".format(self.level))
+        self.current_map = MapFactory.generate("Damgarou Wilderness - Level {}".format(self.level),
+                                               map_type=MapFactory.MAP_TYPE_WILDERNESS,
+                                               town_list=(Town(), Town(), Town()))
         guiwidget.display_single_message_on_screen("Level ok")
 
         #self.minimap = Minimap(self)
