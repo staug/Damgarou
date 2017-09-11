@@ -63,10 +63,10 @@ class GameEntity(Sprite):
         self.rect.centerx = self.x * TILESIZE_SCREEN[0] + int(TILESIZE_SCREEN[1] / 2)  # initial position for the camera
         self.rect.centery = self.y * TILESIZE_SCREEN[0] + int(TILESIZE_SCREEN[1] / 2)
 
-    def assign_entity_to_map_spritegroup(self, map):
-        self.add(map.all_groups[self.z_level])
+    def assign_entity_to_region_spritegroup(self, region):
+        self.add(region.all_groups[self.z_level])
         # Just in case the position has changed since the original place
         self._reposition_rect()
-        
-    def remove_entity_from_map_spritegroup(self, map):
+
+    def remove_entity_from_region_spritegroup(self, region):
         self.remove(map.all_groups[self.z_level])

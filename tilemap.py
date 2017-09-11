@@ -1,11 +1,10 @@
 import pygame as pg
 import random
 from os import path
-import utilities
 from default import *
 from shared import GLOBAL
-from town import Town
 from utilities import AStar, SQ_Location, SQ_MapHandler
+
 
 class Tile:
     """
@@ -42,49 +41,49 @@ class Tile:
         self.explored = False
 
 
-class MapFactory:
+class RegionFactory:
     """
     Used to generate one of the predefined map type
     """
 
-    MAP_TYPE_WILDERNESS = "WILDERNESS"
-    MAP_TYPE_DUNGEON = "DUNGEON"
+    REGION_WILDERNESS = "WILDERNESS"
+    REGION_DUNGEON = "DUNGEON"
 
     @staticmethod
     def generate(name,
                  state=None,
-                 map_type=MAP_TYPE_WILDERNESS,
+                 region_type=REGION_WILDERNESS,
                  dimension=(81, 121),
                  **attributes):
         """
-        :param name: The name of the map. Can be used as a future reference
-        :param state: All maps are generated using random things. This is to define the seed of the map.
-        :param dimension: The dimension of the map
+        :param name: The name of the region. Can be used as a future reference
+        :param state: All maps are generated using random things. This is to define the seed of the region.
+        :param dimension: The dimension of the region
         """
         if state is not None:
             random.setstate(state)
 
-        map_correctly_initialized = False
-        map = None
+        region_correctly_initialized = False
+        region = None
 
-        while not map_correctly_initialized:
-            if map_type == MapFactory.MAP_TYPE_WILDERNESS:
-                assert "town_list" in attributes, "Wilderness map needs to have a town list"
-                map = WildernessMap(name, dimension, town_list=attributes["town_list"], with_liquid=True)
-                map_correctly_initialized = map.is_valid_map()
-                if map_correctly_initialized:
-                    # Now we register the entities on the "map"
+        while not region_correctly_initialized:
+            if region_type == RegionFactory.REGION_WILDERNESS:
+                assert "town_list" in attributes, "Wilderness region needs to have a town list"
+                region = WildernessRegion(name, dimension, town_list=attributes["town_list"], with_liquid=True)
+                region_correctly_initialized = region.is_valid_map()
+                if region_correctly_initialized:
+                    # Now we register the entities on the "region"
                     for town in attributes["town_list"]:
-                        map.map_entities.add(town)
-                        town.assign_entity_to_map_spritegroup(map)
-                print("MAP CORRECT: " + str(map_correctly_initialized))
+                        region.region_entities.add(town)
+                        town.assign_entity_to_region_spritegroup(region)
+                print("MAP CORRECT: " + str(region_correctly_initialized))
 
-        return map
+        return region
 
 
-class Map:
+class Region:
     """
-    The Map, representing a combination of tiles and entities that belong in this space.
+    The Region, representing a combination of tiles and entities that belong in this space.
     Mainly holds a reference to a set of tiles, as well as dimensions as well as a list of entities it uses.
     The list of entities is kept in the sprite groups and in a set
     """
@@ -102,7 +101,7 @@ class Map:
         # We have 5 sprites groups: two below the player, the player one and two above
         # The player one is the 2.
         # They are drawn in the order 0 to 4
-        self.map_entities = set()  # the list of entities of this map
+        self.region_entities = set()  # the list of entities of this map
         self.all_groups = []
         for i in range(5):
             self.all_groups.append(pg.sprite.Group())
@@ -197,20 +196,20 @@ class Map:
 
         return weight
 
-    def get_random_available_tile(self, tile_type, game_objects, without_objects=True):
+    def get_random_available_tile(self, tile_type, region_objects, without_objects=True):
         """
         Return a tile matching the characteristics: given tile type
         Used to get a spawning position...
         By default, the tile should be without objects and out of any doors position
         :param tile_type: the type of tile that we look for
         :param without_objects: check if no objects is there, and that it is not a possible door position
-        :param game_objects: the list of current objects in the game
+        :param region_objects: the list of current objects in the game
         :return: a tile position (tuple)
         """
         entity_pos_listing = set()
 
         if without_objects:
-            for entity in game_objects:
+            for entity in region_objects:
                 entity_pos_listing.add((entity.x, entity.y))
 
         while True:
@@ -222,20 +221,20 @@ class Map:
                 elif not without_objects:
                     return x, y
 
-    def get_close_available_tile(self, ref_pos, tile_type, game_objects, without_objects=True):
+    def get_close_available_tile(self, ref_pos, tile_type, region_objects, without_objects=True):
         """
         Return a tile matching the characteristics: given tile type near entity
         By default, the tile should be without objects and out of any doors position
         :param ref_pos: the ref position for the object
         :param tile_type: the type of tile that we look for
         :param without_objects: check if no objects is there, and that it is not a possible door position
-        :param game_objects: the list of current objects in the game
+        :param region_objects: the list of current objects in the game
         :return: a tile position (tuple) that matches free, the ref pos if none is found
         """
         entity_pos_listing = set()
 
         if without_objects:
-            for entity in self.map_entities:
+            for entity in region_objects:
                 entity_pos_listing.add((entity.x, entity.y))
 
         delta = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
@@ -250,13 +249,13 @@ class Map:
                     return x, y
         return ref_pos
 
-    def get_all_available_tiles(self, tile_type, game_objects, without_objects=False, shuffle=True):
+    def get_all_available_tiles(self, tile_type, region_objects, without_objects=False, shuffle=True):
         """
         Return all tile matching the characteristics: given tile type
         Used to get a spawning position...
         :param tile_type: the type of tile that we look for
         :param without_objects: set to True to remove objects overlap
-        :param game_objects: the list of current game objects
+        :param region_objects: the list of current game objects
         :param shuffle: if set to True, shuffle before returning the data
         :return: a list of tile positions (tuple)
         """
@@ -264,7 +263,7 @@ class Map:
         entity_pos_listing = set()
 
         if without_objects:
-            for entity in self.map_entities:
+            for entity in region_objects:
                 entity_pos_listing.add((entity.x, entity.y))
 
         for x in range(self.tile_width):
@@ -279,17 +278,17 @@ class Map:
             random.shuffle(listing)
         return listing
 
-    def get_all_available_isolated_tiles(self, tile_type, game_objects, without_objects=False, surrounded=7, max=None, shuffle=True):
+    def get_all_available_isolated_tiles(self, tile_type, region_objects, without_objects=False, surrounded=7, max=None, shuffle=True):
         """
         Return all tile matching the characteristics: given tile type, surrounded by 8 cells of same type
         Used to get a spawning position...
         :param tile_type: the types of tile that we look for
         :param without_objects: set to True to remove objects overlap
-        :param game_objects: the list of current game objects
+        :param region_objects: the list of current game objects
         :param surrounded: the number of tiles of same type that the tile should have around
         :return: a list of tile positions (tuple)
         """
-        listing = set(self.get_all_available_tiles(tile_type, game_objects, without_objects=without_objects, shuffle=False))
+        listing = set(self.get_all_available_tiles(tile_type, region_objects, without_objects=without_objects, shuffle=False))
         result = []
         for pos in listing:
             x, y = pos
@@ -355,7 +354,7 @@ class Map:
         return nb_of_tiles_to_be_flooded == len(tiles_flooded)
 
 
-class WildernessMap(Map):
+class WildernessRegion(Region):
     """
     A map which is based on a cellular automaton
     This map can be used for:
@@ -376,24 +375,24 @@ class WildernessMap(Map):
                  grotto_list=None):
 
         assert dimension[0] % 2 == 1 and dimension[1] % 2 == 1, "Maze dimensions must be odd"
-        Map.__init__(self, name, dimension)  # dimensions doivent être impair!
+        Region.__init__(self, name, dimension)  # dimensions doivent être impair!
 
         self.tiles = [[Tile(Tile.T_GROUND, sub_type=Tile.S_FLOOR)
                        for y in range(self.tile_height)]
                       for x in range(self.tile_width)]
 
-        reftiles = WildernessMap._generate_algo(self.tile_width, self.tile_height, 40,
-                                                ((3, 5, 1), (2, 5, -1)), empty_center=False)
+        reftiles = WildernessRegion._generate_algo(self.tile_width, self.tile_height, 40,
+                                                   ((3, 5, 1), (2, 5, -1)), empty_center=False)
         print("Generate base ground ok")
         # Now add some extra stuff depending on the type of map
         # Grass on the floor - to implement we construct a totally new map. We will apply the previous as a mask.
-        grass_tile = WildernessMap._generate_algo(self.tile_width, self.tile_height, 50, ((3, 5, 1), (1, 6, -1)))
+        grass_tile = WildernessRegion._generate_algo(self.tile_width, self.tile_height, 50, ((3, 5, 1), (1, 6, -1)))
         print("Generate grass ground ok")
 
         # Some shallow Aquatics
         water_tile = []
         if with_liquid:
-            water_tile = WildernessMap._generate_algo(self.tile_width, self.tile_height, 40, ((2, 5, -1),))
+            water_tile = WildernessRegion._generate_algo(self.tile_width, self.tile_height, 40, ((2, 5, -1),))
             print("Generate shallow liquid ok")
 
         for y in range(self.tile_height):
@@ -407,7 +406,7 @@ class WildernessMap(Map):
                 elif grass_tile[x][y] == 1:
                     self.tiles[x][y].tile_subtype = Tile.S_GRASS
 
-        list_available_tiles = self.get_all_available_tiles(Tile.T_GROUND, self.map_entities)
+        list_available_tiles = self.get_all_available_tiles(Tile.T_GROUND, self.region_entities)
         for town in town_list:
             (town.x, town.y) = list_available_tiles.pop()
             print("Town pos: " + str(town.pos))
@@ -459,7 +458,7 @@ class WildernessMap(Map):
             for repeat in range(number_repeat):
                 for y in range(1, height - 1):
                     for x in range(1, width - 1):
-                        count = WildernessMap._count_border_tile(tiles, x, y, 1)
+                        count = WildernessRegion._count_border_tile(tiles, x, y, 1)
                         if count >= number_to_keep:
                             tiles[x][y] = 1
                         elif number_to_be_born >= 0 and count <= number_to_be_born:
@@ -468,10 +467,10 @@ class WildernessMap(Map):
                             tiles[x][y] = 0
 
         if empty_center:
-            WildernessMap._eliminate_center_border(tiles, width, height)  # A bit brutal
+            WildernessRegion._eliminate_center_border(tiles, width, height)  # A bit brutal
             for y in range(1, height - 1):  # We smooth a bit the result
                 for x in range(1, width - 1):
-                    count = WildernessMap._count_border_tile(tiles, x, y, 1)
+                    count = WildernessRegion._count_border_tile(tiles, x, y, 1)
                     if count >= number_to_keep:
                         tiles[x][y] = 1
                     else:
@@ -526,15 +525,6 @@ class WildernessMap(Map):
         dirt_serie = initial_seed + 11
         path_serie = initial_seed + 12
         water_serie = initial_seed + 13
-
-        tree_surface = pg.Surface(TILESIZE_SCREEN)
-        tree_surface.fill((136, 66, 29))
-        grass_surface = pg.Surface(TILESIZE_SCREEN)
-        grass_surface.fill((135, 233, 144))
-        floor_surface = pg.Surface(TILESIZE_SCREEN)
-        floor_surface.fill((131, 166, 151))
-        water_surface = pg.Surface( TILESIZE_SCREEN)
-        water_surface.fill((4, 139, 154))
 
         for y in range(self.tile_height):
             for x in range(self.tile_width):

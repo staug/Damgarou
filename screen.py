@@ -29,8 +29,8 @@ class PlayingScreen(Screen):
             return rect.move(self.camera.topleft)
 
         def update(self, pos_tile):
-            self.width = GLOBAL.game.current_map.background.get_width()
-            self.height = GLOBAL.game.current_map.background.get_height()
+            self.width = GLOBAL.game.current_region.background.get_width()
+            self.height = GLOBAL.game.current_region.background.get_height()
 
             x = -pos_tile[0] * TILESIZE_SCREEN[0] + int(PLAYABLE_WIDTH / 2)
             y = -pos_tile[1] * TILESIZE_SCREEN[1] + int(PLAYABLE_HEIGHT / 2)
@@ -65,12 +65,10 @@ class PlayingScreen(Screen):
 
         # Playable Background
         playable_background = pg.Surface((PLAYABLE_WIDTH, PLAYABLE_HEIGHT))
-        playable_background.blit(GLOBAL.game.current_map.background,
-                                 self.camera.apply_rect(pg.Rect(0,
-                                                                0,
-                                                                GLOBAL.game.current_map.background.get_width(),
-                                                                GLOBAL.game.current_map.background.get_height())))
-        # Add all the game objects - To be removed
+        playable_background.blit(GLOBAL.game.current_region.background,
+                                 self.camera.apply_rect(pg.Rect(0, 0, PLAYABLE_WIDTH, PLAYABLE_HEIGHT)))
+
+        # Add all the game objects - Simu To be removed
         psimu_surface = pg.Surface(TILESIZE_SCREEN)
         psimu_surface.fill((255, 166, 151))
         playable_background.blit(psimu_surface, self.camera.apply_rect(pg.Rect(self.pos_player_simu[0] * TILESIZE_SCREEN[0],
@@ -79,7 +77,7 @@ class PlayingScreen(Screen):
                                                                      TILESIZE_SCREEN[1]
                                                                      )))
 
-        for sprite_group in GLOBAL.game.current_map.all_groups:
+        for sprite_group in GLOBAL.game.current_region.all_groups:
             for entity in sprite_group:
                 playable_background.blit(entity.image, self.camera.apply(entity))
 
