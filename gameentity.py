@@ -1,5 +1,6 @@
 from pygame.sprite import Sprite
 from pygame import Surface
+import pygame as pg
 from shared import GLOBAL
 from default import *
 
@@ -65,8 +66,46 @@ class GameEntity(Sprite):
 
     def assign_entity_to_region_spritegroup(self, region):
         self.add(region.all_groups[self.z_level])
-        # Just in case the position has changed since the original place
-        self._reposition_rect()
 
     def remove_entity_from_region_spritegroup(self, region):
         self.remove(map.all_groups[self.z_level])
+
+    def animate(self):
+        now = pg.time.get_ticks()
+        delta = 200
+        if hasattr(self, "ai") and self.ai is not None:
+            if hasattr(self.ai, "speed"):
+                delta = self.ai.speed * 30
+        elif hasattr(self, "speed"):
+            delta = self.speed * 30
+        if now - self.last_update > delta:
+            self.last_update = now
+            reference = 'E'
+            if hasattr(self, "dict_image"):
+                if self.last_direction[0] < 0:
+                    reference = 'W'
+                if self.last_direction[0] > 0:
+                    reference = 'E'
+                if self.last_direction[1] < 0:
+                    reference = 'N'
+                if self.last_direction[1] > 0:
+                    reference = 'S'
+                if "NW" in self.dict_image:
+                    if self.last_direction == (-1, -1):
+                        reference = "NW"
+                    elif self.last_direction == (1, 1):
+                        reference = "SE"
+                    elif self.last_direction == (-1, 1):
+                        reference = "SW"
+                    elif self.last_direction == (1, -1):
+                        reference = "NE"
+                self.current_frame = (self.current_frame + 1) % len(self.dict_image[reference])
+                self.image = self.dict_image[reference][self.current_frame]
+            else:
+                self.current_frame = (self.current_frame + 1) % len(self.list_image)
+                self.image = self.list_image[self.current_frame]
+
+    def update(self):
+        if self.animated:
+            self.animate()
+        self._reposition_rect()

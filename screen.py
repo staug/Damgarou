@@ -2,7 +2,12 @@ import pygame as pg
 from shared import GLOBAL
 from default import *
 
+
 class Screen:
+
+    def __init__(self):
+        self.widgets = None
+        self.thorpy_widgets = None
 
     def events(self):
         pass
@@ -13,11 +18,25 @@ class Screen:
     def draw(self):
         pass
 
+
+class Widget:
+
+    def update(self):
+        pass
+
+    def handle_events(self):
+        pass
+
+    def draw(self):
+        pass
+
+
 class PlayingScreen(Screen):
 
     class Camera:
         def __init__(self):
-            width_map, height_map = 10, 10  # Will be updated later in the update function, as this depends from current map
+            width_map, height_map = 10, 10  # Will be updated later in the update function,
+            # this depends from current map
             self.camera = pg.Rect(0, 0, width_map, height_map)
             self.width = width_map
             self.height = height_map
@@ -53,10 +72,17 @@ class PlayingScreen(Screen):
             (cam_x, cam_y) = self.camera.topleft
             return screen_x - cam_x, screen_y - cam_y
 
+    class PlayableScreen(Widget):
+        # TODO
+        def __init__(self, top_left):
+            self.top_left = top_left
+            self.rect = pg.Rect(0, 0, PLAYABLE_WIDTH, PLAYABLE_HEIGHT)
+
     def __init__(self):
+        Screen.__init__(self)
+
         self.camera = PlayingScreen.Camera()  # this will be updated later
         self.top_playable_position = (32, 64)  # top left corner of the playable screen
-        self.pos_player_simu = [0, 0]
 
     def draw(self):
         # Erase All
@@ -68,15 +94,7 @@ class PlayingScreen(Screen):
         playable_background.blit(GLOBAL.game.current_region.background,
                                  self.camera.apply_rect(pg.Rect(0, 0, PLAYABLE_WIDTH, PLAYABLE_HEIGHT)))
 
-        # Add all the game objects - Simu To be removed
-        psimu_surface = pg.Surface(TILESIZE_SCREEN)
-        psimu_surface.fill((255, 166, 151))
-        playable_background.blit(psimu_surface, self.camera.apply_rect(pg.Rect(self.pos_player_simu[0] * TILESIZE_SCREEN[0],
-                                                                     self.pos_player_simu[1] * TILESIZE_SCREEN[1],
-                                                                     TILESIZE_SCREEN[0],
-                                                                     TILESIZE_SCREEN[1]
-                                                                     )))
-
+        # Add all the game objects
         for sprite_group in GLOBAL.game.current_region.all_groups:
             for entity in sprite_group:
                 playable_background.blit(entity.image, self.camera.apply(entity))
@@ -86,22 +104,26 @@ class PlayingScreen(Screen):
         pg.display.flip()
 
     def update(self):
-        self.camera.update(self.pos_player_simu)
+        for sprite_group in GLOBAL.game.current_region.all_groups:
+            for entity in sprite_group:
+                entity.update()
+
+        self.camera.update(GLOBAL.game.player.pos)
 
     def events(self):
-        # TODO Update all the keys, and change player simu
+        # TODO make the playable screen a widget...
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 GLOBAL.game.quit()
             if event.type == pg.KEYDOWN:
                 if event.key in (pg.K_LEFT, pg.K_q, pg.K_KP4):
-                    self.pos_player_simu[0] -= 1
+                    GLOBAL.game.player.move(dx=-1)
                 if event.key in (pg.K_RIGHT, pg.K_d, pg.K_KP6):
-                    self.pos_player_simu[0] += 1
+                    GLOBAL.game.player.move(dx=1)
                 if event.key in (pg.K_UP, pg.K_z, pg.K_KP8):
-                    self.pos_player_simu[1] -= 1
+                    GLOBAL.game.player.move(dy=-1)
                 if event.key in (pg.K_DOWN, pg.K_x, pg.K_KP2):
-                    self.pos_player_simu[1] += 1
+                    GLOBAL.game.player.move(dy=1)
 
             if event.type == pg.MOUSEBUTTONDOWN:
                 (button1, button2, button3) = pg.mouse.get_pressed()
@@ -112,5 +134,5 @@ class PlayingScreen(Screen):
                     (rev_x, rev_y) = self.camera.reverse((x, y))
                     (x, y) = (int(rev_x / TILESIZE_SCREEN[0]), int(rev_y / TILESIZE_SCREEN[1]))
 
-                    print(GLOBAL.game.current_map.tiles[x][y].tile_type)
+                    print(GLOBAL.game.current_region.tiles[x][y].tile_type)
 

@@ -9,6 +9,7 @@ from shared import GLOBAL
 from tilemap import RegionFactory
 from screen import PlayingScreen
 from town import Town
+from player import Player
 
 class Game:
 
@@ -25,6 +26,7 @@ class Game:
         self.game_running = True
         self.screens = {Game.GAME_STATE_PLAYING: PlayingScreen()}
         self.current_region = None
+        self.player = None
 
     def new(self):
         self.objects = []
@@ -36,7 +38,8 @@ class Game:
                                                      region_type=RegionFactory.REGION_WILDERNESS,
                                                      town_list=(Town(), Town(), Town()))
         guiwidget.display_single_message_on_screen("Level ok")
-
+        self.player = Player()
+        self.player.assign_entity_to_region_spritegroup(self.current_region)
         #self.minimap = Minimap(self)
 
     def start(self):
