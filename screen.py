@@ -6,8 +6,8 @@ from default import *
 class Screen:
 
     def __init__(self):
-        self.widgets = None
-        self.thorpy_widgets = None
+        self.widgets = set()
+        self.thorpy_widgets = set()
 
     def events(self):
         pass
@@ -24,10 +24,10 @@ class Widget:
     def update(self):
         pass
 
-    def handle_events(self):
+    def handle_event(self, event):
         pass
 
-    def draw(self):
+    def draw(self, screen):
         pass
 
 
@@ -73,66 +73,85 @@ class PlayingScreen(Screen):
             return screen_x - cam_x, screen_y - cam_y
 
     class PlayableScreen(Widget):
-        # TODO
         def __init__(self, top_left):
             self.top_left = top_left
-            self.rect = pg.Rect(0, 0, PLAYABLE_WIDTH, PLAYABLE_HEIGHT)
+            self.dimension = (PLAYABLE_WIDTH, PLAYABLE_HEIGHT)
+            self.camera = PlayingScreen.Camera()
+
+        def update(self):
+            for sprite_group in GLOBAL.game.current_region.all_groups:
+                for entity in sprite_group:
+                    entity.update()
+            self.camera.update(GLOBAL.game.player.pos)
+
+        def draw(self, screen):
+            # Playable Background
+            playable_background = pg.Surface(self.dimension)
+            playable_background.blit(GLOBAL.game.current_region.background,
+                                     self.camera.apply_rect(pg.Rect(0, 0, PLAYABLE_WIDTH, PLAYABLE_HEIGHT)))
+
+            # Add all the game objects on the playable entity
+            for sprite_group in GLOBAL.game.current_region.all_groups:
+                for entity in sprite_group:
+                    playable_background.blit(entity.image, self.camera.apply(entity))
+
+            # Playable background commit
+            screen.blit(playable_background, pg.Rect(self.top_left, (PLAYABLE_WIDTH, PLAYABLE_HEIGHT)))
+
+        def handle_event(self, event):
+            if event.type == pg.KEYDOWN:
+                if event.key in (pg.K_LEFT, pg.K_q, pg.K_KP4):
+                    GLOBAL.game.player.move(dx=-1)
+                    return True
+                if event.key in (pg.K_RIGHT, pg.K_d, pg.K_KP6):
+                    GLOBAL.game.player.move(dx=1)
+                    return True
+                if event.key in (pg.K_UP, pg.K_z, pg.K_KP8):
+                    GLOBAL.game.player.move(dy=-1)
+                    return True
+                if event.key in (pg.K_DOWN, pg.K_x, pg.K_KP2):
+                    GLOBAL.game.player.move(dy=1)
+                    return True
+            if event.type == pg.MOUSEBUTTONDOWN:
+                (button1, button2, button3) = pg.mouse.get_pressed()
+                (x, y) = pg.mouse.get_pos()
+                if not pg.Rect(self.top_left, (PLAYABLE_WIDTH, PLAYABLE_HEIGHT)).collidepoint(x, y):
+                    return False
+                if button1:
+                    (rev_x, rev_y) = self.camera.reverse((x - self.top_left[0], y - self.top_left[1]))
+                    (x, y) = (int(rev_x / TILESIZE_SCREEN[0]), int(rev_y / TILESIZE_SCREEN[1]))
+                    print(GLOBAL.game.current_region.tiles[x][y].tile_type)
+                    return True
+            return False
 
     def __init__(self):
         Screen.__init__(self)
-
-        self.camera = PlayingScreen.Camera()  # this will be updated later
-        self.top_playable_position = (32, 64)  # top left corner of the playable screen
+        self.widgets.add(PlayingScreen.PlayableScreen((10, 10)))
 
     def draw(self):
         # Erase All
         screen = pg.display.get_surface()
         screen.fill(BGCOLOR)
 
-        # Playable Background
-        playable_background = pg.Surface((PLAYABLE_WIDTH, PLAYABLE_HEIGHT))
-        playable_background.blit(GLOBAL.game.current_region.background,
-                                 self.camera.apply_rect(pg.Rect(0, 0, PLAYABLE_WIDTH, PLAYABLE_HEIGHT)))
+        for widget in self.widgets:
+            widget.draw(screen)
 
-        # Add all the game objects
-        for sprite_group in GLOBAL.game.current_region.all_groups:
-            for entity in sprite_group:
-                playable_background.blit(entity.image, self.camera.apply(entity))
-
-        # Playable background commit
-        screen.blit(playable_background, pg.Rect(self.top_playable_position, (PLAYABLE_WIDTH, PLAYABLE_HEIGHT)))
         pg.display.flip()
 
     def update(self):
-        for sprite_group in GLOBAL.game.current_region.all_groups:
-            for entity in sprite_group:
-                entity.update()
-
-        self.camera.update(GLOBAL.game.player.pos)
+        for widget in self.widgets:
+            widget.update()
 
     def events(self):
-        # TODO make the playable screen a widget...
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 GLOBAL.game.quit()
-            if event.type == pg.KEYDOWN:
-                if event.key in (pg.K_LEFT, pg.K_q, pg.K_KP4):
-                    GLOBAL.game.player.move(dx=-1)
-                if event.key in (pg.K_RIGHT, pg.K_d, pg.K_KP6):
-                    GLOBAL.game.player.move(dx=1)
-                if event.key in (pg.K_UP, pg.K_z, pg.K_KP8):
-                    GLOBAL.game.player.move(dy=-1)
-                if event.key in (pg.K_DOWN, pg.K_x, pg.K_KP2):
-                    GLOBAL.game.player.move(dy=1)
+            else:
+                handled = False
+                for widget in self.widgets:
+                    if not handled:
+                        handled = widget.handle_event(event)
 
-            if event.type == pg.MOUSEBUTTONDOWN:
-                (button1, button2, button3) = pg.mouse.get_pressed()
-                (x, y) = pg.mouse.get_pos()
-                x -= self.top_playable_position[0]
-                y -= self.top_playable_position[1]
-                if button1:
-                    (rev_x, rev_y) = self.camera.reverse((x, y))
-                    (x, y) = (int(rev_x / TILESIZE_SCREEN[0]), int(rev_y / TILESIZE_SCREEN[1]))
 
-                    print(GLOBAL.game.current_region.tiles[x][y].tile_type)
+
 
