@@ -16,6 +16,18 @@ class Player(GameEntity):
         old_pos = self.pos
 
         # Test if we enter the actionable zone of an entity
+        for entity in GLOBAL.game.current_region.region_entities:
+            if entity != self and entity.actionable is not None and \
+                            (self.x + dx, self.y + dy) in entity.actionable.action_field:
+                self.x += dx
+                self.y += dy
+                result = entity.actionable.action(self)
+                self.x -= dx
+                self.y -= dy
+                if result is not None and not result:
+                    # We triggered an object, it prevented the move (like a door not opening)
+
+                    return False
 
         # Test if we collide with an other enemy, then we enter in a fight mode
 

@@ -29,7 +29,7 @@ OBJECT_FOLDER = os.path.join(IMG_FOLDER, "Objects")
 PLAYER_FOLDER = os.path.join(IMG_FOLDER, "Player")
 
 # Graphical Settings
-TILESIZE_SCREEN = (64, 64)
+TILESIZE_SCREEN = (16, 16)
 
 # game settings
 PLAYABLE_WIDTH = 512   # 16 * 64 or 32 * 32 or 64 * 16
