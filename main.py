@@ -1,15 +1,17 @@
+import os
+import sys
+
 import pygame as pg
 import thorpy
-import sys
-import os
-import default
-import guiwidget
 
+import default
+from entity.player import Player
+from entity.town import Town
+from gui import guiwidget
+from gui.screen import PlayingScreen
+from region.tilemap import RegionFactory
 from shared import GLOBAL
-from tilemap import RegionFactory
-from screen import PlayingScreen
-from town import Town
-from player import Player
+
 
 class Game:
 

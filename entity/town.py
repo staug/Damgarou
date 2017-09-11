@@ -1,4 +1,4 @@
-from gameentity import GameEntity
+from entity.gameentity import GameEntity
 
 """
 Town and its content
