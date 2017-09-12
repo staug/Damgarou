@@ -1,7 +1,7 @@
-import os
 import pygame as pg
 from default import *
 import random as rd
+
 # Set of utilities
 
 
@@ -193,6 +193,360 @@ class EmptyLogger(Logger):
     def handle_published_message(self, message):
         pass
 
+# A STAR Algo
+# Version 1.1
+#
+# Changes in 1.1:
+# In order to optimize the list handling I implemented the location id (lid) attribute.
+# This will make the all list serahces to become extremely more optimized.
+
+class Path:
+    def __init__(self, nodes, totalCost):
+        self.nodes = nodes;
+        self.totalCost = totalCost;
+
+    def getNodes(self):
+        return self.nodes
+
+    def getTotalMoveCost(self):
+        return self.totalCost
+
+
+class Node:
+    def __init__(self, location, mCost, lid, parent=None):
+        self.location = location  # where is this node located
+        self.mCost = mCost  # total move cost to reach this node
+        self.parent = parent  # parent node
+        self.score = 0  # calculated score for this node
+        self.lid = lid  # set the location id - unique for each location in the map
+
+    def __eq__(self, n):
+        if n.lid == self.lid:
+            return 1
+        else:
+            return 0
+
+
+class AStar:
+    def __init__(self, maphandler):
+        self.mh = maphandler
+
+    def _getBestOpenNode(self):
+        bestNode = None
+        for n in self.on:
+            if not bestNode:
+                bestNode = n
+            else:
+                if n.score <= bestNode.score:
+                    bestNode = n
+        return bestNode
+
+    def _tracePath(self, n):
+        nodes = [];
+        totalCost = n.mCost;
+        p = n.parent;
+        nodes.insert(0, n);
+
+        while 1:
+            if p.parent is None:
+                break
+
+            nodes.insert(0, p)
+            p = p.parent
+
+        return Path(nodes, totalCost)
+
+    def _handleNode(self, node, end):
+        i = self.o.index(node.lid)
+        self.on.pop(i)
+        self.o.pop(i)
+        self.c.append(node.lid)
+
+        nodes = self.mh.getAdjacentNodes(node, end)
+
+        for n in nodes:
+            if n.location == end:
+                # reached the destination
+                return n
+            elif n.lid in self.c:
+                # already in close, skip this
+                continue
+            elif n.lid in self.o:
+                # already in open, check if better score
+                i = self.o.index(n.lid)
+                on = self.on[i];
+                if n.mCost < on.mCost:
+                    self.on.pop(i);
+                    self.o.pop(i);
+                    self.on.append(n);
+                    self.o.append(n.lid);
+            else:
+                # new node, append to open list
+                self.on.append(n);
+                self.o.append(n.lid);
+
+        return None
+
+    def findPath(self, fromlocation, tolocation):
+        self.o = []
+        self.on = []
+        self.c = []
+
+        end = tolocation
+        fnode = self.mh.getNode(fromlocation)
+        self.on.append(fnode)
+        self.o.append(fnode.lid)
+        nextNode = fnode
+
+        while nextNode is not None:
+            finish = self._handleNode(nextNode, end)
+            if finish:
+                return self._tracePath(finish)
+            nextNode = self._getBestOpenNode()
+
+        return None
+
+
+class SQ_Location:
+    """A simple Square Map Location implementation"""
+
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+    def __eq__(self, l):
+        """MUST BE IMPLEMENTED"""
+        if l.x == self.x and l.y == self.y:
+            return 1
+        else:
+            return 0
+
+
+class SQ_MapHandler:
+    """A simple Square Map implementation"""
+
+    def __init__(self, mapdata, width, height):
+        self.m = mapdata
+        self.w = width
+        self.h = height
+
+    def getNode(self, location):
+        """MUST BE IMPLEMENTED"""
+        x = location.x
+        y = location.y
+        if x < 0 or x >= self.w or y < 0 or y >= self.h:
+            return None
+        tile = self.m[x][y]
+        if tile.tile_type != '2':  # Not a ground
+            return None
+        #d = self.m[(y*self.w)+x]
+        #if d == -1:
+        #    return None
+        d = 1
+        return Node(location, d, ((y * self.w) + x));
+
+    def getAdjacentNodes(self, curnode, dest):
+        """MUST BE IMPLEMENTED"""
+        result = []
+
+        cl = curnode.location
+        dl = dest
+
+        n = self._handleNode(cl.x + 1, cl.y, curnode, dl.x, dl.y)
+        if n: result.append(n)
+        n = self._handleNode(cl.x - 1, cl.y, curnode, dl.x, dl.y)
+        if n: result.append(n)
+        n = self._handleNode(cl.x, cl.y + 1, curnode, dl.x, dl.y)
+        if n: result.append(n)
+        n = self._handleNode(cl.x, cl.y - 1, curnode, dl.x, dl.y)
+        if n: result.append(n)
+
+        return result
+
+    def _handleNode(self, x, y, fromnode, destx, desty):
+        n = self.getNode(SQ_Location(x, y))
+        if n is not None:
+            dx = max(x, destx) - min(x, destx)
+            dy = max(y, desty) - min(y, desty)
+            emCost = dx + dy
+            n.mCost += fromnode.mCost
+            n.score = n.mCost + emCost
+            n.parent = fromnode
+            return n
+
+        return None
+
+
+class FieldOfView:
+    RAYS = 360  # Should be 360!
+
+    STEP = 3  # The step of for cycle. More = Faster, but large steps may
+    # cause artifacts. Step 3 is great for radius 10.
+
+    RAD = 5  # FOV radius.
+
+    # Tables of precalculated values of sin(x / (180 / pi)) and cos(x / (180 / pi))
+
+    SINTABLE = [
+        0.00000, 0.01745, 0.03490, 0.05234, 0.06976, 0.08716, 0.10453,
+        0.12187, 0.13917, 0.15643, 0.17365, 0.19081, 0.20791, 0.22495, 0.24192,
+        0.25882, 0.27564, 0.29237, 0.30902, 0.32557, 0.34202, 0.35837, 0.37461,
+        0.39073, 0.40674, 0.42262, 0.43837, 0.45399, 0.46947, 0.48481, 0.50000,
+        0.51504, 0.52992, 0.54464, 0.55919, 0.57358, 0.58779, 0.60182, 0.61566,
+        0.62932, 0.64279, 0.65606, 0.66913, 0.68200, 0.69466, 0.70711, 0.71934,
+        0.73135, 0.74314, 0.75471, 0.76604, 0.77715, 0.78801, 0.79864, 0.80902,
+        0.81915, 0.82904, 0.83867, 0.84805, 0.85717, 0.86603, 0.87462, 0.88295,
+        0.89101, 0.89879, 0.90631, 0.91355, 0.92050, 0.92718, 0.93358, 0.93969,
+        0.94552, 0.95106, 0.95630, 0.96126, 0.96593, 0.97030, 0.97437, 0.97815,
+        0.98163, 0.98481, 0.98769, 0.99027, 0.99255, 0.99452, 0.99619, 0.99756,
+        0.99863, 0.99939, 0.99985, 1.00000, 0.99985, 0.99939, 0.99863, 0.99756,
+        0.99619, 0.99452, 0.99255, 0.99027, 0.98769, 0.98481, 0.98163, 0.97815,
+        0.97437, 0.97030, 0.96593, 0.96126, 0.95630, 0.95106, 0.94552, 0.93969,
+        0.93358, 0.92718, 0.92050, 0.91355, 0.90631, 0.89879, 0.89101, 0.88295,
+        0.87462, 0.86603, 0.85717, 0.84805, 0.83867, 0.82904, 0.81915, 0.80902,
+        0.79864, 0.78801, 0.77715, 0.76604, 0.75471, 0.74314, 0.73135, 0.71934,
+        0.70711, 0.69466, 0.68200, 0.66913, 0.65606, 0.64279, 0.62932, 0.61566,
+        0.60182, 0.58779, 0.57358, 0.55919, 0.54464, 0.52992, 0.51504, 0.50000,
+        0.48481, 0.46947, 0.45399, 0.43837, 0.42262, 0.40674, 0.39073, 0.37461,
+        0.35837, 0.34202, 0.32557, 0.30902, 0.29237, 0.27564, 0.25882, 0.24192,
+        0.22495, 0.20791, 0.19081, 0.17365, 0.15643, 0.13917, 0.12187, 0.10453,
+        0.08716, 0.06976, 0.05234, 0.03490, 0.01745, 0.00000, -0.01745, -0.03490,
+        -0.05234, -0.06976, -0.08716, -0.10453, -0.12187, -0.13917, -0.15643,
+        -0.17365, -0.19081, -0.20791, -0.22495, -0.24192, -0.25882, -0.27564,
+        -0.29237, -0.30902, -0.32557, -0.34202, -0.35837, -0.37461, -0.39073,
+        -0.40674, -0.42262, -0.43837, -0.45399, -0.46947, -0.48481, -0.50000,
+        -0.51504, -0.52992, -0.54464, -0.55919, -0.57358, -0.58779, -0.60182,
+        -0.61566, -0.62932, -0.64279, -0.65606, -0.66913, -0.68200, -0.69466,
+        -0.70711, -0.71934, -0.73135, -0.74314, -0.75471, -0.76604, -0.77715,
+        -0.78801, -0.79864, -0.80902, -0.81915, -0.82904, -0.83867, -0.84805,
+        -0.85717, -0.86603, -0.87462, -0.88295, -0.89101, -0.89879, -0.90631,
+        -0.91355, -0.92050, -0.92718, -0.93358, -0.93969, -0.94552, -0.95106,
+        -0.95630, -0.96126, -0.96593, -0.97030, -0.97437, -0.97815, -0.98163,
+        -0.98481, -0.98769, -0.99027, -0.99255, -0.99452, -0.99619, -0.99756,
+        -0.99863, -0.99939, -0.99985, -1.00000, -0.99985, -0.99939, -0.99863,
+        -0.99756, -0.99619, -0.99452, -0.99255, -0.99027, -0.98769, -0.98481,
+        -0.98163, -0.97815, -0.97437, -0.97030, -0.96593, -0.96126, -0.95630,
+        -0.95106, -0.94552, -0.93969, -0.93358, -0.92718, -0.92050, -0.91355,
+        -0.90631, -0.89879, -0.89101, -0.88295, -0.87462, -0.86603, -0.85717,
+        -0.84805, -0.83867, -0.82904, -0.81915, -0.80902, -0.79864, -0.78801,
+        -0.77715, -0.76604, -0.75471, -0.74314, -0.73135, -0.71934, -0.70711,
+        -0.69466, -0.68200, -0.66913, -0.65606, -0.64279, -0.62932, -0.61566,
+        -0.60182, -0.58779, -0.57358, -0.55919, -0.54464, -0.52992, -0.51504,
+        -0.50000, -0.48481, -0.46947, -0.45399, -0.43837, -0.42262, -0.40674,
+        -0.39073, -0.37461, -0.35837, -0.34202, -0.32557, -0.30902, -0.29237,
+        -0.27564, -0.25882, -0.24192, -0.22495, -0.20791, -0.19081, -0.17365,
+        -0.15643, -0.13917, -0.12187, -0.10453, -0.08716, -0.06976, -0.05234,
+        -0.03490, -0.01745, -0.00000
+    ]
+
+    COSTABLE = [
+        1.00000, 0.99985, 0.99939, 0.99863, 0.99756, 0.99619, 0.99452,
+        0.99255, 0.99027, 0.98769, 0.98481, 0.98163, 0.97815, 0.97437, 0.97030,
+        0.96593, 0.96126, 0.95630, 0.95106, 0.94552, 0.93969, 0.93358, 0.92718,
+        0.92050, 0.91355, 0.90631, 0.89879, 0.89101, 0.88295, 0.87462, 0.86603,
+        0.85717, 0.84805, 0.83867, 0.82904, 0.81915, 0.80902, 0.79864, 0.78801,
+        0.77715, 0.76604, 0.75471, 0.74314, 0.73135, 0.71934, 0.70711, 0.69466,
+        0.68200, 0.66913, 0.65606, 0.64279, 0.62932, 0.61566, 0.60182, 0.58779,
+        0.57358, 0.55919, 0.54464, 0.52992, 0.51504, 0.50000, 0.48481, 0.46947,
+        0.45399, 0.43837, 0.42262, 0.40674, 0.39073, 0.37461, 0.35837, 0.34202,
+        0.32557, 0.30902, 0.29237, 0.27564, 0.25882, 0.24192, 0.22495, 0.20791,
+        0.19081, 0.17365, 0.15643, 0.13917, 0.12187, 0.10453, 0.08716, 0.06976,
+        0.05234, 0.03490, 0.01745, 0.00000, -0.01745, -0.03490, -0.05234, -0.06976,
+        -0.08716, -0.10453, -0.12187, -0.13917, -0.15643, -0.17365, -0.19081,
+        -0.20791, -0.22495, -0.24192, -0.25882, -0.27564, -0.29237, -0.30902,
+        -0.32557, -0.34202, -0.35837, -0.37461, -0.39073, -0.40674, -0.42262,
+        -0.43837, -0.45399, -0.46947, -0.48481, -0.50000, -0.51504, -0.52992,
+        -0.54464, -0.55919, -0.57358, -0.58779, -0.60182, -0.61566, -0.62932,
+        -0.64279, -0.65606, -0.66913, -0.68200, -0.69466, -0.70711, -0.71934,
+        -0.73135, -0.74314, -0.75471, -0.76604, -0.77715, -0.78801, -0.79864,
+        -0.80902, -0.81915, -0.82904, -0.83867, -0.84805, -0.85717, -0.86603,
+        -0.87462, -0.88295, -0.89101, -0.89879, -0.90631, -0.91355, -0.92050,
+        -0.92718, -0.93358, -0.93969, -0.94552, -0.95106, -0.95630, -0.96126,
+        -0.96593, -0.97030, -0.97437, -0.97815, -0.98163, -0.98481, -0.98769,
+        -0.99027, -0.99255, -0.99452, -0.99619, -0.99756, -0.99863, -0.99939,
+        -0.99985, -1.00000, -0.99985, -0.99939, -0.99863, -0.99756, -0.99619,
+        -0.99452, -0.99255, -0.99027, -0.98769, -0.98481, -0.98163, -0.97815,
+        -0.97437, -0.97030, -0.96593, -0.96126, -0.95630, -0.95106, -0.94552,
+        -0.93969, -0.93358, -0.92718, -0.92050, -0.91355, -0.90631, -0.89879,
+        -0.89101, -0.88295, -0.87462, -0.86603, -0.85717, -0.84805, -0.83867,
+        -0.82904, -0.81915, -0.80902, -0.79864, -0.78801, -0.77715, -0.76604,
+        -0.75471, -0.74314, -0.73135, -0.71934, -0.70711, -0.69466, -0.68200,
+        -0.66913, -0.65606, -0.64279, -0.62932, -0.61566, -0.60182, -0.58779,
+        -0.57358, -0.55919, -0.54464, -0.52992, -0.51504, -0.50000, -0.48481,
+        -0.46947, -0.45399, -0.43837, -0.42262, -0.40674, -0.39073, -0.37461,
+        -0.35837, -0.34202, -0.32557, -0.30902, -0.29237, -0.27564, -0.25882,
+        -0.24192, -0.22495, -0.20791, -0.19081, -0.17365, -0.15643, -0.13917,
+        -0.12187, -0.10453, -0.08716, -0.06976, -0.05234, -0.03490, -0.01745,
+        -0.00000, 0.01745, 0.03490, 0.05234, 0.06976, 0.08716, 0.10453, 0.12187,
+        0.13917, 0.15643, 0.17365, 0.19081, 0.20791, 0.22495, 0.24192, 0.25882,
+        0.27564, 0.29237, 0.30902, 0.32557, 0.34202, 0.35837, 0.37461, 0.39073,
+        0.40674, 0.42262, 0.43837, 0.45399, 0.46947, 0.48481, 0.50000, 0.51504,
+        0.52992, 0.54464, 0.55919, 0.57358, 0.58779, 0.60182, 0.61566, 0.62932,
+        0.64279, 0.65606, 0.66913, 0.68200, 0.69466, 0.70711, 0.71934, 0.73135,
+        0.74314, 0.75471, 0.76604, 0.77715, 0.78801, 0.79864, 0.80902, 0.81915,
+        0.82904, 0.83867, 0.84805, 0.85717, 0.86603, 0.87462, 0.88295, 0.89101,
+        0.89879, 0.90631, 0.91355, 0.92050, 0.92718, 0.93358, 0.93969, 0.94552,
+        0.95106, 0.95630, 0.96126, 0.96593, 0.97030, 0.97437, 0.97815, 0.98163,
+        0.98481, 0.98769, 0.99027, 0.99255, 0.99452, 0.99619, 0.99756, 0.99863,
+        0.99939, 0.99985, 1.00000
+    ]
+
+    @staticmethod
+    def get_vision_matrix_for(entity, region, radius=RAD, flag_explored=False, ignore_entity_at=None):
+        """
+        The Field of View algo
+        :param entity: the entity for which the algo is done
+        :param radius: the number of tiles the user can go throught
+        :param flag_explored: any unexplored tile will become explored (good for player, but not NPC)
+        :param ignore_entity_at: will ignore any entity at positions (like player) - this is a list
+        :return: the Field of view, with True for each tile that is visible
+        """
+        fov = [[False for y in range(region.tile_height)] for x in
+               range(region.tile_width)]
+
+        # It works like this:
+        # It starts at entity coordinates and cast 360 rays
+        # (if step is 1, less is step is more than 1) in every direction,
+        # until it hits a wall.
+        # When ray hits floor, it is set as visible.
+
+        # Ray is casted by adding to x (initialy it is player's x coord)
+        # value of sin(i degrees) and to y (player's y) value of cos(i degrees),
+        # RAD times, and checking for collision with wall every step.
+
+        # First: the entity itself is visible!
+        fov[entity.x][entity.y] = True  # Make tile visible
+        if flag_explored:
+            region.tiles[entity.x][entity.y].explored = True
+
+        for i in range(0, FieldOfView.RAYS + 1, FieldOfView.STEP):
+            ax = FieldOfView.SINTABLE[i]  # Get precalculated value sin(x / (180 / pi))
+            ay = FieldOfView.COSTABLE[i]  # cos(x / (180 / pi))
+
+            x = entity.x  # Entity x
+            y = entity.y  # Entity y
+
+            for z in range(radius):  # Cast the ray
+                x += ax
+                y += ay
+
+                round_x = int(round(x))
+                round_y = int(round(y))
+                if round_x < 0 or round_y < 0 or round_x > region.tile_width or \
+                                round_y > region.tile_height:  # Ray is out of range
+                    break
+
+                fov[round_x][round_y] = True  # Make tile visible
+                if flag_explored:
+                    region.tiles[round_x][round_y].explored = True
+                if ignore_entity_at is not None:
+                    if (round_x, round_y) not in ignore_entity_at and \
+                            region.tiles[round_x][round_y].block_view_for(entity):
+                        break
+                elif region.tiles[round_x][round_y].block_view_for(entity):  # Stop ray if it hit
+                    break
+
+        return fov
 
 # Graphical utilities
 def get_image(image_src_list, folder, image_name):
@@ -382,5 +736,7 @@ def load_all_images():
     images["DOOR_H_CLOSED"] = load_image(image_src_list, OBJECT_FOLDER, "Door0.png", 0, 0)
     # Stairs
     images["STAIRS"] = load_image(image_src_list, OBJECT_FOLDER, "Tile.png", 1, 1)
+    # Town
+    images["TOWN"] = load_image(image_src_list, OBJECT_FOLDER, "Map0.png", 9, 12)
 
     return images

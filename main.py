@@ -1,13 +1,17 @@
+import os
+import sys
+
 import pygame as pg
 import thorpy
-import sys
-import os
+
 import default
-import guiwidget
-
+from entity.player import Player
+from entity.town import Town
+from gui import guiwidget
+from gui.screen import PlayingScreen
+from region.region import RegionFactory
+from region.tile import Tile
 from shared import GLOBAL
-from tilemap import DungeonMapFactory
-
 
 class Game:
 
@@ -22,26 +26,42 @@ class Game:
         self.player_took_action = False
         self.minimap_enabled = False
         self.game_running = True
+        self.screens = {Game.GAME_STATE_PLAYING: PlayingScreen()}
+        self.current_region = None
+        self.player = None
+        self.invalidate_fog_of_war = True
 
     def new(self):
-        self.objects = []
-        self.level = 1
 
-        #self.map = DungeonMapFactory("MerchantRogue Caves - Level {}".format(self.level)).map
-        guiwidget.display_single_message_on_screen("Building level")
-        DungeonMapFactory("MerchantRogue Caves - Level {}".format(self.level))
-        guiwidget.display_single_message_on_screen("Level ok")
+        self.world = []  # The world contains all the wilderness regions, all the town maps...
 
+        guiwidget.display_single_message_on_screen("Generating World")
+        for i in range(2):
+            self.world.append(RegionFactory.generate("Damgarou Wilderness - Region {}".format(i),
+                                                     region_type=RegionFactory.REGION_WILDERNESS,
+                                                     town_list=(Town(wilderness_index=i),
+                                                                Town(wilderness_index=i),
+                                                                Town(wilderness_index=i))))
+        guiwidget.display_single_message_on_screen("World ok")
+
+        self.current_region = self.world[0]
+        # We start the player, and we add it somewhere
+        self.player = Player()
+        self.player.assign_entity_to_region(self.current_region)
+        (self.player.x, self.player.y) = self.current_region.get_all_available_tiles(Tile.T_GROUND, self.current_region.region_entities).pop()
         #self.minimap = Minimap(self)
 
     def start(self):
         self.run()
 
     def run(self):
+        clock = pg.time.Clock()
+
         while self.game_running:
-            for event in pg.event.get():
-                if event.type == pg.QUIT:
-                    Game.quit()
+            self.screens[self.game_state].events()
+            self.screens[self.game_state].update()
+            self.screens[self.game_state].draw()
+            clock.tick(40)  # the program will never run at more than 40 frames per second
 
     @staticmethod
     def quit():
@@ -66,7 +86,7 @@ class Launcher:
         GLOBAL.logger.trace("Initializing Pygame")
         pg.display.init()
         pg.font.init()
-        pg.display.set_mode((800, 600), pg.RESIZABLE)
+        pg.display.set_mode((default.GAME_WIDTH, default.GAME_HEIGHT), pg.RESIZABLE)
         pg.display.set_caption(default.GAME_TITLE + "-" + default.GAME_VER)
         thorpy.set_theme("human")
         GLOBAL.logger.trace("Initializing Pygame - Done")

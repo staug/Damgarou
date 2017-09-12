@@ -2,7 +2,6 @@ import pygame as pg
 import os
 import default
 
-
 def display_single_message_on_screen(text, position="CENTER", font_size=18, erase_screen_first=True):
     """
     Erase the screen, replace wit a simple message. Use for basic info.
