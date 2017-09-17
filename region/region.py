@@ -55,7 +55,11 @@ class RegionFactory:
                         region.region_entities.add(town)
                         town.assign_entity_to_region(region)
                 print("MAP CORRECT: " + str(region_correctly_initialized))
-
+            elif region_type == RegionFactory.REGION_TOWN:
+                assert "building_list" in attributes, "Town region needs to have a buidling list"
+                region = TownRegion(name, dimension, building_list=attributes["building_list"])
+                region._build_background(name=name+".png")  # TODO: remove later
+                region_correctly_initialized = True  # A town is always correct!
         RegionFactory.REGION_DICT["name"] = region
 
         return region
@@ -589,12 +593,16 @@ class TownRegion(Region):
 
         # all the others
         while len(self._buildings) != len(building_list):
-            branching_building = building_list[len(self._buildings)]
+            current_building_name = building_list[len(self._buildings)]
+            print("Generating and placing: " + current_building_name)
+            # branching_building = self._buildings[building_list[len(self._buildings) - 1]]  # This gives a chain
+            branching_building = self._buildings[random.choice(list(self._buildings.keys()))]  # This gives less a chain
+
             choice_wall = self._get_branching_position_direction(branching_building)
             branching_pos = (choice_wall[0], choice_wall[1])
             branching_dir = choice_wall[2]
             new_building = self._generate_building(building_size_range[0], building_size_range[1])
-            path_length = random.choice((0, 2, 3, 5))
+            path_length = random.randint(3, 7)
 
             if branching_dir == 'N':
                 new_building_pos = (int(branching_pos[0] - (new_building.size[0] / 2)),
@@ -610,8 +618,9 @@ class TownRegion(Region):
                                     int(branching_pos[1] - (new_building.size[1] / 2)))
 
             if self._space_for_new_building(new_building.size, new_building_pos):
+                print("OK - Generating and placing: " + current_building_name)
                 self._place_building(new_building, new_building_pos)
-                self._buildings[branching_building] = new_building
+                self._buildings[building_list[len(self._buildings)]] = new_building
                 # Now connecting room
                 # No tunnel, easy case:
                 new_building.doors.append(branching_pos)
@@ -721,3 +730,33 @@ class TownRegion(Region):
     def _make_floor(self, x, y):
         self.tiles[x][y].tile_type = Tile.T_GROUND
         self.tiles[x][y].tile_subtype = Tile.S_CARPET
+
+    def _create_background(self):
+        """
+        Build background using dawnlike tileset - Redefined here
+        :return: Nothing, just blitting things on _background property
+        """
+
+        floor_serie = random.choice((13, 16, 19, 22))
+        wall_serie = 1
+
+        for y in range(self.tile_height):
+            for x in range(self.tile_width):
+                if self.tiles[x][y].tile_type == Tile.T_VOID:
+                    pass
+                else:
+                    weight = self.tile_weight(x, y, self.tiles,
+                                              tile_type=self.tiles[x][y].tile_type,
+                                              tile_subtype=self.tiles[x][y].tile_subtype)
+
+                    tile_type = self.tiles[x][y].tile_type
+                    tile_subtype = self.tiles[x][y].tile_subtype
+                    if tile_type == Tile.T_BLOCK and tile_subtype == Tile.S_WALL:
+                        self._background.blit(GLOBAL.img('WALLS')[wall_serie][weight],
+                                              (x * TILESIZE_SCREEN[0], y * TILESIZE_SCREEN[1]))
+                    elif tile_type == Tile.T_GROUND and tile_subtype == Tile.S_CARPET:
+                        self._background.blit(GLOBAL.img('FLOOR')[floor_serie][weight],
+                                              (x * TILESIZE_SCREEN[0], y * TILESIZE_SCREEN[1]))
+                    else:
+                        print("Unknown type {} subtype {}".format(self.tiles[x][y].tile_type,
+                                                                  self.tiles[x][y].tile_subtype))

@@ -36,12 +36,19 @@ class Game:
         self.world = []  # The world contains all the wilderness regions, all the town maps...
 
         guiwidget.display_single_message_on_screen("Generating World")
+        for i in range(3):
+            self.world.append(RegionFactory.invoke("Damgarou Town {}".format(i),
+                                                   region_type=RegionFactory.REGION_TOWN,
+                                                   building_list=("Bakery", "Temple", "Zoo", "Stuff", "Stuffy")))
+
         for i in range(2):
             self.world.append(RegionFactory.invoke("Damgarou Wilderness - Region {}".format(i),
                                                    region_type=RegionFactory.REGION_WILDERNESS,
                                                    town_list=(Town(wilderness_index=i),
                                                                 Town(wilderness_index=i),
                                                                 Town(wilderness_index=i))))
+
+
         guiwidget.display_single_message_on_screen("World ok")
 
         self.current_region = self.world[0]
