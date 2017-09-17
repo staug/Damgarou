@@ -37,9 +37,9 @@ class Game:
 
         guiwidget.display_single_message_on_screen("Generating World")
         for i in range(2):
-            self.world.append(RegionFactory.generate("Damgarou Wilderness - Region {}".format(i),
-                                                     region_type=RegionFactory.REGION_WILDERNESS,
-                                                     town_list=(Town(wilderness_index=i),
+            self.world.append(RegionFactory.invoke("Damgarou Wilderness - Region {}".format(i),
+                                                   region_type=RegionFactory.REGION_WILDERNESS,
+                                                   town_list=(Town(wilderness_index=i),
                                                                 Town(wilderness_index=i),
                                                                 Town(wilderness_index=i))))
         guiwidget.display_single_message_on_screen("World ok")

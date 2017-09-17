@@ -11,23 +11,33 @@ from utilities import AStar, SQ_Location, SQ_MapHandler
 
 class RegionFactory:
     """
-    Used to generate one of the predefined map type
+    Used to generate one of the predefined map type.
+    Each region is saved according to its name. If the name already exists, simply returns the region.
     """
 
     REGION_WILDERNESS = "WILDERNESS"
     REGION_DUNGEON = "DUNGEON"
+    REGION_TOWN = "TOWN"
+
+    REGION_DICT = {}
 
     @staticmethod
-    def generate(name,
-                 state=None,
-                 region_type=REGION_WILDERNESS,
-                 dimension=(81, 121),
-                 **attributes):
+    def invoke(name,
+               state=None,
+               region_type=REGION_WILDERNESS,
+               dimension=(81, 121),
+               **attributes):
         """
         :param name: The name of the region. Can be used as a future reference
         :param state: All maps are generated using random things. This is to define the seed of the region.
+        :param region_type: The type of the region. This can be (so far) a wilderness, a dungeon or a town.
         :param dimension: The dimension of the region
         """
+        assert name is not None, "All regions must have a name"
+
+        if name in RegionFactory.REGION_DICT:
+            return RegionFactory.REGION_DICT[name]
+
         if state is not None:
             random.setstate(state)
 
@@ -45,6 +55,8 @@ class RegionFactory:
                         region.region_entities.add(town)
                         town.assign_entity_to_region(region)
                 print("MAP CORRECT: " + str(region_correctly_initialized))
+
+        RegionFactory.REGION_DICT["name"] = region
 
         return region
 
@@ -529,3 +541,24 @@ class WildernessRegion(Region):
 
     def is_valid_map(self):
         return self.check_all_tile_connected()
+
+
+class TownRegion(Region):
+
+    class Building:
+        """
+        A building is a closed space, dedicated to a set of activities.
+        """
+        def __init__(self, size, position=None):
+            """
+            Initialize the room
+            :param size: the size of the room (tuple)
+            :param position: The upper left corner of the room (tuple)
+            """
+            self.size = size
+            self.position = position
+            self.doors = []
+            self.connecting_room = []
+
+    def __init__(self):
+        pass
