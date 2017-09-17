@@ -544,6 +544,9 @@ class WildernessRegion(Region):
 
 
 class TownRegion(Region):
+    """
+    A town is set of buildings (closed spaces), linked by path.
+    """
 
     class Building:
         """
@@ -558,7 +561,163 @@ class TownRegion(Region):
             self.size = size
             self.position = position
             self.doors = []
-            self.connecting_room = []
+            self.connecting_buildings = []
 
-    def __init__(self):
-        pass
+    def __init__(self, name, dimension, building_list):
+
+        assert dimension[0] % 2 == 1 and dimension[1] % 2 == 1, "Maze dimensions must be odd"
+        assert len(building_list) < int(dimension[0]*dimension[1] / 81 * .9), "Too many buildings for the town"
+
+        building_size_range = ((6, 6), (9, 9))
+        assert dimension[0] > building_size_range[1][0] \
+               and dimension[1] > building_size_range[1][1], "Dimensions too small for even one building"
+
+        Region.__init__(self, name, dimension)
+
+        # Initialize map
+        self.tiles = [[Tile(Tile.T_VOID, sub_type=Tile.S_VOID)
+                       for y in range(self.tile_height)]
+                      for x in range(self.tile_width)]
+
+        # generate the town
+
+        # first building
+        self._buildings = {building_list[0]: self._generate_building(building_size_range[0], building_size_range[1])}
+        self._place_building(self._buildings[building_list[0]],
+                             (int(self.tile_width / 2 - (self._buildings[building_list[0]].size[0] / 2)),
+                              int(self.tile_height / 2 - (self._buildings[building_list[0]].size[1] / 2))))
+
+        # all the others
+        while len(self._buildings) != len(building_list):
+            branching_building = building_list[len(self._buildings)]
+            choice_wall = self._get_branching_position_direction(branching_building)
+            branching_pos = (choice_wall[0], choice_wall[1])
+            branching_dir = choice_wall[2]
+            new_building = self._generate_building(building_size_range[0], building_size_range[1])
+            path_length = random.choice((0, 2, 3, 5))
+
+            if branching_dir == 'N':
+                new_building_pos = (int(branching_pos[0] - (new_building.size[0] / 2)),
+                                    int(branching_pos[1] - new_building.size[1] + 1 - path_length))
+            elif branching_dir == 'E':
+                new_building_pos = (int(branching_pos[0] + path_length),
+                                    int(branching_pos[1] - (new_building.size[1] / 2)))
+            elif branching_dir == 'S':
+                new_building_pos = (int(branching_pos[0] - (new_building.size[0] / 2)),
+                                    int(branching_pos[1] + path_length))
+            elif branching_dir == 'W':
+                new_building_pos = (int(branching_pos[0] - (new_building.size[0]) + 1 - path_length),
+                                    int(branching_pos[1] - (new_building.size[1] / 2)))
+
+            if self._space_for_new_building(new_building.size, new_building_pos):
+                self._place_building(new_building, new_building_pos)
+                self._buildings[branching_building] = new_building
+                # Now connecting room
+                # No tunnel, easy case:
+                new_building.doors.append(branching_pos)
+                self._make_floor(branching_pos[0], branching_pos[1])
+                new_building.connecting_buildings.append(branching_building)
+                branching_building.connecting_buildings.append(new_building)
+                # We now place the tunnel
+                if branching_dir == 'N':
+                    for i in range(1, path_length + 1):
+                        self._make_floor(branching_pos[0], branching_pos[1] - i)
+                        self._make_wall(branching_pos[0] - 1, branching_pos[1] - i)
+                        self._make_wall(branching_pos[0] + 1, branching_pos[1] - i)
+                    if path_length >= 3:
+                        branching_building.doors.append((branching_pos[0], branching_pos[1] - path_length))
+                elif branching_dir == 'E':
+                    for i in range(1, path_length + 1):
+                        self._make_floor(branching_pos[0] + i, branching_pos[1])
+                        self._make_wall(branching_pos[0] + i, branching_pos[1] - 1)
+                        self._make_wall(branching_pos[0] + i, branching_pos[1] + 1)
+                    if path_length >= 3:
+                        branching_building.doors.append((branching_pos[0] + path_length, branching_pos[1]))
+                elif branching_dir == 'S':
+                    for i in range(1, path_length + 1):
+                        self._make_floor(branching_pos[0], branching_pos[1] + i)
+                        self._make_wall(branching_pos[0] - 1, branching_pos[1] + i)
+                        self._make_wall(branching_pos[0] + 1, branching_pos[1] + i)
+                        if path_length >= 3:
+                            branching_building.doors.append((branching_pos[0], branching_pos[1] + path_length))
+                elif branching_dir == 'W':
+                    for i in range(1, path_length + 1):
+                        self._make_floor(branching_pos[0] - i, branching_pos[1])
+                        self._make_wall(branching_pos[0] - i, branching_pos[1] - 1)
+                        self._make_wall(branching_pos[0] - i, branching_pos[1] + 1)
+                    if path_length >= 3:
+                        branching_building.doors.append((branching_pos[0] - path_length, branching_pos[1]))
+
+    def _generate_building(self, min_size, max_size, modulo_rest=2):
+        """
+        Generate a building according to the criteria
+        :param min_size: tuple with the minimum dimension
+        :param max_size: tuple with the max dimension
+        :param modulo_rest: put to 0 for even dimensions, 1 for odd, 2 if do not care (default)
+        :return:
+        """
+        size_x = random.randint(min_size[0], max_size[0])
+        size_y = random.randint(min_size[1], max_size[1])
+        if modulo_rest < 2:
+            while size_x % 2 != modulo_rest:
+                size_x = random.randint(min_size[0], max_size[0])
+            while size_y % 2 != modulo_rest:
+                size_y = random.randint(min_size[1], max_size[1])
+        return TownRegion.Building((size_x, size_y))
+
+    def _place_building(self, building, grid_position):
+        building.position = grid_position
+        for y in range(grid_position[1], grid_position[1] + building.size[1]):
+            for x in range(grid_position[0], grid_position[0] + building.size[0]):
+                # self.tiles[x][y].room = building
+                if y in (grid_position[1], grid_position[1] + building.size[1] - 1) or \
+                                x in (grid_position[0], grid_position[0] + building.size[0] - 1):
+                    self._make_wall(x, y)
+                else:
+                    self._make_floor(x, y)
+
+    def _get_branching_position_direction(self, branching_building, except_dir=None):
+        while True:
+            # we consider pos = 0,0
+            walls = {'N': [(x, 0) for x in range(1, branching_building.size[0] - 1)],
+                     'S': [(x, branching_building.size[1] - 1) for x in range(1, branching_building.size[0] - 1)],
+                     'W': [(0, y) for y in range(1, branching_building.size[1] - 1)],
+                     'E': [(branching_building.size[0] - 1, y) for y in range(1, branching_building.size[1] - 1)]}
+            valid_list = ['N', 'S', 'E', 'W']
+            if except_dir is not None:
+                for direction in except_dir:
+                    if direction is not None:
+                        valid_list.remove(direction)
+            direction = random.choice(valid_list)
+            target = random.choice(walls[direction])
+            # We don't want doors next to doors...
+            x = target[0] + branching_building.position[0]
+            y = target[1] + branching_building.position[1]
+            if direction in ('N', 'S'):
+                if not (self.tiles[x - 1][y].tile_type == Tile.T_GROUND or
+                                self.tiles[x + 1][y].tile_type == Tile.T_GROUND):
+                    return x, y, direction
+            if direction in ('E', 'W'):
+                if not (self.tiles[x][y-1].tile_type == Tile.T_GROUND or self.tiles[x][y+1].tile_type == Tile.T_GROUND):
+                    return x, y, direction
+
+    def _space_for_new_building(self, new_building_size, new_building_position, tiles_blocking=Tile.T_GROUND):
+        for y in range(new_building_position[1],
+                       new_building_position[1] + new_building_size[1]):
+            for x in range(new_building_position[0],
+                           new_building_position[0] + new_building_size[0]):
+                if x < 0 or x > self.tile_width - 1:
+                    return False
+                if y < 0 or y > self.tile_height - 1:
+                    return False
+                if self.tiles[x][y].tile_type in tiles_blocking:
+                    return False
+        return True
+
+    def _make_wall(self, x, y):
+        self.tiles[x][y].tile_type = Tile.T_BLOCK
+        self.tiles[x][y].tile_subtype = Tile.S_WALL
+
+    def _make_floor(self, x, y):
+        self.tiles[x][y].tile_type = Tile.T_GROUND
+        self.tiles[x][y].tile_subtype = Tile.S_CARPET
