@@ -556,12 +556,13 @@ class TownRegion(Region):
         """
         A building is a closed space, dedicated to a set of activities.
         """
-        def __init__(self, size, position=None):
+        def __init__(self, size, name=None, position=None):
             """
             Initialize the room
             :param size: the size of the room (tuple)
             :param position: The upper left corner of the room (tuple)
             """
+            self.name = name
             self.size = size
             self.position = position
             self.doors = []
@@ -585,8 +586,11 @@ class TownRegion(Region):
 
         # generate the town
 
-        # first building
-        self._buildings = {building_list[0]: self._generate_building(building_size_range[0], building_size_range[1])}
+        # first building - the first building is always the village place :-)
+        current_building_name = building_list[0]
+        print("Generating and placing: " + current_building_name)
+
+        self._buildings = {building_list[0]: self._generate_building((3,3), (3,3), name=current_building_name)}
         self._place_building(self._buildings[building_list[0]],
                              (int(self.tile_width / 2 - (self._buildings[building_list[0]].size[0] / 2)),
                               int(self.tile_height / 2 - (self._buildings[building_list[0]].size[1] / 2))))
@@ -601,7 +605,7 @@ class TownRegion(Region):
             choice_wall = self._get_branching_position_direction(branching_building)
             branching_pos = (choice_wall[0], choice_wall[1])
             branching_dir = choice_wall[2]
-            new_building = self._generate_building(building_size_range[0], building_size_range[1])
+            new_building = self._generate_building(building_size_range[0], building_size_range[1], name=current_building_name)
             path_length = random.randint(3, 7)
 
             if branching_dir == 'N':
@@ -657,7 +661,7 @@ class TownRegion(Region):
                     if path_length >= 3:
                         branching_building.doors.append((branching_pos[0] - path_length, branching_pos[1]))
 
-    def _generate_building(self, min_size, max_size, modulo_rest=2):
+    def _generate_building(self, min_size, max_size, modulo_rest=2, name=None):
         """
         Generate a building according to the criteria
         :param min_size: tuple with the minimum dimension
@@ -672,7 +676,7 @@ class TownRegion(Region):
                 size_x = random.randint(min_size[0], max_size[0])
             while size_y % 2 != modulo_rest:
                 size_y = random.randint(min_size[1], max_size[1])
-        return TownRegion.Building((size_x, size_y))
+        return TownRegion.Building((size_x, size_y), name=name)
 
     def _place_building(self, building, grid_position):
         building.position = grid_position
@@ -683,7 +687,11 @@ class TownRegion(Region):
                                 x in (grid_position[0], grid_position[0] + building.size[0] - 1):
                     self._make_wall(x, y)
                 else:
-                    self._make_floor(x, y)
+                    if building.name == "Entrance":  #FIXME later - this is to see the entrance
+                        self.tiles[x][y].tile_type = Tile.T_GROUND
+                        self.tiles[x][y].tile_subtype = Tile.S_SPECIAL
+                    else:
+                        self._make_floor(x, y)
 
     def _get_branching_position_direction(self, branching_building, except_dir=None):
         while True:

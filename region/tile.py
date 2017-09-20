@@ -22,6 +22,7 @@ class Tile:
     S_PATH = '2_1'
     S_GRASS = '2_2'
     S_CARPET = '2_3'
+    S_SPECIAL = '2_A'  # Test
 
     # Liquid - for non blocking ground
     S_WATER = '3_1'  # Only Aquatics will be able to cross

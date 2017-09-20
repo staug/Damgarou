@@ -104,8 +104,8 @@ town have alignment that specifies the type of good that can be offered/sold.
 
 Places in town:
 [temple] -> Heal, remove curse, bless, get married :-)
-[trading place] -> buy/sell
-[shops] buy equipment, repair equipment(?), craft equipment(?)
+[trading place] -> buy/sell material
+[shops] buy equipment, repair equipment(?), craft equipment(?), sell equipment
 [guild] hire friends.
 [Tavern]: special missions(?) - take somebody to a place, ... & gossips on other towns. buy food.
 [bank] store money/get money, interest. Money in accrues interests, but not all towns has a bank.
@@ -117,13 +117,13 @@ Town can be agricultural (20%), hunting  (20%), mining (20%), administrative (15
 [Places in town]
 Places in town depends mainly on the type of town. Chance below:
                   agricultural      | hunting         | mining          | administrative | military        | outlaw.
-Market            90%               | 90%             | 90%             | 90%             | 80%            | 80%
-Tavern            80%               | 80%             | 60%             | 50%             | 60%            | 70%
-Shop              80%               | 80%             | 80%             | 60%             | 50%            | 50%
-Temple            30%               | 20%             | 20%             | 60%             | 50%            | 10%
-Bank              10%               | 10%             | 10%             | 80%             | 60%            |  0%
-Guild (Fighter) 30%                | 30%             | 30%             | 10%             | 90%            | 90%
-Guild (Mule)      40%               | 40%             | 70%             | 10%             | 50%            | 30%
+Market               90%              | 90%             | 90%             | 90%             | 80%            | 80%
+Tavern               80%              | 80%             | 60%             | 50%             | 60%            | 70%
+Shop & trading place 80%              | 80%             | 80%             | 60%             | 50%            | 50%
+Temple & town hall   30%              | 20%             | 20%             | 60%             | 50%            | 10%
+Bank                 10%              | 10%             | 10%             | 80%             | 60%            |  0%
+Guild (Fighter)      30%              | 30%             | 30%             | 10%             | 90%            | 90%
+Guild (Mule)         40%              | 40%             | 70%             | 10%             | 50%            | 30%
 An alogorithm should be applied to make sure that there is always 3 temples, 2 banks in the world
 
 [Inventory]
