@@ -617,14 +617,16 @@ class TownRegion(Region):
             branching_dir = choice_wall[2]
             new_building = self._generate_building(building_size_range[0], building_size_range[1], name=current_building.name)
             path_length = random.randint(3, 7)
-
+            door_type = 'H'
             if branching_dir == 'N':
+                door_type = 'V'
                 new_building_pos = (int(branching_pos[0] - (new_building.size[0] / 2)),
                                     int(branching_pos[1] - new_building.size[1] + 1 - path_length))
             elif branching_dir == 'E':
                 new_building_pos = (int(branching_pos[0] + path_length),
                                     int(branching_pos[1] - (new_building.size[1] / 2)))
             elif branching_dir == 'S':
+                door_type = 'V'
                 new_building_pos = (int(branching_pos[0] - (new_building.size[0] / 2)),
                                     int(branching_pos[1] + path_length))
             elif branching_dir == 'W':
@@ -638,7 +640,7 @@ class TownRegion(Region):
 
                 # Now connecting room
                 # No tunnel, easy case:
-                new_building.doors.append(branching_pos)
+                new_building.doors.append((door_type, branching_pos[0], branching_pos[1]))
                 self._make_floor(branching_pos[0], branching_pos[1])
                 new_building.connecting_buildings.append(branching_building)
                 branching_building.connecting_buildings.append(new_building)
