@@ -740,23 +740,16 @@ def load_all_images():
     images["TOWN"] = load_image(image_src_list, OBJECT_FOLDER, "Map0.png", 9, 12)
 
     # Buildings
-    images["BUILDING_BANK"] = load_image(image_src_list, ICON_FOLDER, "bank.png", 0, 0, width=32, height=32,
-                                         adapt_ratio=.5)
-    images["BUILDING_GUILD_FIGHTER"] = load_image(image_src_list, ICON_FOLDER, "guild-fighter.png", 0, 0, width=32,
-                                                  height=32,
-                                                  adapt_ratio=.5)
-    images["BUILDING_GUILD_MULE"] = load_image(image_src_list, ICON_FOLDER, "guild-mule.png", 0, 0, width=32,
-                                               height=32,
-                                               adapt_ratio=.5)
-    images["BUILDING_SHOP"] = load_image(image_src_list, ICON_FOLDER, "shop.png", 0, 0, width=32, height=32,
-                                         adapt_ratio=.5)
-    images["BUILDING_TAVERN"] = load_image(image_src_list, ICON_FOLDER, "tavern.png", 0, 0, width=32, height=32,
-                                           adapt_ratio=.5)
-    images["BUILDING_TEMPLE"] = load_image(image_src_list, ICON_FOLDER, "temple.png", 0, 0, width=32, height=32,
-                                           adapt_ratio=.5)
-    images["BUILDING_TOWNHALL"] = load_image(image_src_list, ICON_FOLDER, "townhall.png", 0, 0, width=32, height=32,
-                                             adapt_ratio=.5)
-    images["BUILDING_TRADE"] = load_image(image_src_list, ICON_FOLDER, "trade.png", 0, 0, width=32, height=32,
-                                          adapt_ratio=.5)
-
+    images["BUILDING_BANK"] = load_image(image_src_list, ICON_FOLDER, "bank.png", 0, 0, width=64, height=64)
+    images["BUILDING_GUILD_FIGHTER"] = load_image(image_src_list, ICON_FOLDER, "guild-fighter.png", 0, 0, width=64,
+                                                  height=64)
+    images["BUILDING_GUILD_MULE"] = load_image(image_src_list, ICON_FOLDER, "guild-mule.png", 0, 0, width=64,
+                                               height=64)
+    images["BUILDING_SHOP"] = load_image(image_src_list, ICON_FOLDER, "shop.png", 0, 0, width=64, height=64)
+    images["BUILDING_TAVERN"] = load_image(image_src_list, ICON_FOLDER, "tavern.png", 0, 0, width=64, height=64)
+    images["BUILDING_TEMPLE"] = load_image(image_src_list, ICON_FOLDER, "temple.png", 0, 0, width=64, height=64)
+    images["BUILDING_TOWNHALL"] = load_image(image_src_list, ICON_FOLDER, "townhall.png", 0, 0, width=64, height=64)
+    images["BUILDING_TRADE"] = load_image(image_src_list, ICON_FOLDER, "trade.png", 0, 0, width=64, height=64)
+    images["BUILDING_ENTRANCE"] = load_image(image_src_list, ICON_FOLDER, "entrance.png", 0, 0, width=64, height=64)
+    
     return images

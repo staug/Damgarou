@@ -57,7 +57,12 @@ class RegionFactory:
                 print("MAP CORRECT: " + str(region_correctly_initialized))
             elif region_type == RegionFactory.REGION_TOWN:
                 assert "building_list" in attributes, "Town region needs to have a buidling list"
-                region = TownRegion(name, dimension, building_list=attributes["building_list"])
+                region = TownRegion(name, dimension, building_entity_list=attributes["building_list"])
+                # We register the building in the town
+                for building in attributes["building_list"]:
+                    region.region_entities.add(building)
+                    building.town_name = region.name
+                    building.assign_entity_to_region(region)
                 region._build_background(name=name+".png")  # TODO: remove later
                 region_correctly_initialized = True  # A town is always correct!
         RegionFactory.REGION_DICT["name"] = region
@@ -568,10 +573,15 @@ class TownRegion(Region):
             self.doors = []
             self.connecting_buildings = []
 
-    def __init__(self, name, dimension, building_list):
+        def get_center_pos(self):
+            pos_x = self.position[0] + int(self.size[0] / 2)
+            pos_y = self.position[1] + int(self.size[1] / 2)
+            return pos_x, pos_y
+
+    def __init__(self, name, dimension, building_entity_list):
 
         assert dimension[0] % 2 == 1 and dimension[1] % 2 == 1, "Maze dimensions must be odd"
-        assert len(building_list) < int(dimension[0]*dimension[1] / 81 * .9), "Too many buildings for the town"
+        assert len(building_entity_list) < int(dimension[0] * dimension[1] / 81 * .9), "Too many buildings for the town"
 
         building_size_range = ((6, 6), (9, 9))
         assert dimension[0] > building_size_range[1][0] \
@@ -586,26 +596,27 @@ class TownRegion(Region):
 
         # generate the town
 
-        # first building - the first building is always the village place :-)
-        current_building_name = building_list[0]
-        print("Generating and placing: " + current_building_name)
+        # first building - the first building is always the entrance :-)
+        current_building = building_entity_list[0]
+        print("Generating and placing: " + current_building.name)
 
-        self._buildings = {building_list[0]: self._generate_building((3,3), (3,3), name=current_building_name)}
-        self._place_building(self._buildings[building_list[0]],
-                             (int(self.tile_width / 2 - (self._buildings[building_list[0]].size[0] / 2)),
-                              int(self.tile_height / 2 - (self._buildings[building_list[0]].size[1] / 2))))
+        self._buildings = {building_entity_list[0]: self._generate_building((3, 3), (3, 3), name=current_building.name)}
+        self._place_building(self._buildings[building_entity_list[0]],
+                             (int(self.tile_width / 2 - (self._buildings[building_entity_list[0]].size[0] / 2)),
+                              int(self.tile_height / 2 - (self._buildings[building_entity_list[0]].size[1] / 2))))
+        building_entity_list[0].x, building_entity_list[0].y = self._buildings[building_entity_list[0]].get_center_pos()
 
         # all the others
-        while len(self._buildings) != len(building_list):
-            current_building_name = building_list[len(self._buildings)]
-            print("Generating and placing: " + current_building_name)
+        while len(self._buildings) != len(building_entity_list):
+            current_building = building_entity_list[len(self._buildings)]
+            print("Generating and placing: " + current_building.name)
             # branching_building = self._buildings[building_list[len(self._buildings) - 1]]  # This gives a chain
             branching_building = self._buildings[random.choice(list(self._buildings.keys()))]  # This gives less a chain
 
             choice_wall = self._get_branching_position_direction(branching_building)
             branching_pos = (choice_wall[0], choice_wall[1])
             branching_dir = choice_wall[2]
-            new_building = self._generate_building(building_size_range[0], building_size_range[1], name=current_building_name)
+            new_building = self._generate_building(building_size_range[0], building_size_range[1], name=current_building.name)
             path_length = random.randint(3, 7)
 
             if branching_dir == 'N':
@@ -622,9 +633,11 @@ class TownRegion(Region):
                                     int(branching_pos[1] - (new_building.size[1] / 2)))
 
             if self._space_for_new_building(new_building.size, new_building_pos):
-                print("OK - Generating and placing: " + current_building_name)
+                print("OK - Generating and placing: " + current_building.name)
                 self._place_building(new_building, new_building_pos)
-                self._buildings[building_list[len(self._buildings)]] = new_building
+                building_entity_list[len(self._buildings)].x, building_entity_list[len(self._buildings)].y = new_building.get_center_pos()  # this is the game entity
+                self._buildings[building_entity_list[len(self._buildings)]] = new_building
+
                 # Now connecting room
                 # No tunnel, easy case:
                 new_building.doors.append(branching_pos)
@@ -687,11 +700,7 @@ class TownRegion(Region):
                                 x in (grid_position[0], grid_position[0] + building.size[0] - 1):
                     self._make_wall(x, y)
                 else:
-                    if building.name == "Entrance":  #FIXME later - this is to see the entrance
-                        self.tiles[x][y].tile_type = Tile.T_GROUND
-                        self.tiles[x][y].tile_subtype = Tile.S_SPECIAL
-                    else:
-                        self._make_floor(x, y)
+                    self._make_floor(x, y)
 
     def _get_branching_position_direction(self, branching_building, except_dir=None):
         while True:

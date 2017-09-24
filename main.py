@@ -6,7 +6,7 @@ import thorpy
 
 import default
 from entity.player import Player
-from entity.town import Town
+from entity.town import Town, Entrance, Bank, GuildFighter, GuildMule, Shop, Tavern, Trade, Townhall, Temple
 from gui import guiwidget
 from gui.screen import PlayingScreen
 from region.region import RegionFactory
@@ -39,7 +39,12 @@ class Game:
         for i in range(3):
             self.world.append(RegionFactory.invoke("Damgarou Town {}".format(i),
                                                    region_type=RegionFactory.REGION_TOWN,
-                                                   building_list=("Entrance", "Bakery", "Temple", "Zoo", "Stuff", "Stuffy")))
+                                                   building_list=(Entrance(),
+                                                                  Bank(),
+                                                                  GuildMule(),
+                                                                  GuildFighter(),
+                                                                  Shop(),
+                                                                  Tavern())))
         '''
         for i in range(2):
             self.world.append(RegionFactory.invoke("Damgarou Wilderness - Region {}".format(i),

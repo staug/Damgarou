@@ -27,9 +27,10 @@ class Player(GameEntity):
                 result = entity.actionable.action(self)
                 self.x -= dx
                 self.y -= dy
-                if result is not None and not result:
-                    # We triggered an object, it prevented the move (like a door not opening)
-                    return False
+                if entity.blocks:
+                    if result is not None and not result:
+                        # We triggered an object, and it prevented the move (like a door not opening)
+                        return False
 
         # Test if we collide with an other enemy, then we enter in a fight mode
 
