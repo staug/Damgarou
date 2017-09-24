@@ -63,7 +63,6 @@ class RegionFactory:
                     region.region_entities.add(building)
                     building.town_name = region.name
                     building.assign_entity_to_region(region)
-                region._build_background(name=name+".png")  # TODO: remove later
                 region_correctly_initialized = True  # A town is always correct!
         RegionFactory.REGION_DICT["name"] = region
 
@@ -372,18 +371,18 @@ class WildernessRegion(Region):
                        for y in range(self.tile_height)]
                       for x in range(self.tile_width)]
 
-        reftiles = WildernessRegion._generate_algo(self.tile_width, self.tile_height, 40,
-                                                   ((3, 5, 1), (2, 5, -1)), empty_center=False)
+        reftiles = WildernessRegion.generate_algo(self.tile_width, self.tile_height, 40,
+                                                  ((3, 5, 1), (2, 5, -1)), empty_center=False)
         print("Generate base ground ok")
         # Now add some extra stuff depending on the type of map
         # Grass on the floor - to implement we construct a totally new map. We will apply the previous as a mask.
-        grass_tile = WildernessRegion._generate_algo(self.tile_width, self.tile_height, 50, ((3, 5, 1), (1, 6, -1)))
+        grass_tile = WildernessRegion.generate_algo(self.tile_width, self.tile_height, 50, ((3, 5, 1), (1, 6, -1)))
         print("Generate grass ground ok")
 
         # Some shallow Aquatics
         water_tile = []
         if with_liquid:
-            water_tile = WildernessRegion._generate_algo(self.tile_width, self.tile_height, 40, ((2, 5, -1),))
+            water_tile = WildernessRegion.generate_algo(self.tile_width, self.tile_height, 40, ((2, 5, -1),))
             print("Generate shallow liquid ok")
 
         for y in range(self.tile_height):
@@ -420,7 +419,7 @@ class WildernessRegion(Region):
         #self.remove_extra_blocks()
 
     @staticmethod
-    def _generate_algo(width, height, initial_noise, repeat_parameters, empty_center=False):
+    def generate_algo(width, height, initial_noise, repeat_parameters, empty_center=False):
         """
         Create a map, with 1 and 0. See algo at
         http://www.roguebasin.com/index.php?title=Cellular_Automata_Method_for_Generating_Random_Cave-Like_Levels
@@ -570,7 +569,7 @@ class TownRegion(Region):
             self.name = name
             self.size = size
             self.position = position
-            self.doors = []
+            self.doors = []  # Triplet H/V, x, y (H for horizontal, V for vertical)
             self.connecting_buildings = []
             self.one_connection = one_connection
 
@@ -608,7 +607,6 @@ class TownRegion(Region):
         # all the others
         while len(self._buildings) != len(building_entity_list):
             current_building = building_entity_list[len(self._buildings)]
-            # branching_building = self._buildings[building_list[len(self._buildings) - 1]]  # This gives a chain
             branching_building = self._buildings[random.choice(list(self._buildings.keys()))]  # This gives less a chain
             while branching_building.one_connection and len(branching_building.connecting_buildings)>0:
                 branching_building = self._buildings[
@@ -634,7 +632,6 @@ class TownRegion(Region):
                                     int(branching_pos[1] - (new_building.size[1] / 2)))
 
             if self._space_for_new_building(new_building.size, new_building_pos):
-                print("OK - Generating and placing: " + current_building.name)
                 self._place_building(new_building, new_building_pos)
                 building_entity_list[len(self._buildings)].x, building_entity_list[len(self._buildings)].y = new_building.get_center_pos()  # this is the game entity
                 self._buildings[building_entity_list[len(self._buildings)]] = new_building
@@ -652,28 +649,28 @@ class TownRegion(Region):
                         # self._make_wall(branching_pos[0] - 1, branching_pos[1] - i)
                         # self._make_wall(branching_pos[0] + 1, branching_pos[1] - i)
                     if path_length >= 3:
-                        branching_building.doors.append((branching_pos[0], branching_pos[1] - path_length))
+                        branching_building.doors.append(('V', branching_pos[0], branching_pos[1] - path_length))
                 elif branching_dir == 'E':
                     for i in range(1, path_length + 1):
                         self._make_floor(branching_pos[0] + i, branching_pos[1])
                         # self._make_wall(branching_pos[0] + i, branching_pos[1] - 1)
                         # self._make_wall(branching_pos[0] + i, branching_pos[1] + 1)
                     if path_length >= 3:
-                        branching_building.doors.append((branching_pos[0] + path_length, branching_pos[1]))
+                        branching_building.doors.append(('H', branching_pos[0] + path_length, branching_pos[1]))
                 elif branching_dir == 'S':
                     for i in range(1, path_length + 1):
                         self._make_floor(branching_pos[0], branching_pos[1] + i)
                         # self._make_wall(branching_pos[0] - 1, branching_pos[1] + i)
                         # self._make_wall(branching_pos[0] + 1, branching_pos[1] + i)
                         if path_length >= 3:
-                            branching_building.doors.append((branching_pos[0], branching_pos[1] + path_length))
+                            branching_building.doors.append(('V', branching_pos[0], branching_pos[1] + path_length))
                 elif branching_dir == 'W':
                     for i in range(1, path_length + 1):
                         self._make_floor(branching_pos[0] - i, branching_pos[1])
                         # self._make_wall(branching_pos[0] - i, branching_pos[1] - 1)
                         # self._make_wall(branching_pos[0] - i, branching_pos[1] + 1)
                     if path_length >= 3:
-                        branching_building.doors.append((branching_pos[0] - path_length, branching_pos[1]))
+                        branching_building.doors.append(('H', branching_pos[0] - path_length, branching_pos[1]))
 
 
         # Any building that is 3x3 (Entrance...) we remove the walls - and the doors
@@ -732,7 +729,7 @@ class TownRegion(Region):
             # let's adjust the doors
             doorlist = []
             for door in self._buildings[building_entity].doors:
-                doorlist.append((door[0] - remove_extreme_left, door[1] - remove_extreme_top))
+                doorlist.append((door[0], door[1] - remove_extreme_left, door[2] - remove_extreme_top))
             self._buildings[building_entity].doors = doorlist
 
         # Now all buildings are placed, let's add some decoration.
@@ -741,13 +738,13 @@ class TownRegion(Region):
                        for y in range(self.tile_height)]
                       for x in range(self.tile_width)]
 
-        reftiles = WildernessRegion._generate_algo(self.tile_width, self.tile_height, 40,
-                                                   ((3, 5, 1), (2, 5, -1)), empty_center=False)
+        reftiles = WildernessRegion.generate_algo(self.tile_width, self.tile_height, 40,
+                                                  ((3, 5, 1), (2, 5, -1)), empty_center=False)
         # Grass on the floor - to implement we construct a totally new map. We will apply the previous as a mask.
-        grass_tile = WildernessRegion._generate_algo(self.tile_width, self.tile_height, 50, ((3, 5, 1), (1, 6, -1)))
+        grass_tile = WildernessRegion.generate_algo(self.tile_width, self.tile_height, 50, ((3, 5, 1), (1, 6, -1)))
 
         # Some shallow Aquatics
-        water_tile = WildernessRegion._generate_algo(self.tile_width, self.tile_height, 40, ((2, 5, -1),))
+        water_tile = WildernessRegion.generate_algo(self.tile_width, self.tile_height, 40, ((2, 5, -1),))
 
         for y in range(self.tile_height):
             for x in range(self.tile_width):
