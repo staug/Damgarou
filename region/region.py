@@ -561,7 +561,7 @@ class TownRegion(Region):
         """
         A building is a closed space, dedicated to a set of activities.
         """
-        def __init__(self, size, name=None, position=None):
+        def __init__(self, size, name=None, position=None, one_connection=False):
             """
             Initialize the room
             :param size: the size of the room (tuple)
@@ -572,6 +572,7 @@ class TownRegion(Region):
             self.position = position
             self.doors = []
             self.connecting_buildings = []
+            self.one_connection = one_connection
 
         def get_center_pos(self):
             pos_x = self.position[0] + int(self.size[0] / 2)
@@ -598,20 +599,20 @@ class TownRegion(Region):
 
         # first building - the first building is always the entrance :-)
         current_building = building_entity_list[0]
-        print("Generating and placing: " + current_building.name)
 
-        self._buildings = {building_entity_list[0]: self._generate_building((3, 3), (3, 3), name=current_building.name)}
+        self._buildings = {building_entity_list[0]: self._generate_building((3, 3), (3, 3), name=current_building.name, one_connection=True)}
         self._place_building(self._buildings[building_entity_list[0]],
                              (int(self.tile_width / 2 - (self._buildings[building_entity_list[0]].size[0] / 2)),
                               int(self.tile_height / 2 - (self._buildings[building_entity_list[0]].size[1] / 2))))
-        building_entity_list[0].x, building_entity_list[0].y = self._buildings[building_entity_list[0]].get_center_pos()
 
         # all the others
         while len(self._buildings) != len(building_entity_list):
             current_building = building_entity_list[len(self._buildings)]
-            print("Generating and placing: " + current_building.name)
             # branching_building = self._buildings[building_list[len(self._buildings) - 1]]  # This gives a chain
             branching_building = self._buildings[random.choice(list(self._buildings.keys()))]  # This gives less a chain
+            while branching_building.one_connection and len(branching_building.connecting_buildings)>0:
+                branching_building = self._buildings[
+                    random.choice(list(self._buildings.keys()))]  # We want to ensure that some building like the Entrance are only linked to one
 
             choice_wall = self._get_branching_position_direction(branching_building)
             branching_pos = (choice_wall[0], choice_wall[1])
@@ -648,33 +649,122 @@ class TownRegion(Region):
                 if branching_dir == 'N':
                     for i in range(1, path_length + 1):
                         self._make_floor(branching_pos[0], branching_pos[1] - i)
-                        self._make_wall(branching_pos[0] - 1, branching_pos[1] - i)
-                        self._make_wall(branching_pos[0] + 1, branching_pos[1] - i)
+                        # self._make_wall(branching_pos[0] - 1, branching_pos[1] - i)
+                        # self._make_wall(branching_pos[0] + 1, branching_pos[1] - i)
                     if path_length >= 3:
                         branching_building.doors.append((branching_pos[0], branching_pos[1] - path_length))
                 elif branching_dir == 'E':
                     for i in range(1, path_length + 1):
                         self._make_floor(branching_pos[0] + i, branching_pos[1])
-                        self._make_wall(branching_pos[0] + i, branching_pos[1] - 1)
-                        self._make_wall(branching_pos[0] + i, branching_pos[1] + 1)
+                        # self._make_wall(branching_pos[0] + i, branching_pos[1] - 1)
+                        # self._make_wall(branching_pos[0] + i, branching_pos[1] + 1)
                     if path_length >= 3:
                         branching_building.doors.append((branching_pos[0] + path_length, branching_pos[1]))
                 elif branching_dir == 'S':
                     for i in range(1, path_length + 1):
                         self._make_floor(branching_pos[0], branching_pos[1] + i)
-                        self._make_wall(branching_pos[0] - 1, branching_pos[1] + i)
-                        self._make_wall(branching_pos[0] + 1, branching_pos[1] + i)
+                        # self._make_wall(branching_pos[0] - 1, branching_pos[1] + i)
+                        # self._make_wall(branching_pos[0] + 1, branching_pos[1] + i)
                         if path_length >= 3:
                             branching_building.doors.append((branching_pos[0], branching_pos[1] + path_length))
                 elif branching_dir == 'W':
                     for i in range(1, path_length + 1):
                         self._make_floor(branching_pos[0] - i, branching_pos[1])
-                        self._make_wall(branching_pos[0] - i, branching_pos[1] - 1)
-                        self._make_wall(branching_pos[0] - i, branching_pos[1] + 1)
+                        # self._make_wall(branching_pos[0] - i, branching_pos[1] - 1)
+                        # self._make_wall(branching_pos[0] - i, branching_pos[1] + 1)
                     if path_length >= 3:
                         branching_building.doors.append((branching_pos[0] - path_length, branching_pos[1]))
 
-    def _generate_building(self, min_size, max_size, modulo_rest=2, name=None):
+
+        # Any building that is 3x3 (Entrance...) we remove the walls - and the doors
+        for building in self._buildings:
+            if self._buildings[building].size == (3, 3):
+                self._place_building(self._buildings[building], self._buildings[building].position, force_floor=True)
+                self._buildings[building].doors = []
+
+        # Now we crop the town
+        # The town is ar too big for the number of buildings. We only leave a small square around the building.
+        border = 3
+        # remove extreme right part
+        index_x = self.tile_width - 1
+        found = False
+        while not found:
+            for index_y in range(self.tile_height):
+                if self.tiles[index_x][index_y].tile_type != Tile.T_VOID:
+                    found = True
+            index_x -= 1
+        remove_extreme_right = max(self.tile_width - index_x - 2 - border, 0)
+        # remove left part:
+        index_x = 0
+        found = False
+        while not found:
+            for index_y in range(self.tile_height):
+                if self.tiles[index_x][index_y].tile_type != Tile.T_VOID:
+                    found = True
+            index_x += 1
+        remove_extreme_left = max(index_x - 1 - border, 0)
+        # remove bottom part
+        index_y = self.tile_height - 1
+        found = False
+        while not found:
+            for index_x in range(self.tile_width):
+                if self.tiles[index_x][index_y].tile_type != Tile.T_VOID:
+                    found = True
+            index_y -= 1
+        remove_extreme_bottom = max(self.tile_height - index_y - 2 - border, 0)
+        # remove upper part
+        index_y = 0
+        found = False
+        while not found:
+            for index_x in range(self.tile_width):
+                if self.tiles[index_x][index_y].tile_type != Tile.T_VOID:
+                    found = True
+            index_y += 1
+        remove_extreme_top = max(index_y - 1 - border, 0)
+
+        # let's adjust accordingly the position of the building entities, the only one which matters
+        self.tile_height -= remove_extreme_bottom + remove_extreme_top
+        self.tile_width -= remove_extreme_left + remove_extreme_right
+        for building_entity in self._buildings.keys():
+            old_pos_x, old_pos_y = self._buildings[building_entity].get_center_pos()
+            building_entity.x = old_pos_x - remove_extreme_left
+            building_entity.y = old_pos_y - remove_extreme_top
+            # let's adjust the doors
+            doorlist = []
+            for door in self._buildings[building_entity].doors:
+                doorlist.append((door[0] - remove_extreme_left, door[1] - remove_extreme_top))
+            self._buildings[building_entity].doors = doorlist
+
+        # Now all buildings are placed, let's add some decoration.
+        walls_building = self.tiles[:]  # We copy the current tiles
+        self.tiles = [[Tile(Tile.T_GROUND, sub_type=Tile.S_FLOOR)
+                       for y in range(self.tile_height)]
+                      for x in range(self.tile_width)]
+
+        reftiles = WildernessRegion._generate_algo(self.tile_width, self.tile_height, 40,
+                                                   ((3, 5, 1), (2, 5, -1)), empty_center=False)
+        # Grass on the floor - to implement we construct a totally new map. We will apply the previous as a mask.
+        grass_tile = WildernessRegion._generate_algo(self.tile_width, self.tile_height, 50, ((3, 5, 1), (1, 6, -1)))
+
+        # Some shallow Aquatics
+        water_tile = WildernessRegion._generate_algo(self.tile_width, self.tile_height, 40, ((2, 5, -1),))
+
+        for y in range(self.tile_height):
+            for x in range(self.tile_width):
+                if walls_building[x + remove_extreme_left][y + remove_extreme_top].tile_type != Tile.T_VOID:
+                    self.tiles[x][y].tile_type = walls_building[x + remove_extreme_left][y + remove_extreme_top].tile_type
+                    self.tiles[x][y].tile_subtype = walls_building[x + remove_extreme_left][y + remove_extreme_top].tile_subtype
+                else:
+                    if reftiles[x][y] == 1:
+                        self.tiles[x][y].tile_type = Tile.T_BLOCK
+                        self.tiles[x][y].tile_subtype = Tile.S_BOULDER
+                    elif water_tile[x][y] == 1:
+                        self.tiles[x][y].tile_type = Tile.T_LIQUID
+                        self.tiles[x][y].tile_subtype = Tile.S_WATER
+                    elif grass_tile[x][y] == 1:
+                        self.tiles[x][y].tile_subtype = Tile.S_GRASS
+
+    def _generate_building(self, min_size, max_size, modulo_rest=2, name=None, one_connection=False):
         """
         Generate a building according to the criteria
         :param min_size: tuple with the minimum dimension
@@ -689,18 +779,20 @@ class TownRegion(Region):
                 size_x = random.randint(min_size[0], max_size[0])
             while size_y % 2 != modulo_rest:
                 size_y = random.randint(min_size[1], max_size[1])
-        return TownRegion.Building((size_x, size_y), name=name)
+        return TownRegion.Building((size_x, size_y), name=name, one_connection=one_connection)
 
-    def _place_building(self, building, grid_position):
+    def _place_building(self, building, grid_position, force_floor=False):
         building.position = grid_position
         for y in range(grid_position[1], grid_position[1] + building.size[1]):
             for x in range(grid_position[0], grid_position[0] + building.size[0]):
-                # self.tiles[x][y].room = building
-                if y in (grid_position[1], grid_position[1] + building.size[1] - 1) or \
-                                x in (grid_position[0], grid_position[0] + building.size[0] - 1):
-                    self._make_wall(x, y)
-                else:
+                if force_floor:
                     self._make_floor(x, y)
+                else:
+                    if y in (grid_position[1], grid_position[1] + building.size[1] - 1) or \
+                                    x in (grid_position[0], grid_position[0] + building.size[0] - 1):
+                        self._make_wall(x, y)
+                    else:
+                        self._make_floor(x, y)
 
     def _get_branching_position_direction(self, branching_building, except_dir=None):
         while True:
@@ -727,11 +819,11 @@ class TownRegion(Region):
                 if not (self.tiles[x][y-1].tile_type == Tile.T_GROUND or self.tiles[x][y+1].tile_type == Tile.T_GROUND):
                     return x, y, direction
 
-    def _space_for_new_building(self, new_building_size, new_building_position, tiles_blocking=Tile.T_GROUND):
-        for y in range(new_building_position[1],
-                       new_building_position[1] + new_building_size[1]):
-            for x in range(new_building_position[0],
-                           new_building_position[0] + new_building_size[0]):
+    def _space_for_new_building(self, new_building_size, new_building_position, tiles_blocking=Tile.T_GROUND, border=1):
+        for y in range(new_building_position[1] - border,
+                       new_building_position[1] + new_building_size[1] + border):
+            for x in range(new_building_position[0] - border,
+                           new_building_position[0] + new_building_size[0] + border):
                 if x < 0 or x > self.tile_width - 1:
                     return False
                 if y < 0 or y > self.tile_height - 1:
@@ -754,8 +846,15 @@ class TownRegion(Region):
         :return: Nothing, just blitting things on _background property
         """
 
-        floor_serie = random.choice((13, 16, 19, 22))
+        carpet_serie = random.choice((13, 16, 19, 22))
         wall_serie = 1
+
+        initial_seed = random.choice((1, 4, 7, 10))
+        grass_serie = initial_seed + 0
+        rock_serie = initial_seed + 1
+        dirt_serie = initial_seed + 11
+        path_serie = initial_seed + 12
+        water_serie = initial_seed + 13
 
         for y in range(self.tile_height):
             for x in range(self.tile_width):
@@ -768,6 +867,41 @@ class TownRegion(Region):
 
                     tile_type = self.tiles[x][y].tile_type
                     tile_subtype = self.tiles[x][y].tile_subtype
+
+                    if tile_type == Tile.T_BLOCK:
+                        if tile_subtype == Tile.S_BOULDER:
+                            self._background.blit(GLOBAL.img('FLOOR')[rock_serie][weight],
+                                              (x * TILESIZE_SCREEN[0], y * TILESIZE_SCREEN[1]))
+                        elif tile_subtype == Tile.S_WALL:
+                            self._background.blit(GLOBAL.img('WALLS')[wall_serie][weight],
+                                                  (x * TILESIZE_SCREEN[0], y * TILESIZE_SCREEN[1]))
+
+                    elif self.tiles[x][y].tile_type == Tile.T_GROUND:
+                        if self.tiles[x][y].tile_subtype == Tile.S_FLOOR:
+                            self._background.blit(GLOBAL.img('FLOOR')[dirt_serie][weight],
+                                                  (x * TILESIZE_SCREEN[0], y * TILESIZE_SCREEN[1]))
+                        elif self.tiles[x][y].tile_subtype == Tile.S_GRASS:
+                            self._background.blit(GLOBAL.img('FLOOR')[grass_serie][weight],
+                                                  (x * TILESIZE_SCREEN[0], y * TILESIZE_SCREEN[1]))
+                        elif self.tiles[x][y].tile_subtype == Tile.S_PATH:
+                            self._background.blit(GLOBAL.img('FLOOR')[path_serie][weight],
+                                                  (x * TILESIZE_SCREEN[0], y * TILESIZE_SCREEN[1]))
+                        elif self.tiles[x][y].tile_subtype == Tile.S_CARPET:
+                            self._background.blit(GLOBAL.img('FLOOR')[carpet_serie][weight],
+                                                  (x * TILESIZE_SCREEN[0], y * TILESIZE_SCREEN[1]))
+                    elif self.tiles[x][y].tile_type == Tile.T_LIQUID:
+                        if self.tiles[x][y].tile_subtype == Tile.S_WATER:
+                            self._background.blit(GLOBAL.img('FLOOR')[water_serie][weight],
+                                                  (x * TILESIZE_SCREEN[0], y * TILESIZE_SCREEN[1]))
+                    else:
+                        print("Unknown type {} subtype {}".format(self.tiles[x][y].tile_type,
+                                                                  self.tiles[x][y].tile_subtype))
+
+
+
+
+
+                    '''
                     if tile_type == Tile.T_BLOCK and tile_subtype == Tile.S_WALL:
                         self._background.blit(GLOBAL.img('WALLS')[wall_serie][weight],
                                               (x * TILESIZE_SCREEN[0], y * TILESIZE_SCREEN[1]))
@@ -776,4 +910,4 @@ class TownRegion(Region):
                                               (x * TILESIZE_SCREEN[0], y * TILESIZE_SCREEN[1]))
                     else:
                         print("Unknown type {} subtype {}".format(self.tiles[x][y].tile_type,
-                                                                  self.tiles[x][y].tile_subtype))
+                                                                  self.tiles[x][y].tile_subtype))'''
