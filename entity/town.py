@@ -1,4 +1,5 @@
 from entity.gameentity import GameEntity, ActionableEntity
+from shared import GLOBAL
 
 """
 Town and its content
@@ -215,5 +216,8 @@ class Entrance(GameEntity):
 
 
 def enter_building(building_entity, entity_that_triggers):
+    GLOBAL.game.screens[GLOBAL.game.GAME_STATE_BUILDING].attach_building(building_entity)
+    GLOBAL.game.game_state = GLOBAL.game.GAME_STATE_BUILDING
+
     print("{} enter {}".format(entity_that_triggers, building_entity.name))
     return False

@@ -8,7 +8,7 @@ import default
 from entity.player import Player
 from entity.town import Town, Entrance, Bank, GuildFighter, GuildMule, Shop, Tavern, Trade, Townhall, Temple
 from gui import guiwidget
-from gui.screen import PlayingScreen
+from gui.screen import PlayingScreen, BuildingScreen
 from region.region import RegionFactory
 from region.tile import Tile
 from shared import GLOBAL
@@ -19,6 +19,7 @@ class Game:
     GAME_STATE_INVENTORY = 'Inventory'
     GAME_STATE_MAP = 'Map'
     GAME_STATE_CHARACTER = 'Character'
+    GAME_STATE_BUILDING = 'Building'
 
     def __init__(self):
 
@@ -26,7 +27,7 @@ class Game:
         self.player_took_action = False
         self.minimap_enabled = False
         self.game_running = True
-        self.screens = {Game.GAME_STATE_PLAYING: PlayingScreen()}
+        self.screens = {Game.GAME_STATE_PLAYING: PlayingScreen(), Game.GAME_STATE_BUILDING: BuildingScreen()}
         self.current_region = None
         self.player = None
         self.invalidate_fog_of_war = True

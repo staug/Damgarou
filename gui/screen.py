@@ -176,5 +176,45 @@ class PlayingScreen(Screen):
                         handled = widget.handle_event(event)
 
 
+class BuildingScreen(Screen):
+    """
+    This set of screens is to represent the action inside a building.
+    Pressing Escape will go back to the regular state.
+    """
 
+    def attach_building(self, building):
+        self.building = building
 
+    def draw(self):
+        # Erase All
+        screen = pg.display.get_surface()
+        screen.fill(BGCOLOR)
+
+        for widget in self.widgets:
+            widget.draw(screen)
+
+        font = pg.font.Font(os.path.join(FONT_FOLDER, FONT_NAME), 20)
+        text = font.render("Building " + self.building.name, True, WHITE)
+        text_rect = text.get_rect()
+
+        left_x = screen.get_rect().centerx - int(text_rect.width / 2)
+        top_y = screen.get_rect().centery - int(text_rect.height / 2)
+        screen.blit(text, (left_x, top_y))
+
+        pg.display.flip()
+
+    def update(self):
+        for widget in self.widgets:
+            widget.update()
+
+    def events(self):
+        for event in pg.event.get():
+            if event.type == pg.QUIT:
+                GLOBAL.game.quit()
+            elif event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE:
+                GLOBAL.game.game_state = GLOBAL.game.GAME_STATE_PLAYING
+            else:
+                handled = False
+                for widget in self.widgets:
+                    if not handled:
+                        handled = widget.handle_event(event)

@@ -8,3 +8,5 @@ List of things to be done
 * Load/save
 * Event system
 * Time system
+
+ - Going from town to building
