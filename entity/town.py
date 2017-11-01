@@ -1,4 +1,5 @@
 from entity.gameentity import GameEntity, ActionableEntity
+from region.tile import Tile
 from shared import GLOBAL
 
 """
@@ -16,7 +17,7 @@ class Town(GameEntity):
                             image_ref="TOWN",
                             z_level=0,
                             actionable=ActionableEntity(radius=0, actionable_by_player_only=True, function=enter_town))
-
+        self.blocks = True
         if name:
             self.name = name
         else:
@@ -27,6 +28,8 @@ class Town(GameEntity):
 
 def enter_town(town_entity, entity_that_triggers):
     print("{} enter {}".format(entity_that_triggers, town_entity.name))
+    GLOBAL.game.player.switch_region(GLOBAL.game.current_region,
+                                     GLOBAL.game.world[town_entity.name])
     return False
 
 """
@@ -204,7 +207,7 @@ class Entrance(GameEntity):
                             image_ref="BUILDING_ENTRANCE",
                             z_level=0,
                             actionable=ActionableEntity(radius=0, actionable_by_player_only=True,
-                                                        function=enter_building))
+                                                        function=enter_wilderness))
 
         if name:
             self.name = name
@@ -212,7 +215,16 @@ class Entrance(GameEntity):
             self.name = "Entrance " + str(Entrance.ENTRANCE_INDEX)
             Entrance.ENTRANCE_INDEX += 1
 
+        self.blocks = True
         self.town_name = town_name
+
+
+def enter_wilderness(building_entity, entity_that_triggers):
+    print("{} enter {}".format(entity_that_triggers, building_entity.name))
+    wilderness_region_name = GLOBAL.game.world[building_entity.town_name].town.wilderness_index
+    GLOBAL.game.player.switch_region(GLOBAL.game.current_region,
+                                     GLOBAL.game.world[wilderness_region_name])
+    return False
 
 
 def enter_building(building_entity, entity_that_triggers):

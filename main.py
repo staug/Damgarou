@@ -3,6 +3,7 @@ import sys
 
 import pygame as pg
 import thorpy
+import random
 
 import default
 from entity.player import Player
@@ -34,30 +35,34 @@ class Game:
 
     def new(self):
 
-        self.world = []  # The world contains all the wilderness regions, all the town maps...
-
+        self.world = {}  # The world contains all the wilderness regions and all towns
         guiwidget.display_single_message_on_screen("Generating World")
-        for i in range(3):
-            self.world.append(RegionFactory.invoke("Damgarou Town {}".format(i),
-                                                   region_type=RegionFactory.REGION_TOWN,
-                                                   building_list=(Entrance(),
-                                                                  Bank(),
-                                                                  GuildMule(),
-                                                                  GuildFighter(),
-                                                                  Shop(),
-                                                                  Tavern())))
-        '''
-        for i in range(2):
-            self.world.append(RegionFactory.invoke("Damgarou Wilderness - Region {}".format(i),
-                                                   region_type=RegionFactory.REGION_WILDERNESS,
-                                                   town_list=(Town(wilderness_index=i),
-                                                                Town(wilderness_index=i),
-                                                                Town(wilderness_index=i))))
 
-        '''
+        guiwidget.display_single_message_on_screen("Generating World - Wilderness")
+        for i in range(1):
+            name = "Damgarou Wilderness - Region {}".format(i)
+            town_list = []
+            for i in range(random.randint(2, 6)):
+                name_town = "Damgarou Town {}".format(i)
+                town_region = RegionFactory.invoke(name_town,
+                                                      wilderness_index=name,
+                                                      region_type=RegionFactory.REGION_TOWN,
+                                                      building_list=(Entrance(),
+                                                                      Bank(),
+                                                                      GuildMule(),
+                                                                      GuildFighter(),
+                                                                      Shop(),
+                                                                      Tavern()))
+                town_list.append(town_region)
+                self.world[name_town] = town_region
+
+            self.world[name] = RegionFactory.invoke(name,
+                                                   region_type=RegionFactory.REGION_WILDERNESS,
+                                                   town_list=town_list)
+
         guiwidget.display_single_message_on_screen("World ok")
 
-        self.current_region = self.world[0]
+        self.current_region = self.world[name]
         # We start the player, and we add it somewhere
         self.player = Player()
         self.player.assign_entity_to_region(self.current_region)

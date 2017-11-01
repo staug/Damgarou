@@ -5,6 +5,7 @@ import pygame as pg
 
 from default import *
 from region.tile import Tile
+from entity.town import Town
 from shared import GLOBAL
 from utilities import AStar, SQ_Location, SQ_MapHandler
 
@@ -51,14 +52,17 @@ class RegionFactory:
                 region_correctly_initialized = region.is_valid_map()
                 if region_correctly_initialized:
                     # Now we register the entities on the "region"
-                    for town in attributes["town_list"]:
-                        region.region_entities.add(town)
-                        town.assign_entity_to_region(region)
+                    for town_region in attributes["town_list"]:
+                        region.region_entities.add(town_region.town)
+                        town_region.town.assign_entity_to_region(region)
                 print("MAP CORRECT: " + str(region_correctly_initialized))
             elif region_type == RegionFactory.REGION_TOWN:
                 assert "building_list" in attributes, "Town region needs to have a buidling list"
                 region = TownRegion(name, dimension, building_entity_list=attributes["building_list"])
+                region.town = Town(name=name)
                 # We register the building in the town
+                if attributes["wilderness_index"]:
+                    region.town.wilderness_index = attributes["wilderness_index"]
                 for building in attributes["building_list"]:
                     region.region_entities.add(building)
                     building.town_name = region.name
@@ -397,9 +401,9 @@ class WildernessRegion(Region):
                     self.tiles[x][y].tile_subtype = Tile.S_GRASS
 
         list_available_tiles = self.get_all_available_tiles(Tile.T_GROUND, self.region_entities)
-        for town in town_list:
-            (town.x, town.y) = list_available_tiles.pop()
-            print("Town pos: " + str(town.pos))
+        for town_region in town_list:
+            (town_region.town.x, town_region.town.y) = list_available_tiles.pop()
+            print("Town pos: " + str(town_region.town.pos))
 
         # And we add some path on the floor to connect the towns
         for index_origin, town_origin in enumerate(town_list[:]):
@@ -408,8 +412,8 @@ class WildernessRegion(Region):
                     print("Generating road from {} to {}".format(town_origin.name, town_destination.name))
 
                     astar = AStar(SQ_MapHandler(self.tiles, dimension[0], dimension[1]))
-                    p = astar.findPath(SQ_Location(town_origin.x, town_origin.y),
-                                       SQ_Location(town_destination.x, town_destination.y))
+                    p = astar.findPath(SQ_Location(town_origin.town.x, town_origin.town.y),
+                                       SQ_Location(town_destination.town.x, town_destination.town.y))
 
                     if p:
                         for n in p.nodes:
@@ -595,6 +599,7 @@ class TownRegion(Region):
                       for x in range(self.tile_width)]
 
         # generate the town
+        self.town = None
 
         # first building - the first building is always the entrance :-)
         current_building = building_entity_list[0]
@@ -762,6 +767,9 @@ class TownRegion(Region):
                         self.tiles[x][y].tile_subtype = Tile.S_WATER
                     elif grass_tile[x][y] == 1:
                         self.tiles[x][y].tile_subtype = Tile.S_GRASS
+
+        # Setup the player starting position near the entrance to wilderness
+        self.last_player_position = building_entity_list[0].pos
 
     def _generate_building(self, min_size, max_size, modulo_rest=2, name=None, one_connection=False):
         """

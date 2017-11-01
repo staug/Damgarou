@@ -89,7 +89,7 @@ class GameEntity(Sprite):
         region.region_entities.add(self)
 
     def remove_entity_from_region(self, region):
-        self.remove(map.all_groups[self.z_level])
+        self.remove(region.all_groups[self.z_level])
         region.region_entities.remove(self)
 
     def animate(self):

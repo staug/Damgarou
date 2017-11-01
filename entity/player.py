@@ -1,6 +1,6 @@
 from entity.gameentity import GameEntity
 from shared import GLOBAL
-
+from region.tile import Tile
 
 class Player(GameEntity):
 
@@ -9,6 +9,18 @@ class Player(GameEntity):
 
         self.mule_list = []
         self.fighter_list = []
+
+    def switch_region(self, old_region, new_region):
+        self.remove_entity_from_region(old_region)
+
+        GLOBAL.game.current_region = new_region
+        if new_region.last_player_position is None:
+            (self.x, self.y) = new_region.get_all_available_tiles(Tile.T_GROUND, new_region.region_entities).pop()
+        else:
+            (self.x, self.y) = new_region.last_player_position
+        self.assign_entity_to_region(new_region)
+
+        GLOBAL.game.invalidate_fog_of_war = True
 
     def move(self, dx=0, dy=0):
         """
