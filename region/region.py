@@ -6,6 +6,7 @@ import pygame as pg
 from default import *
 from region.tile import Tile
 from entity.town import Town
+from entity.door import Door
 from shared import GLOBAL
 from utilities import AStar, SQ_Location, SQ_MapHandler
 
@@ -56,6 +57,7 @@ class RegionFactory:
                         region.region_entities.add(town_region.town)
                         town_region.town.assign_entity_to_region(region)
                 print("MAP CORRECT: " + str(region_correctly_initialized))
+
             elif region_type == RegionFactory.REGION_TOWN:
                 assert "building_list" in attributes, "Town region needs to have a buidling list"
                 region = TownRegion(name, dimension, building_entity_list=attributes["building_list"])
@@ -63,10 +65,18 @@ class RegionFactory:
                 # We register the building in the town
                 if attributes["wilderness_index"]:
                     region.town.wilderness_index = attributes["wilderness_index"]
+
                 for building in attributes["building_list"]:
                     region.region_entities.add(building)
                     building.town_name = region.name
                     building.assign_entity_to_region(region)
+
+                for door_characteristics in region.door_list:
+                    door = Door((door_characteristics[1], door_characteristics[2]),
+                                                     door_characteristics[0])
+                    region.region_entities.add(door)
+                    door.assign_entity_to_region(region)
+
                 region_correctly_initialized = True  # A town is always correct!
         RegionFactory.REGION_DICT["name"] = region
 
@@ -600,11 +610,13 @@ class TownRegion(Region):
 
         # generate the town
         self.town = None
+        self.door_list = []
 
         # first building - the first building is always the entrance :-)
         current_building = building_entity_list[0]
 
         self._buildings = {building_entity_list[0]: self._generate_building((3, 3), (3, 3), name=current_building.name, one_connection=True)}
+
         self._place_building(self._buildings[building_entity_list[0]],
                              (int(self.tile_width / 2 - (self._buildings[building_entity_list[0]].size[0] / 2)),
                               int(self.tile_height / 2 - (self._buildings[building_entity_list[0]].size[1] / 2))))
@@ -645,7 +657,8 @@ class TownRegion(Region):
 
                 # Now connecting room
                 # No tunnel, easy case:
-                new_building.doors.append((door_type, branching_pos[0], branching_pos[1]))
+                if branching_building.size != (3, 3):
+                    branching_building.doors.append((door_type, branching_pos[0], branching_pos[1]))
                 self._make_floor(branching_pos[0], branching_pos[1])
                 new_building.connecting_buildings.append(branching_building)
                 branching_building.connecting_buildings.append(new_building)
@@ -655,32 +668,32 @@ class TownRegion(Region):
                         self._make_floor(branching_pos[0], branching_pos[1] - i)
                         # self._make_wall(branching_pos[0] - 1, branching_pos[1] - i)
                         # self._make_wall(branching_pos[0] + 1, branching_pos[1] - i)
-                    if path_length >= 3:
-                        branching_building.doors.append(('V', branching_pos[0], branching_pos[1] - path_length))
+                    if path_length >= 3 and new_building.size != (3, 3):
+                        new_building.doors.append(('V', branching_pos[0], branching_pos[1] - path_length))
                 elif branching_dir == 'E':
                     for i in range(1, path_length + 1):
                         self._make_floor(branching_pos[0] + i, branching_pos[1])
                         # self._make_wall(branching_pos[0] + i, branching_pos[1] - 1)
                         # self._make_wall(branching_pos[0] + i, branching_pos[1] + 1)
-                    if path_length >= 3:
-                        branching_building.doors.append(('H', branching_pos[0] + path_length, branching_pos[1]))
+                    if path_length >= 3 and new_building.size != (3, 3):
+                        new_building.doors.append(('H', branching_pos[0] + path_length, branching_pos[1]))
                 elif branching_dir == 'S':
                     for i in range(1, path_length + 1):
                         self._make_floor(branching_pos[0], branching_pos[1] + i)
                         # self._make_wall(branching_pos[0] - 1, branching_pos[1] + i)
                         # self._make_wall(branching_pos[0] + 1, branching_pos[1] + i)
-                        if path_length >= 3:
-                            branching_building.doors.append(('V', branching_pos[0], branching_pos[1] + path_length))
+                        if path_length >= 3 and new_building.size != (3, 3):
+                            new_building.doors.append(('V', branching_pos[0], branching_pos[1] + path_length))
                 elif branching_dir == 'W':
                     for i in range(1, path_length + 1):
                         self._make_floor(branching_pos[0] - i, branching_pos[1])
                         # self._make_wall(branching_pos[0] - i, branching_pos[1] - 1)
                         # self._make_wall(branching_pos[0] - i, branching_pos[1] + 1)
-                    if path_length >= 3:
-                        branching_building.doors.append(('H', branching_pos[0] - path_length, branching_pos[1]))
+                    if path_length >= 3 and new_building.size != (3, 3):
+                        new_building.doors.append(('H', branching_pos[0] - path_length, branching_pos[1]))
 
 
-        # Any building that is 3x3 (Entrance...) we remove the walls - and the doors
+        # Any building that is 3x3 (Entrance...) we remove the walls - and the doors (even if should not be)
         for building in self._buildings:
             if self._buildings[building].size == (3, 3):
                 self._place_building(self._buildings[building], self._buildings[building].position, force_floor=True)
@@ -729,6 +742,8 @@ class TownRegion(Region):
         # let's adjust accordingly the position of the building entities, the only one which matters
         self.tile_height -= remove_extreme_bottom + remove_extreme_top
         self.tile_width -= remove_extreme_left + remove_extreme_right
+
+        handled_door_pos = []
         for building_entity in self._buildings.keys():
             old_pos_x, old_pos_y = self._buildings[building_entity].get_center_pos()
             building_entity.x = old_pos_x - remove_extreme_left
@@ -736,8 +751,13 @@ class TownRegion(Region):
             # let's adjust the doors
             doorlist = []
             for door in self._buildings[building_entity].doors:
-                doorlist.append((door[0], door[1] - remove_extreme_left, door[2] - remove_extreme_top))
+                x, y = door[1] - remove_extreme_left, door[2] - remove_extreme_top
+                doorlist.append((door[0], x, y))
+                if (x, y) not in handled_door_pos:
+                    handled_door_pos.append((x, y))
+                    self.door_list.append((door[0], x, y))
             self._buildings[building_entity].doors = doorlist
+
 
         # Now all buildings are placed, let's add some decoration.
         walls_building = self.tiles[:]  # We copy the current tiles

@@ -36,11 +36,11 @@ class Player(GameEntity):
                             (self.x + dx, self.y + dy) in entity.actionable.action_field:
                 self.x += dx
                 self.y += dy
-                result = entity.actionable.action(self)
+                ok_to_move = entity.actionable.action(self)
                 self.x -= dx
                 self.y -= dy
                 if entity.blocks:
-                    if result is not None and not result:
+                    if ok_to_move is not None and not ok_to_move:
                         # We triggered an object, and it prevented the move (like a door not opening)
                         return False
 

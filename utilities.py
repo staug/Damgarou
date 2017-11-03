@@ -730,10 +730,10 @@ def load_all_images():
     images["TREES"] = load_tree_structure_dawnlike(image_src_list, OBJECT_FOLDER, "Tree0.png")
 
     # Doors
-    images["DOOR_V_OPEN"] = load_image(image_src_list, OBJECT_FOLDER, "Door1.png", 1, 0)
-    images["DOOR_V_CLOSED"] = load_image(image_src_list, OBJECT_FOLDER, "Door0.png", 1, 0)
-    images["DOOR_H_OPEN"] = load_image(image_src_list, OBJECT_FOLDER, "Door1.png", 0, 0)
-    images["DOOR_H_CLOSED"] = load_image(image_src_list, OBJECT_FOLDER, "Door0.png", 0, 0)
+    images["DOOR_V_OPEN"] = load_image(image_src_list, OBJECT_FOLDER, "Door1.png", 0, 0)
+    images["DOOR_V_CLOSED"] = load_image(image_src_list, OBJECT_FOLDER, "Door0.png", 0, 0)
+    images["DOOR_H_OPEN"] = load_image(image_src_list, OBJECT_FOLDER, "Door1.png", 1, 0)
+    images["DOOR_H_CLOSED"] = load_image(image_src_list, OBJECT_FOLDER, "Door0.png", 1, 0)
     # Stairs
     images["STAIRS"] = load_image(image_src_list, OBJECT_FOLDER, "Tile.png", 1, 1)
     # Town
