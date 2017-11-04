@@ -3,6 +3,7 @@ from shared import GLOBAL
 from default import *
 from utilities import FieldOfView
 
+import dill as pick
 
 class Screen:
 
@@ -122,7 +123,10 @@ class PlayingScreen(Screen):
             screen.blit(playable_background, pg.Rect(self.top_left, (PLAYABLE_WIDTH, PLAYABLE_HEIGHT)))
 
         def handle_event(self, event):
+
             if event.type == pg.KEYDOWN:
+
+                # Movement
                 if event.key in (pg.K_LEFT, pg.K_q, pg.K_KP4):
                     GLOBAL.game.player.move(dx=-1)
                     return True
@@ -135,6 +139,27 @@ class PlayingScreen(Screen):
                 if event.key in (pg.K_DOWN, pg.K_x, pg.K_KP2):
                     GLOBAL.game.player.move(dy=1)
                     return True
+
+                # Save
+                if event.key == pg.K_s:
+                    print("SAVING and EXIT")
+                    # We cleanup all objects
+                    for region_name in GLOBAL.game.world:
+                        for entity in GLOBAL.game.world[region_name].region_entities:
+                            entity.clean_before_save()
+                        GLOBAL.game.world[region_name].clean_before_save()
+                    GLOBAL.clean_before_save()
+                    self.fog_of_war_mask = None
+
+                    test = GLOBAL.game
+                    print(test)
+                    #for entities in self.game.player.inventory:
+                    #    entities.clean_before_save()
+
+                    with open("savegame", "wb") as f:
+                        pick.dump([GLOBAL.game], f)
+                    GLOBAL.game.quit()
+
             if event.type == pg.MOUSEBUTTONDOWN:
                 (button1, button2, button3) = pg.mouse.get_pressed()
                 (x, y) = pg.mouse.get_pos()

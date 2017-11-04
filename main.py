@@ -4,15 +4,18 @@ import sys
 import pygame as pg
 import thorpy
 import random
+import dill as pick
+
 
 import default
 from entity.player import Player
-from entity.town import Town, Entrance, Bank, GuildFighter, GuildMule, Shop, Tavern, Trade, Townhall, Temple
+from entity.town import Entrance, Bank, GuildFighter, GuildMule, Shop, Tavern, Trade, Townhall, Temple
 from gui import guiwidget
 from gui.screen import PlayingScreen, BuildingScreen
 from region.region import RegionFactory
 from shared import GLOBAL
 from utilities import MName
+
 
 class Game:
 
@@ -42,10 +45,10 @@ class Game:
         guiwidget.display_single_message_on_screen("Generating World - Wilderness")
         player_spawn_pos = None  # this will be a town on a wilderness
 
-        for i in range(1):
+        for _i in range(1):
             name = MName.place_name()
             town_list = []
-            for i in range(random.randint(2, 6)):
+            for _j in range(random.randint(2, 6)):
                 name_town = "{}'s Town".format(MName.person_name())
                 town_region = RegionFactory.invoke(name_town,
                                                    wilderness_index=name,
@@ -70,7 +73,6 @@ class Game:
         # We start the player, and we add it at his spawning position (a town of hte latest wilderness)
         self.player = Player()
         self.player.assign_entity_to_region(self.current_region)
-        # (self.player.x, self.player.y) = self.current_region.get_all_available_tiles(Tile.T_GROUND, self.current_region.region_entities).pop()
         (self.player.x, self.player.y) = player_spawn_pos
 
     def start(self):
@@ -100,11 +102,12 @@ class Launcher:
 
     def __init__(self):
         self.widgets = None
-        self.init_pygame_subsystem()
-        self.load_data()
+        Launcher.init_pygame_subsystem()
+        Launcher.load_data()
         self.launcher_running = True
 
-    def init_pygame_subsystem(self):
+    @staticmethod
+    def init_pygame_subsystem():
         GLOBAL.logger.trace("Initializing Pygame")
         pg.display.init()
         pg.font.init()
@@ -113,7 +116,8 @@ class Launcher:
         thorpy.set_theme("human")
         GLOBAL.logger.trace("Initializing Pygame - Done")
 
-    def load_data(self):
+    @staticmethod
+    def load_data():
         GLOBAL.logger.trace("Loading Images")
         GLOBAL.load_images()
         GLOBAL.logger.trace("Loading Images - Done")
@@ -170,6 +174,7 @@ class Launcher:
     def quit():
         pg.quit()
         sys.exit()
+
 
 if __name__ == '__main__':
     Launcher().run()

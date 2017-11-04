@@ -40,6 +40,9 @@ class Global:
         if self._images == {}:
             self._images = utilities.load_all_images()
 
+    def clean_before_save(self):
+        self._images = None
+
     def img(self, image_key):
         if image_key not in self._images:
             self.logger.error("Key [" + image_key + "] not in image dictionary")

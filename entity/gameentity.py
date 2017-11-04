@@ -32,6 +32,7 @@ class GameEntity(Sprite):
         self.image_ref = image_ref
         self.image = None
         self.animated = False
+        self.current_region_name = None
         self.init_graphics()
 
         # Blocking: what the object can go over, what it can see over, and if the object prevents movement upon itself
@@ -88,6 +89,20 @@ class GameEntity(Sprite):
         self.image_ref = new_image_ref
         self.init_graphics()
 
+    def clean_before_save(self, image_only=False):
+        """
+        Clean all graphical objects, remove from sprite dictionary and remove the game reference
+        :return:
+        """
+        self.image = None
+        self.animated = False
+        if hasattr(self, "dict_image"):
+            # self.dict_image = None
+            delattr(self, "dict_image")
+        if hasattr(self, "list_image"):
+            self.list_image = None
+            delattr(self, "list_image")
+
     def _reposition_rect(self):
         self.rect = self.image.get_rect()
         self.rect.centerx = self.x * TILESIZE_SCREEN[0] + int(TILESIZE_SCREEN[1] / 2)  # initial position for the camera
@@ -95,10 +110,12 @@ class GameEntity(Sprite):
 
     def assign_entity_to_region(self, region):
         self.add(region.all_groups[self.z_level])
+        self.current_region_name = region.name
         region.region_entities.add(self)
 
     def remove_entity_from_region(self, region):
         self.remove(region.all_groups[self.z_level])
+        self.current_region_name = None
         region.region_entities.remove(self)
 
     def animate(self):
