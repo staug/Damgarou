@@ -11,7 +11,6 @@ from entity.town import Town, Entrance, Bank, GuildFighter, GuildMule, Shop, Tav
 from gui import guiwidget
 from gui.screen import PlayingScreen, BuildingScreen
 from region.region import RegionFactory
-from region.tile import Tile
 from shared import GLOBAL
 from utilities import MName
 
@@ -34,42 +33,45 @@ class Game:
         self.player = None
         self.invalidate_fog_of_war = True
 
+        self.world = {}  # The world contains all the wilderness regions and all towns
+
     def new(self):
 
-        self.world = {}  # The world contains all the wilderness regions and all towns
         guiwidget.display_single_message_on_screen("Generating World")
 
         guiwidget.display_single_message_on_screen("Generating World - Wilderness")
+        player_spawn_pos = None  # this will be a town on a wilderness
+
         for i in range(1):
-            #name = "Damgarou Wilderness - Region {}".format(i)
             name = MName.place_name()
             town_list = []
             for i in range(random.randint(2, 6)):
                 name_town = "{}'s Town".format(MName.person_name())
                 town_region = RegionFactory.invoke(name_town,
-                                                      wilderness_index=name,
-                                                      region_type=RegionFactory.REGION_TOWN,
-                                                      building_list=(Entrance(),
-                                                                      Bank(),
-                                                                      GuildMule(),
-                                                                      GuildFighter(),
-                                                                      Shop(),
-                                                                      Tavern()))
+                                                   wilderness_index=name,
+                                                   region_type=RegionFactory.REGION_TOWN,
+                                                   building_list=(Entrance(),
+                                                                  Bank(),
+                                                                  GuildMule(),
+                                                                  GuildFighter(),
+                                                                  Shop(),
+                                                                  Tavern(), Trade(), Townhall(), Temple()))
                 town_list.append(town_region)
                 self.world[name_town] = town_region
 
             self.world[name] = RegionFactory.invoke(name,
-                                                   region_type=RegionFactory.REGION_WILDERNESS,
-                                                   town_list=town_list)
+                                                    region_type=RegionFactory.REGION_WILDERNESS,
+                                                    town_list=town_list)
+            player_spawn_pos = town_list[0].town.pos  # small hack
 
         guiwidget.display_single_message_on_screen("World ok")
 
         self.current_region = self.world[name]
-        # We start the player, and we add it somewhere
+        # We start the player, and we add it at his spawning position (a town of hte latest wilderness)
         self.player = Player()
         self.player.assign_entity_to_region(self.current_region)
-        (self.player.x, self.player.y) = self.current_region.get_all_available_tiles(Tile.T_GROUND, self.current_region.region_entities).pop()
-        #self.minimap = Minimap(self)
+        # (self.player.x, self.player.y) = self.current_region.get_all_available_tiles(Tile.T_GROUND, self.current_region.region_entities).pop()
+        (self.player.x, self.player.y) = player_spawn_pos
 
     def start(self):
         self.run()
