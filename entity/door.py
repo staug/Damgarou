@@ -22,3 +22,5 @@ class Door(GameEntity):
 
 def open_door(door_entity, entity_that_triggers):
     print("you passed a door at {}, was it closed: {}".format(door_entity.pos, door_entity.closed))
+    door_entity.update_graphics(door_entity.image_ref[0:7] + "OPEN")
+    door_entity.actionable = None

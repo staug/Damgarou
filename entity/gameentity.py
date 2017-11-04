@@ -79,6 +79,15 @@ class GameEntity(Sprite):
                 self.image = image
         self._reposition_rect()
 
+    def update_graphics(self, new_image_ref):
+        """
+        Update the graphical reference, and force a reset of the graphical function
+        :param new_image_ref: the new image reference
+        :return: nothing
+        """
+        self.image_ref = new_image_ref
+        self.init_graphics()
+
     def _reposition_rect(self):
         self.rect = self.image.get_rect()
         self.rect.centerx = self.x * TILESIZE_SCREEN[0] + int(TILESIZE_SCREEN[1] / 2)  # initial position for the camera
