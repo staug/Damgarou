@@ -13,6 +13,7 @@ from gui.screen import PlayingScreen, BuildingScreen
 from region.region import RegionFactory
 from region.tile import Tile
 from shared import GLOBAL
+from utilities import MName
 
 class Game:
 
@@ -40,10 +41,11 @@ class Game:
 
         guiwidget.display_single_message_on_screen("Generating World - Wilderness")
         for i in range(1):
-            name = "Damgarou Wilderness - Region {}".format(i)
+            #name = "Damgarou Wilderness - Region {}".format(i)
+            name = MName.place_name()
             town_list = []
             for i in range(random.randint(2, 6)):
-                name_town = "Damgarou Town {}".format(i)
+                name_town = "{}'s Town".format(MName.person_name())
                 town_region = RegionFactory.invoke(name_town,
                                                       wilderness_index=name,
                                                       region_type=RegionFactory.REGION_TOWN,
