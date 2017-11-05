@@ -143,18 +143,9 @@ class PlayingScreen(Screen):
                 # Save
                 if event.key == pg.K_s:
                     print("SAVING and EXIT")
-                    # We cleanup all objects
-                    for region_name in GLOBAL.game.world:
-                        for entity in GLOBAL.game.world[region_name].region_entities:
-                            entity.clean_before_save()
-                        GLOBAL.game.world[region_name].clean_before_save()
+                    GLOBAL.game.clean_graphics_before_save()
                     GLOBAL.clean_before_save()
                     self.fog_of_war_mask = None
-
-                    test = GLOBAL.game
-                    print(test)
-                    #for entities in self.game.player.inventory:
-                    #    entities.clean_before_save()
 
                     with open("savegame", "wb") as f:
                         pick.dump([GLOBAL.game], f)

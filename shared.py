@@ -37,10 +37,15 @@ class Global:
             return utilities.EmptyLogger()
 
     def load_images(self):
-        if self._images == {}:
+        if self._images is None or self._images == {}:
             self._images = utilities.load_all_images()
 
     def clean_before_save(self):
+        """
+        Clean the dictionary
+        This is mandatory before saving to a file
+        :return:
+        """
         self._images = None
 
     def img(self, image_key):

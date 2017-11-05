@@ -87,6 +87,17 @@ class Game:
             self.screens[self.game_state].draw()
             clock.tick(40)  # the program will never run at more than 40 frames per second
 
+    def reinit_graphics_after_save(self):
+        for region_name in self.world:
+            for entity in self.world[region_name].region_entities:
+                entity.init_graphics()
+
+    def clean_graphics_before_save(self):
+        for region_name in self.world:
+            for entity in self.world[region_name].region_entities:
+                entity.clean_before_save()
+            self.world[region_name].clean_before_save()
+
     @staticmethod
     def quit():
         pg.quit()
@@ -131,7 +142,7 @@ class Launcher:
         button_start.set_font(font)
         button_start.set_font_size(16)
 
-        button_load = thorpy.make_button("Load")
+        button_load = thorpy.make_button("Load", func=self.load)
         button_load.set_size((100, None))
         button_load.set_font(font)
         button_load.set_font_size(16)
@@ -168,6 +179,16 @@ class Launcher:
         self.launcher_running = False
         GLOBAL.game = Game()
         GLOBAL.game.new()
+        GLOBAL.game.start()
+
+    def load(self):
+        self.launcher_running = False
+        with open("savegame", "rb") as f:
+            GLOBAL.game = pick.load(f)[0]
+            GLOBAL.game.reinit_graphics_after_save()
+
+        # Done: starting the game
+        self.widgets = []  # Killing the menu. A bit forced, but prevent some problems.
         GLOBAL.game.start()
 
     @staticmethod

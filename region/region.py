@@ -523,7 +523,10 @@ class WildernessRegion(Region):
         :return: Nothing, just blitting things on _background property
         """
 
-        initial_seed = random.choice((1, 4, 7, 10))
+        if not hasattr(self, "save_initial_seed"):
+            self.save_initial_seed = random.choice((1, 4, 7, 10))
+
+        initial_seed = self.save_initial_seed
         grass_serie = initial_seed + 0
         rock_serie = initial_seed + 1
         dirt_serie = initial_seed + 11
@@ -872,11 +875,16 @@ class TownRegion(Region):
         Build background using dawnlike tileset - Redefined here
         :return: Nothing, just blitting things on _background property
         """
+        if not hasattr(self, "save_carpet"):
+            self.save_carpet = random.choice((13, 16, 19, 22))
+        carpet_serie = self.save_carpet
 
-        carpet_serie = random.choice((13, 16, 19, 22))
         wall_serie = 1
 
-        initial_seed = random.choice((1, 4, 7, 10))
+        if not hasattr(self, "save_initial_seed"):
+            self.save_initial_seed = random.choice((1, 4, 7, 10))
+
+        initial_seed = self.save_initial_seed
         grass_serie = initial_seed + 0
         rock_serie = initial_seed + 1
         dirt_serie = initial_seed + 11
