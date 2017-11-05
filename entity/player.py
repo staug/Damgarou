@@ -60,7 +60,7 @@ class Player(GameEntity):
                 self.last_direction = (dx, dy)
 
             GLOBAL.game.invalidate_fog_of_war = True
-            #self.game.ticker.ticks_to_advance += self.speed_cost_for(c.AC_ENV_MOVE)
+            # self.game.ticker.ticks_to_advance += self.speed_cost_for(c.AC_ENV_MOVE)
             return True
 
         return False

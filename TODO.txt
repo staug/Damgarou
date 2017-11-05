@@ -6,7 +6,7 @@ List of things to be done
 - External: town, open spaces: DONE
 * Player movement: DONE
 * Add non-player characters in towns, just giving advice and popups
-* Load/save
+* Load/save: DONE
 * Event system
 * Time system
 

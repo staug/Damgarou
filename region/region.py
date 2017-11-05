@@ -73,7 +73,7 @@ class RegionFactory:
 
                 for door_characteristics in region.door_list:
                     door = Door((door_characteristics[1], door_characteristics[2]),
-                                                     door_characteristics[0])
+                                door_characteristics[0])
                     region.region_entities.add(door)
                     door.assign_entity_to_region(region)
 
@@ -131,6 +131,9 @@ class Region:
             self._build_background()
         return self._background
 
+    def _create_background(self):
+        assert True, "Method create background was called on region instead of sub class"
+
     def clean_before_save(self):
         self._background = None
 
@@ -161,20 +164,21 @@ class Region:
                 self.tiles[pos[0]][pos[1]].tile_type = replace_with_type
                 self.tiles[pos[0]][pos[1]].tile_subtype = replace_with_subtype
 
-    def tile_weight(self, x, y, tiles, tile_type=(Tile.T_BLOCK), tile_subtype=None):
+    def tile_weight(self, x, y, tiles, tile_type=[Tile.T_BLOCK], tile_subtype=None):
         """
         Taken from http://www.angryfishstudios.com/2011/04/adventures-in-bitmasking/
         :param x:
         :param y:
         :param tiles: the complete tileset
-        :param tile_type: the tyle type used as reference to count the weight
+        :param tile_type: the tile type used as reference to count the weight
+        :param tile_subtype: the tile subtype to be used (optional)
         :return:
         """
         weight = 0
 
         if y == 0 or (y - 1 >= 0 and tiles[x][y - 1].tile_type in tile_type and
                           (tile_subtype is None or tiles[x][y - 1].tile_subtype in tile_subtype)):
-                weight += 1
+            weight += 1
         if x == 0 or (x - 1 >= 0 and tiles[x - 1][y].tile_type in tile_type and
                           (tile_subtype is None or tiles[x - 1][y].tile_subtype in tile_subtype)):
             weight += 8
@@ -200,20 +204,19 @@ class Region:
 
         return weight
 
-    def get_random_available_tile(self, tile_type, region_objects, without_objects=True):
+    def get_random_available_tile(self, tile_type, without_objects=True):
         """
         Return a tile matching the characteristics: given tile type
         Used to get a spawning position...
         By default, the tile should be without objects and out of any doors position
         :param tile_type: the type of tile that we look for
         :param without_objects: check if no objects is there, and that it is not a possible door position
-        :param region_objects: the list of current objects in the game
         :return: a tile position (tuple)
         """
         entity_pos_listing = set()
 
         if without_objects:
-            for entity in region_objects:
+            for entity in self.region_entities:
                 entity_pos_listing.add((entity.x, entity.y))
 
         while True:
@@ -225,20 +228,19 @@ class Region:
                 elif not without_objects:
                     return x, y
 
-    def get_close_available_tile(self, ref_pos, tile_type, region_objects, without_objects=True):
+    def get_close_available_tile(self, ref_pos, tile_type, without_objects=True):
         """
         Return a tile matching the characteristics: given tile type near entity
         By default, the tile should be without objects and out of any doors position
         :param ref_pos: the ref position for the object
         :param tile_type: the type of tile that we look for
         :param without_objects: check if no objects is there, and that it is not a possible door position
-        :param region_objects: the list of current objects in the game
         :return: a tile position (tuple) that matches free, the ref pos if none is found
         """
         entity_pos_listing = set()
 
         if without_objects:
-            for entity in region_objects:
+            for entity in self.region_entities:
                 entity_pos_listing.add((entity.x, entity.y))
 
         delta = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
@@ -253,13 +255,12 @@ class Region:
                     return x, y
         return ref_pos
 
-    def get_all_available_tiles(self, tile_type, region_objects, without_objects=False, shuffle=True):
+    def get_all_available_tiles(self, tile_type, without_objects=False, shuffle=True):
         """
         Return all tile matching the characteristics: given tile type
         Used to get a spawning position...
         :param tile_type: the type of tile that we look for
         :param without_objects: set to True to remove objects overlap
-        :param region_objects: the list of current game objects
         :param shuffle: if set to True, shuffle before returning the data
         :return: a list of tile positions (tuple)
         """
@@ -267,7 +268,7 @@ class Region:
         entity_pos_listing = set()
 
         if without_objects:
-            for entity in region_objects:
+            for entity in self.region_entities:
                 entity_pos_listing.add((entity.x, entity.y))
 
         for x in range(self.tile_width):
@@ -282,17 +283,16 @@ class Region:
             random.shuffle(listing)
         return listing
 
-    def get_all_available_isolated_tiles(self, tile_type, region_objects, without_objects=False, surrounded=7, max=None, shuffle=True):
+    def get_all_available_isolated_tiles(self, tile_type, without_objects=False, surrounded=7, max=None, shuffle=True):
         """
         Return all tile matching the characteristics: given tile type, surrounded by 8 cells of same type
         Used to get a spawning position...
         :param tile_type: the types of tile that we look for
         :param without_objects: set to True to remove objects overlap
-        :param region_objects: the list of current game objects
         :param surrounded: the number of tiles of same type that the tile should have around
         :return: a list of tile positions (tuple)
         """
-        listing = set(self.get_all_available_tiles(tile_type, region_objects, without_objects=without_objects, shuffle=False))
+        listing = set(self.get_all_available_tiles(tile_type, without_objects=without_objects, shuffle=False))
         result = []
         for pos in listing:
             x, y = pos
@@ -339,9 +339,9 @@ class Region:
             tiles_flooded.add((current_position_x, current_position_y))
             # Let's go in all direction
             for (delta_x, delta_y) in ((-1,-1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1,-1), (1,0), (1,1)):
-                if 0 <= current_position_x + delta_x < self.tile_width and\
+                if 0 <= current_position_x + delta_x < self.tile_width and \
                                         0 <= current_position_y + delta_y < self.tile_height:
-                    if self.tiles[current_position_x + delta_x][current_position_y + delta_y].tile_type ==\
+                    if self.tiles[current_position_x + delta_x][current_position_y + delta_y].tile_type == \
                             starting_type_type:
                         pos_to_add = (current_position_x + delta_x, current_position_y + delta_y)
                         if pos_to_add not in tiles_to_flood and pos_to_add not in tiles_flooded:
@@ -354,7 +354,7 @@ class Region:
             for x in range(self.tile_width):
                 if self.tiles[x][y].tile_type == starting_type_type:
                     nb_of_tiles_to_be_flooded += 1
-        print("Nb tiles flooded:" + str(len(tiles_flooded)) + " vs to be:" +str(nb_of_tiles_to_be_flooded))
+        print("Nb tiles flooded:" + str(len(tiles_flooded)) + " vs to be:" + str(nb_of_tiles_to_be_flooded))
         return nb_of_tiles_to_be_flooded == len(tiles_flooded)
 
 
@@ -382,8 +382,8 @@ class WildernessRegion(Region):
         Region.__init__(self, name, dimension)  # dimensions doivent être impair!
 
         self.tiles = [[Tile(Tile.T_GROUND, sub_type=Tile.S_FLOOR)
-                       for y in range(self.tile_height)]
-                      for x in range(self.tile_width)]
+                       for _y in range(self.tile_height)]
+                      for _x in range(self.tile_width)]
 
         reftiles = WildernessRegion.generate_algo(self.tile_width, self.tile_height, 40,
                                                   ((3, 5, 1), (2, 5, -1)), empty_center=False)
@@ -410,7 +410,7 @@ class WildernessRegion(Region):
                 elif grass_tile[x][y] == 1:
                     self.tiles[x][y].tile_subtype = Tile.S_GRASS
 
-        list_available_tiles = self.get_all_available_tiles(Tile.T_GROUND, self.region_entities)
+        list_available_tiles = self.get_all_available_tiles(Tile.T_GROUND, without_objects=True)
         for town_region in town_list:
             (town_region.town.x, town_region.town.y) = list_available_tiles.pop()
             print("Town pos: " + str(town_region.town.pos))
@@ -428,9 +428,6 @@ class WildernessRegion(Region):
                     if p:
                         for n in p.nodes:
                             self.tiles[n.location.x][n.location.y].tile_subtype = Tile.S_PATH
-
-        # Make it a bit more beautiful - warning, needs to be the very last step and may be not usefull...
-        #self.remove_extra_blocks()
 
     @staticmethod
     def generate_algo(width, height, initial_noise, repeat_parameters, empty_center=False):
@@ -516,7 +513,6 @@ class WildernessRegion(Region):
             for x in range(x_left, x_right):
                 tiles[x][y] = value_to_fill
 
-
     def _create_background(self):
         """
         Build background using dawnlike tileset - Redefined here
@@ -601,8 +597,8 @@ class TownRegion(Region):
         assert len(building_entity_list) < int(dimension[0] * dimension[1] / 81 * .9), "Too many buildings for the town"
 
         building_size_range = ((6, 6), (9, 9))
-        assert dimension[0] > building_size_range[1][0] \
-               and dimension[1] > building_size_range[1][1], "Dimensions too small for even one building"
+        assert dimension[0] > building_size_range[1][0] and dimension[1] > building_size_range[1][1],\
+            "Dimensions too small for even one building"
 
         Region.__init__(self, name, dimension)
 
@@ -618,7 +614,10 @@ class TownRegion(Region):
         # first building - the first building is always the entrance :-)
         current_building = building_entity_list[0]
 
-        self._buildings = {building_entity_list[0]: self._generate_building((3, 3), (3, 3), name=current_building.name, one_connection=True)}
+        self._buildings = {building_entity_list[0]: self._generate_building((3, 3),
+                                                                            (3, 3),
+                                                                            name=current_building.name,
+                                                                            one_connection=True)}
 
         self._place_building(self._buildings[building_entity_list[0]],
                              (int(self.tile_width / 2 - (self._buildings[building_entity_list[0]].size[0] / 2)),
@@ -628,9 +627,10 @@ class TownRegion(Region):
         while len(self._buildings) != len(building_entity_list):
             current_building = building_entity_list[len(self._buildings)]
             branching_building = self._buildings[random.choice(list(self._buildings.keys()))]  # This gives less a chain
-            while branching_building.one_connection and len(branching_building.connecting_buildings)>0:
+            while branching_building.one_connection and len(branching_building.connecting_buildings) > 0:
+                # We want to ensure that some building like the Entrance are only linked to one
                 branching_building = self._buildings[
-                    random.choice(list(self._buildings.keys()))]  # We want to ensure that some building like the Entrance are only linked to one
+                    random.choice(list(self._buildings.keys()))]
 
             choice_wall = self._get_branching_position_direction(branching_building)
             branching_pos = (choice_wall[0], choice_wall[1])
@@ -655,7 +655,8 @@ class TownRegion(Region):
 
             if self._space_for_new_building(new_building.size, new_building_pos):
                 self._place_building(new_building, new_building_pos)
-                building_entity_list[len(self._buildings)].x, building_entity_list[len(self._buildings)].y = new_building.get_center_pos()  # this is the game entity
+                building_entity_list[len(self._buildings)].x,\
+                building_entity_list[len(self._buildings)].y = new_building.get_center_pos()  # this is the game entity
                 self._buildings[building_entity_list[len(self._buildings)]] = new_building
 
                 # Now connecting room
@@ -694,7 +695,6 @@ class TownRegion(Region):
                         # self._make_wall(branching_pos[0] - i, branching_pos[1] + 1)
                     if path_length >= 3 and new_building.size != (3, 3):
                         new_building.doors.append(('H', branching_pos[0] - path_length, branching_pos[1]))
-
 
         # Any building that is 3x3 (Entrance...) we remove the walls - and the doors (even if should not be)
         for building in self._buildings:
@@ -760,7 +760,6 @@ class TownRegion(Region):
                     handled_door_pos.append((x, y))
                     self.door_list.append((door[0], x, y))
             self._buildings[building_entity].doors = doorlist
-
 
         # Now all buildings are placed, let's add some decoration.
         walls_building = self.tiles[:]  # We copy the current tiles
@@ -906,7 +905,7 @@ class TownRegion(Region):
                     if tile_type == Tile.T_BLOCK:
                         if tile_subtype == Tile.S_BOULDER:
                             self._background.blit(GLOBAL.img('FLOOR')[rock_serie][weight],
-                                              (x * TILESIZE_SCREEN[0], y * TILESIZE_SCREEN[1]))
+                                                  (x * TILESIZE_SCREEN[0], y * TILESIZE_SCREEN[1]))
                         elif tile_subtype == Tile.S_WALL:
                             self._background.blit(GLOBAL.img('WALLS')[wall_serie][weight],
                                                   (x * TILESIZE_SCREEN[0], y * TILESIZE_SCREEN[1]))
@@ -931,18 +930,3 @@ class TownRegion(Region):
                     else:
                         print("Unknown type {} subtype {}".format(self.tiles[x][y].tile_type,
                                                                   self.tiles[x][y].tile_subtype))
-
-
-
-
-
-                    '''
-                    if tile_type == Tile.T_BLOCK and tile_subtype == Tile.S_WALL:
-                        self._background.blit(GLOBAL.img('WALLS')[wall_serie][weight],
-                                              (x * TILESIZE_SCREEN[0], y * TILESIZE_SCREEN[1]))
-                    elif tile_type == Tile.T_GROUND and tile_subtype == Tile.S_CARPET:
-                        self._background.blit(GLOBAL.img('FLOOR')[floor_serie][weight],
-                                              (x * TILESIZE_SCREEN[0], y * TILESIZE_SCREEN[1]))
-                    else:
-                        print("Unknown type {} subtype {}".format(self.tiles[x][y].tile_type,
-                                                                  self.tiles[x][y].tile_subtype))'''
