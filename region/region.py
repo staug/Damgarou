@@ -56,7 +56,6 @@ class RegionFactory:
                     # Now we register the entities on the "region"
                     for town_region in attributes["town_list"]:
                         town_region.town.assign_entity_to_region(region)
-                print("MAP CORRECT: " + str(region_correctly_initialized))
 
             elif region_type == RegionFactory.REGION_TOWN:
                 assert "building_list" in attributes, "Town region needs to have a buidling list"
@@ -377,7 +376,6 @@ class Region:
             for x in range(self.tile_width):
                 if self.tiles[x][y].tile_type == starting_type_type:
                     nb_of_tiles_to_be_flooded += 1
-        print("Nb tiles flooded:" + str(len(tiles_flooded)) + " vs to be:" + str(nb_of_tiles_to_be_flooded))
         return nb_of_tiles_to_be_flooded == len(tiles_flooded)
 
     def position_without_entity(self, position):
@@ -414,19 +412,17 @@ class WildernessRegion(Region):
                        for _y in range(self.tile_height)]
                       for _x in range(self.tile_width)]
 
+        # Base Ground
         reftiles = WildernessRegion.generate_algo(self.tile_width, self.tile_height, 40,
                                                   ((3, 5, 1), (2, 5, -1)), empty_center=False)
-        print("Generate base ground ok")
         # Now add some extra stuff depending on the type of map
         # Grass on the floor - to implement we construct a totally new map. We will apply the previous as a mask.
         grass_tile = WildernessRegion.generate_algo(self.tile_width, self.tile_height, 50, ((3, 5, 1), (1, 6, -1)))
-        print("Generate grass ground ok")
 
         # Some shallow Aquatics
         water_tile = []
         if with_liquid:
             water_tile = WildernessRegion.generate_algo(self.tile_width, self.tile_height, 40, ((2, 5, -1),))
-            print("Generate shallow liquid ok")
 
         for y in range(self.tile_height):
             for x in range(self.tile_width):
@@ -442,14 +438,12 @@ class WildernessRegion(Region):
         list_available_tiles = self.get_all_available_tiles(Tile.T_GROUND, without_objects=True)
         for town_region in town_list:
             (town_region.town.x, town_region.town.y) = list_available_tiles.pop()
-            print("Town pos: " + str(town_region.town.pos))
 
         # And we add some path on the floor to connect the towns
         for index_origin, town_origin in enumerate(town_list[:]):
             for index_destination, town_destination in enumerate(town_list[:]):
                 if index_destination > index_origin:
-                    print("Generating road from {} to {}".format(town_origin.name, town_destination.name))
-
+                    # Road from town_origin.name, town_destination.name
                     astar = AStar(SQ_MapHandler(self.tiles, dimension[0], dimension[1]))
                     p = astar.findPath(SQ_Location(town_origin.town.x, town_origin.town.y),
                                        SQ_Location(town_destination.town.x, town_destination.town.y))

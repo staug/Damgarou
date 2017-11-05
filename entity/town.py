@@ -1,5 +1,4 @@
 from entity.gameentity import GameEntity, ActionableEntity
-from region.tile import Tile
 from shared import GLOBAL
 
 """
@@ -26,11 +25,13 @@ class Town(GameEntity):
 
         self.wilderness_index = wilderness_index
 
+
 def enter_town(town_entity, entity_that_triggers):
     print("{} enter {}".format(entity_that_triggers, town_entity.name))
     GLOBAL.game.player.switch_region(GLOBAL.game.current_region,
                                      GLOBAL.game.world[town_entity.name])
     return False
+
 
 """
 Town buildings

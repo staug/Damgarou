@@ -2,13 +2,17 @@ from entity.gameentity import GameEntity
 from shared import GLOBAL
 from region.tile import Tile
 
+
 class Player(GameEntity):
 
     def __init__(self):
         GameEntity.__init__(self, pos=(1,1), image_ref="PLAYER_PALADIN", z_level=2)
-
+        self.name = "PLAYER"
         self.mule_list = []
         self.fighter_list = []
+
+    def __str__(self):
+        return self.name
 
     def switch_region(self, old_region, new_region):
         self.remove_entity_from_region(old_region)
