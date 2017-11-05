@@ -7,7 +7,7 @@ import pygame as pg
 class Global:
 
     def __init__(self):
-        self._global_ticker = None
+        self._global_ticker = None  # Each region will have its own local ticker as well...
         self._global_bus = None
         self._log_message = True
         self._logger = utilities.Logger()

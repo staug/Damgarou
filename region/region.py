@@ -7,8 +7,9 @@ from default import *
 from region.tile import Tile
 from entity.town import Town
 from entity.door import Door
+from entity.building_deco import MuralLamp
 from shared import GLOBAL
-from utilities import AStar, SQ_Location, SQ_MapHandler
+from utilities import AStar, SQ_Location, SQ_MapHandler, Ticker
 
 
 class RegionFactory:
@@ -54,7 +55,6 @@ class RegionFactory:
                 if region_correctly_initialized:
                     # Now we register the entities on the "region"
                     for town_region in attributes["town_list"]:
-                        region.region_entities.add(town_region.town)
                         town_region.town.assign_entity_to_region(region)
                 print("MAP CORRECT: " + str(region_correctly_initialized))
 
@@ -67,15 +67,28 @@ class RegionFactory:
                     region.town.wilderness_index = attributes["wilderness_index"]
 
                 for building in attributes["building_list"]:
-                    region.region_entities.add(building)
                     building.town_name = region.name
                     building.assign_entity_to_region(region)
 
                 for door_characteristics in region.door_list:
                     door = Door((door_characteristics[1], door_characteristics[2]),
-                                door_characteristics[0])
-                    region.region_entities.add(door)
+                                    door_characteristics[0])
                     door.assign_entity_to_region(region)
+
+                # Let's add some decoration inside...
+                for building in attributes["building_list"]:
+                    if building.size != (3, 3):
+                        for north_wall_index in range(building.top_left_pos[0] + 1,
+                                                  building.top_left_pos[0] + building.size[0] - 1):
+                            position = (north_wall_index, building.top_left_pos[1])
+                            if region.position_without_entity(position):
+                                chance = random.randint(0, 100)
+                                if 0 <= chance < 50:
+                                    lamp = MuralLamp((north_wall_index, building.top_left_pos[1]), "1")
+                                    lamp.assign_entity_to_region(region)
+                                elif 50 <= chance < 100:
+                                    lamp = MuralLamp((north_wall_index, building.top_left_pos[1]), "2")
+                                    lamp.assign_entity_to_region(region)
 
                 region_correctly_initialized = True  # A town is always correct!
         RegionFactory.REGION_DICT["name"] = region
@@ -109,6 +122,16 @@ class Region:
             self.all_groups.append(pg.sprite.Group())
 
         self.last_player_position = None
+
+        # Each region has its own ticker for its entities, so that we do not waste time advancing things that are not
+        # present on the screen
+        self._local_ticker = None
+
+    @property
+    def ticker(self):
+        if self._local_ticker is None:
+            self._local_ticker = Ticker()
+        return self._local_ticker
 
     def _build_background(self, name=None):
         """
@@ -357,6 +380,12 @@ class Region:
         print("Nb tiles flooded:" + str(len(tiles_flooded)) + " vs to be:" + str(nb_of_tiles_to_be_flooded))
         return nb_of_tiles_to_be_flooded == len(tiles_flooded)
 
+    def position_without_entity(self, position):
+        for entity in self.region_entities:
+            if entity.pos == position:
+                return False
+        return True
+
 
 class WildernessRegion(Region):
     """
@@ -569,7 +598,7 @@ class TownRegion(Region):
     A town is set of buildings (closed spaces), linked by path.
     """
 
-    class Building:
+    class _Building:
         """
         A building is a closed space, dedicated to a set of activities.
         """
@@ -614,23 +643,23 @@ class TownRegion(Region):
         # first building - the first building is always the entrance :-)
         current_building = building_entity_list[0]
 
-        self._buildings = {building_entity_list[0]: self._generate_building((3, 3),
+        _internal_buildings_list = {building_entity_list[0]: self._generate_building((3, 3),
                                                                             (3, 3),
                                                                             name=current_building.name,
                                                                             one_connection=True)}
 
-        self._place_building(self._buildings[building_entity_list[0]],
-                             (int(self.tile_width / 2 - (self._buildings[building_entity_list[0]].size[0] / 2)),
-                              int(self.tile_height / 2 - (self._buildings[building_entity_list[0]].size[1] / 2))))
+        self._place_building(_internal_buildings_list[building_entity_list[0]],
+                             (int(self.tile_width / 2 - (_internal_buildings_list[building_entity_list[0]].size[0] / 2)),
+                              int(self.tile_height / 2 - (_internal_buildings_list[building_entity_list[0]].size[1] / 2))))
 
         # all the others
-        while len(self._buildings) != len(building_entity_list):
-            current_building = building_entity_list[len(self._buildings)]
-            branching_building = self._buildings[random.choice(list(self._buildings.keys()))]  # This gives less a chain
+        while len(_internal_buildings_list) != len(building_entity_list):
+            current_building = building_entity_list[len(_internal_buildings_list)]
+            branching_building = _internal_buildings_list[random.choice(list(_internal_buildings_list.keys()))]  # This gives less a chain
             while branching_building.one_connection and len(branching_building.connecting_buildings) > 0:
                 # We want to ensure that some building like the Entrance are only linked to one
-                branching_building = self._buildings[
-                    random.choice(list(self._buildings.keys()))]
+                branching_building = _internal_buildings_list[
+                    random.choice(list(_internal_buildings_list.keys()))]
 
             choice_wall = self._get_branching_position_direction(branching_building)
             branching_pos = (choice_wall[0], choice_wall[1])
@@ -655,9 +684,9 @@ class TownRegion(Region):
 
             if self._space_for_new_building(new_building.size, new_building_pos):
                 self._place_building(new_building, new_building_pos)
-                building_entity_list[len(self._buildings)].x,\
-                building_entity_list[len(self._buildings)].y = new_building.get_center_pos()  # this is the game entity
-                self._buildings[building_entity_list[len(self._buildings)]] = new_building
+                building_entity_list[len(_internal_buildings_list)].x,\
+                building_entity_list[len(_internal_buildings_list)].y = new_building.get_center_pos()  # this is the game entity
+                _internal_buildings_list[building_entity_list[len(_internal_buildings_list)]] = new_building
 
                 # Now connecting room
                 # No tunnel, easy case:
@@ -697,10 +726,12 @@ class TownRegion(Region):
                         new_building.doors.append(('H', branching_pos[0] - path_length, branching_pos[1]))
 
         # Any building that is 3x3 (Entrance...) we remove the walls - and the doors (even if should not be)
-        for building in self._buildings:
-            if self._buildings[building].size == (3, 3):
-                self._place_building(self._buildings[building], self._buildings[building].position, force_floor=True)
-                self._buildings[building].doors = []
+        for building in _internal_buildings_list:
+            if _internal_buildings_list[building].size == (3, 3):
+                self._place_building(_internal_buildings_list[building],
+                                     _internal_buildings_list[building].position,
+                                     force_floor=True)
+                _internal_buildings_list[building].doors = []
 
         # Now we crop the town
         # The town is ar too big for the number of buildings. We only leave a small square around the building.
@@ -747,19 +778,23 @@ class TownRegion(Region):
         self.tile_width -= remove_extreme_left + remove_extreme_right
 
         handled_door_pos = []
-        for building_entity in self._buildings.keys():
-            old_pos_x, old_pos_y = self._buildings[building_entity].get_center_pos()
+        for building_entity in _internal_buildings_list.keys():
+            old_pos_x, old_pos_y = _internal_buildings_list[building_entity].get_center_pos()
             building_entity.x = old_pos_x - remove_extreme_left
             building_entity.y = old_pos_y - remove_extreme_top
+            old_left_x, old_top_y = _internal_buildings_list[building_entity].position
+            building_entity.top_left_pos = (old_left_x - remove_extreme_left,
+                                        old_top_y - remove_extreme_top)
+            building_entity.size = _internal_buildings_list[building_entity].size
             # let's adjust the doors
             doorlist = []
-            for door in self._buildings[building_entity].doors:
+            for door in _internal_buildings_list[building_entity].doors:
                 x, y = door[1] - remove_extreme_left, door[2] - remove_extreme_top
                 doorlist.append((door[0], x, y))
                 if (x, y) not in handled_door_pos:
                     handled_door_pos.append((x, y))
                     self.door_list.append((door[0], x, y))
-            self._buildings[building_entity].doors = doorlist
+            _internal_buildings_list[building_entity].doors = doorlist
 
         # Now all buildings are placed, let's add some decoration.
         walls_building = self.tiles[:]  # We copy the current tiles
@@ -793,6 +828,7 @@ class TownRegion(Region):
         # Setup the player starting position near the entrance to wilderness
         self.last_player_position = building_entity_list[0].pos
 
+
     def _generate_building(self, min_size, max_size, modulo_rest=2, name=None, one_connection=False):
         """
         Generate a building according to the criteria
@@ -808,7 +844,7 @@ class TownRegion(Region):
                 size_x = random.randint(min_size[0], max_size[0])
             while size_y % 2 != modulo_rest:
                 size_y = random.randint(min_size[1], max_size[1])
-        return TownRegion.Building((size_x, size_y), name=name, one_connection=one_connection)
+        return TownRegion._Building((size_x, size_y), name=name, one_connection=one_connection)
 
     def _place_building(self, building, grid_position, force_floor=False):
         building.position = grid_position

@@ -37,7 +37,14 @@ Town buildings
 """
 
 
-class Bank(GameEntity):
+class Building(GameEntity):
+
+    def __init__(self):
+        self.size = None
+        self.top_left_pos = None
+
+
+class Bank(Building):
 
     BANK_INDEX = 1
 
@@ -58,7 +65,7 @@ class Bank(GameEntity):
         self.town_name = town_name
 
 
-class GuildFighter(GameEntity):
+class GuildFighter(Building):
     GF_INDEX = 1
 
     def __init__(self, name=None, pos=None, town_name=None):
@@ -78,7 +85,7 @@ class GuildFighter(GameEntity):
         self.town_name = town_name
 
 
-class GuildMule(GameEntity):
+class GuildMule(Building):
     GM_INDEX = 1
 
     def __init__(self, name=None, pos=None, town_name=None):
@@ -98,7 +105,7 @@ class GuildMule(GameEntity):
         self.town_name = town_name
 
 
-class Shop(GameEntity):
+class Shop(Building):
     SHOP_INDEX = 1
 
     def __init__(self, name=None, pos=None, town_name=None):
@@ -118,7 +125,7 @@ class Shop(GameEntity):
         self.town_name = town_name
 
 
-class Tavern(GameEntity):
+class Tavern(Building):
     TAVERN_INDEX = 1
 
     def __init__(self, name=None, pos=None, town_name=None):
@@ -138,7 +145,7 @@ class Tavern(GameEntity):
         self.town_name = town_name
 
 
-class Temple(GameEntity):
+class Temple(Building):
     TEMPLE_INDEX = 1
 
     def __init__(self, name=None, pos=None, town_name=None):
@@ -158,7 +165,7 @@ class Temple(GameEntity):
         self.town_name = town_name
 
 
-class Townhall(GameEntity):
+class Townhall(Building):
     TH_INDEX = 1
 
     def __init__(self, name=None, pos=None, town_name=None):
@@ -178,7 +185,7 @@ class Townhall(GameEntity):
         self.town_name = town_name
 
 
-class Trade(GameEntity):
+class Trade(Building):
     TRADE_INDEX = 1
 
     def __init__(self, name=None, pos=None, town_name=None):
@@ -198,7 +205,7 @@ class Trade(GameEntity):
         self.town_name = town_name
 
 
-class Entrance(GameEntity):
+class Entrance(Building):
     ENTRANCE_INDEX = 1
 
     def __init__(self, name=None, pos=None, town_name=None):

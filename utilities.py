@@ -770,6 +770,7 @@ def load_floor_structure_dawnlike(image_src_list, folder, image_name):
             image_set.append(dict_image)
     return image_set
 
+
 def load_tree_structure_dawnlike(image_src_list, folder, image_name):
     """
     Load the set of walls from dawnlike file and put it in a dictionary
@@ -829,7 +830,8 @@ def load_all_images():
     images["FLOOR"] = load_floor_structure_dawnlike(image_src_list, OBJECT_FOLDER, "Floor.png")
     images["WALLS"] = load_wall_structure_dawnlike(image_src_list, OBJECT_FOLDER, "Wall.png")
     images["TREES"] = load_tree_structure_dawnlike(image_src_list, OBJECT_FOLDER, "Tree0.png")
-
+    images["MURAL_LAMP_1"] = load_image_list_dawnlike(image_src_list, OBJECT_FOLDER, "Decor0.png", "Decor1.png", 0, 8)
+    images["MURAL_LAMP_2"] = load_image_list_dawnlike(image_src_list, OBJECT_FOLDER, "Decor0.png", "Decor1.png", 1, 8)
     # Doors
     images["DOOR_V_OPEN"] = load_image(image_src_list, OBJECT_FOLDER, "Door1.png", 0, 0)
     images["DOOR_V_CLOSED"] = load_image(image_src_list, OBJECT_FOLDER, "Door0.png", 0, 0)
@@ -839,6 +841,7 @@ def load_all_images():
     images["STAIRS"] = load_image(image_src_list, OBJECT_FOLDER, "Tile.png", 1, 1)
     # Town
     images["TOWN"] = load_image(image_src_list, OBJECT_FOLDER, "Map0.png", 9, 12)
+
 
     # Buildings
     images["BUILDING_BANK"] = load_image(image_src_list, ICON_FOLDER, "bank.png", 0, 0, width=64, height=64)
