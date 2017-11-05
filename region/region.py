@@ -7,6 +7,7 @@ from default import *
 from region.tile import Tile
 from entity.town import Town
 from entity.door import Door
+from entity.livingentities import FriendlyEntity
 from entity.building_deco import MuralLamp
 from shared import GLOBAL
 from utilities import AStar, SQ_Location, SQ_MapHandler, Ticker
@@ -56,6 +57,10 @@ class RegionFactory:
                     # Now we register the entities on the "region"
                     for town_region in attributes["town_list"]:
                         town_region.town.assign_entity_to_region(region)
+                    # We add some friendly guys
+                    all_positions = region.get_all_available_tiles(without_objects=True, tile_type=Tile.T_GROUND)
+                    for i in range(20):
+                        FriendlyEntity("Friendly {}".format(i), all_positions.pop()).assign_entity_to_region(region)
 
             elif region_type == RegionFactory.REGION_TOWN:
                 assert "building_list" in attributes, "Town region needs to have a buidling list"

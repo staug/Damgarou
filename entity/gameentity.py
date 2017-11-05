@@ -1,8 +1,10 @@
 from pygame.sprite import Sprite
 from pygame import Surface
 import pygame as pg
+from math import sqrt
 from shared import GLOBAL
 from default import *
+import random as rd
 
 """
 Generic Game entity, which may be displayed on the map (town, player, trap, object...)
@@ -12,7 +14,10 @@ Most of the object base code will go there
 
 class GameEntity(Sprite):
 
+    COUNTER = 0
+
     def __init__(self,
+                 name=None,
                  pos=None,
                  image_ref=None,
                  z_level=2,
@@ -20,12 +25,18 @@ class GameEntity(Sprite):
                  blocking_view_list=None,
                  vision=1,
                  blocks=False,
-                 actionable=None):
+                 actionable=None,
+                 ai=None):
 
         Sprite.__init__(self)
         if not pos:
             pos = (-1, -1)
         (self.x, self.y) = pos
+
+        self.name = name
+        if name is None:
+            GameEntity.COUNTER += 1
+            self.name = "Entity ".format(GameEntity.COUNTER)
 
         # Image settings
         self.z_level = z_level  # The depth. Default is 2, min is 0.
@@ -45,6 +56,10 @@ class GameEntity(Sprite):
         self.actionable = actionable
         if self.actionable:
             self.actionable.owner = self
+
+        self.ai = ai
+        if self.ai:
+            self.ai.owner = self
 
     @property
     def pos(self):
@@ -112,11 +127,14 @@ class GameEntity(Sprite):
         self.add(region.all_groups[self.z_level])
         self.current_region_name = region.name
         region.region_entities.add(self)
+        if self.ai is not None:
+            region.ticker.schedule_turn(self.ai.speed, self.ai)
 
     def remove_entity_from_region(self, region):
         self.remove(region.all_groups[self.z_level])
         self.current_region_name = None
         region.region_entities.remove(self)
+        region.ticker.unregister(self.ai)
 
     def animate(self):
         now = pg.time.get_ticks()
@@ -158,6 +176,49 @@ class GameEntity(Sprite):
             self.animate()
         self._reposition_rect()
 
+    def move(self, dx=0, dy=0, with_fight=False):
+        """
+        Try to move the entity.
+        Return True if an action was done (either move or attack)
+        """
+
+        # Test if we enter the actionable zone of an entity
+        for entity in GLOBAL.game.current_region.region_entities:
+            if entity != self and entity.actionable is not None and \
+                            (self.x + dx, self.y + dy) in entity.actionable.action_field:
+                self.x += dx
+                self.y += dy
+                ok_to_move = entity.actionable.action(self)
+                self.x -= dx
+                self.y -= dy
+                if entity.blocks:
+                    if ok_to_move is not None and not ok_to_move:
+                        # We triggered an object, and it prevented the move (like a door not opening)
+                        return False
+
+        # Test if we collide with an other enemy, then we enter in a fight mode
+        #TODO implement fight
+        if with_fight:
+            assert True, "FIGHT NOT IMPLEMENTED YET"
+
+        # Test if we collide with the terrain, and terrain only
+        destination_tile = GLOBAL.game.current_region.tiles[self.x + dx][self.y + dy]
+        if not destination_tile.block_for(self):
+            # now test the list of objects
+            for entity in GLOBAL.game.current_region.region_entities:
+                if entity != self and entity.blocks and entity.x == self.x + dx and entity.y == self.y + dy:
+                    return False
+            # success
+            self.x += dx
+            self.y += dy
+            if self.animated and (dx != 0 or dy != 0):
+                self.last_direction = (dx, dy)
+
+            GLOBAL.game.invalidate_fog_of_war = True
+            # self.game.ticker.ticks_to_advance += self.speed_cost_for(c.AC_ENV_MOVE)
+            return True
+
+        return False
 
 
 class ActionableEntity:
@@ -197,3 +258,56 @@ class ActionableEntity:
                     return self.function(self.owner, entity_that_actioned)
             else:
                 return self.function(self.owner, entity_that_actioned)
+
+
+class AIEntity:
+
+    def __init__(self, speed=1):
+        self.owner = None
+        self.speed = speed  # the speed represents the time between two turns
+
+    def move_towards_position(self, pos, with_fight=False):
+        # vector from this object to the target, and distance
+        dx = pos[0] - self.owner.x
+        dy = pos[1] - self.owner.y
+        distance = sqrt(dx ** 2 + dy ** 2)
+
+        # normalize it to length 1 (preserving direction), then round it and
+        # convert to integer so the movement is restricted to the map grid
+        if distance != 0:
+            dx = int(round(dx / distance))
+            dy = int(round(dy / distance))
+        else:
+            dx = dy = 0
+        return self.owner.move(dx, dy, with_fight=with_fight)
+
+    def move_towards_entity(self, other_entity, with_fight=False):
+        self.move_towards_position(other_entity.pos, with_fight=with_fight)
+
+    def move_randomly(self, with_fight=False):
+        """
+        Move by 1 around the current position. The destination should be non blocking.
+        If no tiles match, then no move is taken.
+        :return:
+        """
+        delta = [(-1, -1), (-1, 0), (-1, 1), (0, 1), (0, -1), (1, -1), (1, 0), (1, 1)]
+        rd.shuffle(delta)
+        x, y = self.owner.pos
+        while len(delta) > 0:
+            dx, dy = delta.pop()
+            if self.move_towards_position((x + dx, y + dy), with_fight=with_fight):
+                return
+
+    def take_turn(self):
+        assert True, "Entity has not redefined the take turn"
+
+
+class WanderingAIEntity(AIEntity):
+
+    def __init__(self, speed):
+        AIEntity.__init__(self, speed=speed)
+
+    def take_turn(self):
+        self.move_randomly(with_fight=False)
+        print("{} moves to {}".format(self.owner.name, self.owner.pos))
+        GLOBAL.game.world[self.owner.current_region_name].ticker.schedule_turn(self.speed, self)

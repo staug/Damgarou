@@ -842,6 +842,8 @@ def load_all_images():
     # Town
     images["TOWN"] = load_image(image_src_list, OBJECT_FOLDER, "Map0.png", 9, 12)
 
+    # Folder: Live Entities
+    images["HUMANOID_1"] = load_image_list_dawnlike(image_src_list, LIVE_FOLDER, "Humanoid0.png", "Humanoid1.png", 7, 0)
 
     # Buildings
     images["BUILDING_BANK"] = load_image(image_src_list, ICON_FOLDER, "bank.png", 0, 0, width=64, height=64)

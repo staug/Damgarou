@@ -178,6 +178,9 @@ class PlayingScreen(Screen):
         pg.display.flip()
 
     def update(self):
+        # Update region
+        GLOBAL.game.current_region.ticker.advance_ticks()
+
         for widget in self.widgets:
             widget.update()
 
