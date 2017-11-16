@@ -8,4 +8,4 @@ class FriendlyEntity(GameEntity):
         image_ref = "HUMANOID_1"
 
         GameEntity.__init__(self, name=name, pos=position, image_ref=image_ref, z_level=2, blocks=True,
-                            ai=WanderingAIEntity(speed=1))
+                            ai=WanderingAIEntity(speed=10))

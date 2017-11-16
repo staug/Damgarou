@@ -10,6 +10,7 @@ class Player(GameEntity):
         self.name = "PLAYER"
         self.mule_list = []
         self.fighter_list = []
+        self.speed = 10
 
     def __str__(self):
         return self.name
@@ -67,7 +68,7 @@ class Player(GameEntity):
 
             # TODO: variable costs
             # self.game.ticker.ticks_to_advance += self.speed_cost_for(c.AC_ENV_MOVE)
-            GLOBAL.game.current_region.ticker.ticks_to_advance += 1
+            GLOBAL.game.current_region.ticker.ticks_to_advance += self.speed
             return True
 
         return False
