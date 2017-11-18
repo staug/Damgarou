@@ -63,7 +63,7 @@ class RegionFactory:
                         FriendlyEntity("Friendly {}".format(i), all_positions.pop()).assign_entity_to_region(region)
 
             elif region_type == RegionFactory.REGION_TOWN:
-                assert "building_list" in attributes, "Town region needs to have a buidling list"
+                assert "building_list" in attributes, "Town region needs to have a building list"
                 region = TownRegion(name, dimension, building_entity_list=attributes["building_list"])
                 region.town = Town(name=name)
                 # We register the building in the town
@@ -80,6 +80,7 @@ class RegionFactory:
                     door.assign_entity_to_region(region)
 
                 # Let's add some decoration inside...
+                # TODO move that to the post init?
                 for building in attributes["building_list"]:
                     if building.size != (3, 3):
                         for north_wall_index in range(building.top_left_pos[0] + 1,
@@ -93,6 +94,10 @@ class RegionFactory:
                                 elif 50 <= chance < 100:
                                     lamp = MuralLamp((north_wall_index, building.top_left_pos[1]), "2")
                                     lamp.assign_entity_to_region(region)
+
+                # Let's call the post init method that are specific to the buildings
+                for building in attributes["building_list"]:
+                    building.post_init()
 
                 region_correctly_initialized = True  # A town is always correct!
         RegionFactory.REGION_DICT["name"] = region

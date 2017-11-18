@@ -1,4 +1,7 @@
 from entity.gameentity import GameEntity, ActionableEntity
+from entity.livingentities import FriendlyEntity
+import random
+
 from shared import GLOBAL
 
 """
@@ -44,6 +47,23 @@ class Building(GameEntity):
         self.size = None
         self.top_left_pos = None
 
+    def get_position_inside(self):
+        """
+        Return a random position inside the building (excluding the wall)
+        :return:
+        """
+        dx = random.randint(1, self.size[0] - 1)
+        dy = random.randint(1, self.size[1] - 1)
+        return (self.top_left_pos[0] + dx, self.top_left_pos[1] + dy)
+
+    def post_init(self):
+        """
+        This method is called by the town once the building has been set, positioned and registered
+        Can be used to add entities for example, or set additional properties
+        :return:
+        """
+        print("Method not implemented for " + self.name)
+
 
 class Bank(Building):
 
@@ -84,6 +104,17 @@ class GuildFighter(Building):
             GuildFighter.GF_INDEX += 1
 
         self.town_name = town_name
+        self.fighter_list = []
+
+    def post_init(self):
+        """
+        Add entities to the guild of fighter
+        :return: None
+        """
+        for i in range(4):
+            self.fighter_list.append(
+                FriendlyEntity("Fighter friendly {}".format(i),
+                               self.get_position_inside()).assign_entity_to_region(self.current_region))
 
 
 class GuildMule(Building):
