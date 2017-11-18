@@ -75,6 +75,10 @@ class Game:
         self.player.assign_entity_to_region(self.current_region)
         (self.player.x, self.player.y) = player_spawn_pos
 
+        #Post init on screens
+        for screen_name in self.screens:
+            self.screens[screen_name].post_init()
+
     def start(self):
         self.run()
 

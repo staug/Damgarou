@@ -12,6 +12,8 @@ class Player(GameEntity):
         self.fighter_list = []
         self.speed = 10
 
+        self.test_attribute = 100
+
     def __str__(self):
         return self.name
 
@@ -32,6 +34,8 @@ class Player(GameEntity):
         Try to move the player.
         Return True if an action was done (either move or attack)
         """
+        self.test_attribute -= 1
+
         # We keep the old position
         GLOBAL.game.current_region.last_player_position = self.pos
 

@@ -3,14 +3,14 @@ import thorpy
 from shared import GLOBAL
 from default import *
 from utilities import FieldOfView
-from gui.guiwidget import Widget
+from gui.guiwidget import Widget, ProgressBar
 import dill as pick
 
 
 class Screen:
 
     def __init__(self):
-        self.widgets = set()
+        self.widgets = []
         self.thorpy_widgets = None
 
     def events(self):
@@ -20,6 +20,13 @@ class Screen:
         pass
 
     def draw(self):
+        pass
+
+    def post_init(self):
+        """
+        This method is called when all entities (including player!) are created
+        :return: Nothing
+        """
         pass
 
 
@@ -161,7 +168,10 @@ class PlayingScreen(Screen):
 
     def __init__(self):
         Screen.__init__(self)
-        self.widgets.add(PlayingScreen.PlayableScreen((10, 10)))
+        self.widgets.append(PlayingScreen.PlayableScreen((10, 10)))
+
+    def post_init(self):
+        self.widgets.append(ProgressBar((10, 10), (100, 10), GLOBAL.game.player, "test_attribute", 100, RED, BLUE))
 
     def draw(self):
         # Erase All
