@@ -212,7 +212,7 @@ class BuildingScreen(Screen):
         if self.building.is_guild_fighter():
             elements = []
             for fighter in self.building.fighter_list:
-                button = thorpy.make_button(fighter.name, func=test)
+                button = thorpy.make_button(fighter.name, func=lambda myfighter=fighter: test(myfighter))
                 button.set_size((100, None))
                 # button_start.set_font(font)
                 button.set_font_size(16)
@@ -266,5 +266,5 @@ class BuildingScreen(Screen):
                 if not handled:
                     self.thorpy_widgets.react(event)
 
-def test():
-    print("YO")
+def test(fighter):
+    print("YO" + fighter.name)
