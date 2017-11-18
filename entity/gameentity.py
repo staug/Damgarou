@@ -44,7 +44,7 @@ class GameEntity(Sprite):
         self.image = None
         self.animated = False
         self.current_region_name = None
-        self.current_region = None
+        self._current_region = None
         self.init_graphics()
 
         # Blocking: what the object can go over, what it can see over, and if the object prevents movement upon itself
@@ -65,6 +65,11 @@ class GameEntity(Sprite):
     @property
     def pos(self):
         return self.x, self.y
+
+    @property
+    def region(self):
+        assert self._current_region is not None, "Tried accessing a region that is not yet set {}".format(self.name)
+        return self._current_region
 
     # GRAPHICAL RELATED FUNCTIONS
     def init_graphics(self):
@@ -127,7 +132,7 @@ class GameEntity(Sprite):
     def assign_entity_to_region(self, region):
         self.add(region.all_groups[self.z_level])
         self.current_region_name = region.name
-        self.current_region = region
+        self._current_region = region
         region.region_entities.add(self)
         if self.ai is not None:
             region.ticker.schedule_turn(self.ai.speed, self.ai)
@@ -135,7 +140,7 @@ class GameEntity(Sprite):
     def remove_entity_from_region(self, region):
         self.remove(region.all_groups[self.z_level])
         self.current_region_name = None
-        self.current_region = None
+        self._current_region = None
         region.region_entities.remove(self)
         region.ticker.unregister(self.ai)
 

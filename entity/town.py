@@ -64,6 +64,9 @@ class Building(GameEntity):
         """
         print("Method not implemented for " + self.name)
 
+    def is_guild_fighter(self):
+        return False
+
 
 class Bank(Building):
 
@@ -112,9 +115,20 @@ class GuildFighter(Building):
         :return: None
         """
         for i in range(4):
-            self.fighter_list.append(
-                FriendlyEntity("Fighter friendly {}".format(i),
-                               self.get_position_inside()).assign_entity_to_region(self.current_region))
+            fighter = FriendlyEntity("Fighter friendly {}".format(i), self.get_position_inside())
+            fighter.assign_entity_to_region(self.region)
+            self.fighter_list.append(fighter)
+
+    def is_guild_fighter(self):
+        return True
+
+
+def enter_fighter_guild(building_entity, entity_that_triggers):
+    GLOBAL.game.screens[GLOBAL.game.GAME_STATE_BUILDING].attach_building(building_entity)
+    GLOBAL.game.game_state = GLOBAL.game.GAME_STATE_BUILDING
+
+    print("{} enter {}".format(entity_that_triggers, building_entity.name))
+    return False
 
 
 class GuildMule(Building):

@@ -1,4 +1,5 @@
 import pygame as pg
+import thorpy
 from shared import GLOBAL
 from default import *
 from utilities import FieldOfView
@@ -9,7 +10,7 @@ class Screen:
 
     def __init__(self):
         self.widgets = set()
-        self.thorpy_widgets = set()
+        self.thorpy_widgets = None
 
     def events(self):
         pass
@@ -201,30 +202,55 @@ class BuildingScreen(Screen):
     Pressing Escape will go back to the regular state.
     """
 
+    def __init__(self):
+        Screen.__init__(self)
+        self.building = None
+
     def attach_building(self, building):
         self.building = building
+
+        if self.building.is_guild_fighter():
+            elements = []
+            for fighter in self.building.fighter_list:
+                button = thorpy.make_button(fighter.name, func=test)
+                button.set_size((100, None))
+                # button_start.set_font(font)
+                button.set_font_size(16)
+                elements.append(button)
+
+            box = thorpy.Box.make(elements=elements)
+            box.set_main_color((0, 0, 0, 0))
+
+            self.thorpy_widgets = thorpy.Menu(box)
+            for element in self.thorpy_widgets.get_population():
+                element.surface = pg.display.get_surface()
 
     def draw(self):
         # Erase All
         screen = pg.display.get_surface()
         screen.fill(BGCOLOR)
 
-        for widget in self.widgets:
-            widget.draw(screen)
+        if len(self.widgets) == 0 and len(self.thorpy_widgets.get_population()) == 0:
+            font = pg.font.Font(os.path.join(FONT_FOLDER, FONT_NAME), 20)
+            text = font.render("Building " + self.building.name, True, WHITE)
+            text_rect = text.get_rect()
 
-        font = pg.font.Font(os.path.join(FONT_FOLDER, FONT_NAME), 20)
-        text = font.render("Building " + self.building.name, True, WHITE)
-        text_rect = text.get_rect()
-
-        left_x = screen.get_rect().centerx - int(text_rect.width / 2)
-        top_y = screen.get_rect().centery - int(text_rect.height / 2)
-        screen.blit(text, (left_x, top_y))
+            left_x = screen.get_rect().centerx - int(text_rect.width / 2)
+            top_y = screen.get_rect().centery - int(text_rect.height / 2)
+            screen.blit(text, (left_x, top_y))
+        else:
+            for widget in self.widgets:
+                widget.draw(screen)
+            for element in self.thorpy_widgets.get_population():
+                element.blit()
 
         pg.display.flip()
 
     def update(self):
         for widget in self.widgets:
             widget.update()
+        for element in self.thorpy_widgets.get_population():
+            element.update()
 
     def events(self):
         for event in pg.event.get():
@@ -237,3 +263,8 @@ class BuildingScreen(Screen):
                 for widget in self.widgets:
                     if not handled:
                         handled = widget.handle_event(event)
+                if not handled:
+                    self.thorpy_widgets.react(event)
+
+def test():
+    print("YO")
