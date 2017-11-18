@@ -3,8 +3,9 @@ import thorpy
 from shared import GLOBAL
 from default import *
 from utilities import FieldOfView
-
+from gui.guiwidget import Widget
 import dill as pick
+
 
 class Screen:
 
@@ -19,18 +20,6 @@ class Screen:
         pass
 
     def draw(self):
-        pass
-
-
-class Widget:
-
-    def update(self):
-        pass
-
-    def handle_event(self, event):
-        pass
-
-    def draw(self, screen):
         pass
 
 
@@ -113,9 +102,15 @@ class PlayingScreen(Screen):
                 for x in range(GLOBAL.game.current_region.tile_width):
                     for y in range(GLOBAL.game.current_region.tile_height):
                         if GLOBAL.game.current_region.tiles[x][y].explored:
-                            self.fog_of_war_mask.blit(gray, self.camera.apply_rect(pg.Rect((x * TILESIZE_SCREEN[0], y * TILESIZE_SCREEN[1]), TILESIZE_SCREEN)))
+                            self.fog_of_war_mask.blit(gray,
+                                                      self.camera.apply_rect(
+                                                          pg.Rect((x * TILESIZE_SCREEN[0],
+                                                                   y * TILESIZE_SCREEN[1]), TILESIZE_SCREEN)))
                         else:
-                            self.fog_of_war_mask.blit(black, self.camera.apply_rect(pg.Rect((x * TILESIZE_SCREEN[0], y * TILESIZE_SCREEN[1]), TILESIZE_SCREEN)))
+                            self.fog_of_war_mask.blit(black,
+                                                      self.camera.apply_rect(
+                                                          pg.Rect((x * TILESIZE_SCREEN[0],
+                                                                   y * TILESIZE_SCREEN[1]), TILESIZE_SCREEN)))
                 GLOBAL.game.invalidate_fog_of_war = False
 
             playable_background.blit(self.fog_of_war_mask, (0, 0))
@@ -265,6 +260,7 @@ class BuildingScreen(Screen):
                         handled = widget.handle_event(event)
                 if not handled:
                     self.thorpy_widgets.react(event)
+
 
 def test(fighter):
     print("YO" + fighter.name)

@@ -2,6 +2,20 @@ import pygame as pg
 import os
 import default
 
+class Widget:
+
+    def update(self):
+        pass
+
+    def handle_event(self, event):
+        pass
+
+    def draw(self, screen):
+        pass
+
+class ProgressBar(Widget):
+    pass
+
 def display_single_message_on_screen(text, position="CENTER", font_size=18, erase_screen_first=True):
     """
     Erase the screen, replace wit a simple message. Use for basic info.
@@ -31,3 +45,5 @@ def display_single_message_on_screen(text, position="CENTER", font_size=18, eras
 
     # And done...
     pg.display.update()
+
+
