@@ -19,6 +19,8 @@ class ProgressBar(Widget):
     """
     A progress bar widget. Tracks the value of an object.
     """
+    PROGRESSBAR_FONT = 'freesansbold.ttf'
+
     def __init__(self,
                  position,
                  dimension,
@@ -26,7 +28,9 @@ class ProgressBar(Widget):
                  attribute_to_follow,
                  max_value,
                  bar_color,
-                 back_color=(0, 0, 0, 0)):
+                 back_color=(0, 0, 0, 0),
+                 font=None,
+                 with_text=True):
         """
         Define a progress bar
         :param position: (x, y) on the screen
@@ -36,6 +40,8 @@ class ProgressBar(Widget):
         :param max_value: the maximum value the attribute can take
         :param bar_color: (r, g, b) the color of the external part and of the filled part
         :param back_color: (r, g, b, a) the color of the background when the bar is not filled. Default is transparent.
+        :param font: the font to print in case of text
+        :param with_text: display a text on the bar
         """
 
         self._position = position
@@ -53,6 +59,12 @@ class ProgressBar(Widget):
 
         self._current_value = getattr(object_to_follow, attribute_to_follow)
         self._need_redraw = True
+
+        if font is None:
+            self._font = pg.font.Font(ProgressBar.PROGRESSBAR_FONT, 14)
+        else:
+            self._font = font
+        self._with_text = with_text
 
     def handle_event(self, event):
         pass
@@ -89,13 +101,31 @@ class ProgressBar(Widget):
         bar.fill(self._bar_color)
         screen.blit(bar, self._position)
 
-    """
-    #finally, some centered text with the values
-    font = pygame.font.Font(GAME_FONT, 14)
-    fontSurface = font.render(name + ': ' + str(value) + '/' + str(maximum),1,(255,255,255))
-    gameSurface.blit(fontSurface, (x+10,y+int(float(total_height-font.get_height())/2)))
-    """
+        #finally, some centered text with the values
+        if self._with_text:
+            fontSurface = self._font.render(str(self._current_value) + '/' + str(self._max_value), 1, (255, 255, 255))
+            screen.blit(fontSurface, (self._position[0] + 10,
+                                      self._position[1]+int(float(self._dimension[1]-self._font.get_height())/2)))
 
+
+class Button(Widget):
+
+    BUTTON_FONT = 'freesansbold.ttf'
+
+    # Based on pygbutton
+    def __init__(self, position, dimension, text, function, font):
+        self._position = position
+        self._dimension = dimension
+        self._text = text
+        self._function = function
+
+        if font is None:
+            self._font = pg.font.Font(Button.BUTTON_FONT, 14)
+        else:
+            self._font = font
+
+    def update(self):
+        pass
 
 def display_single_message_on_screen(text, position="CENTER", font_size=18, erase_screen_first=True):
     """
