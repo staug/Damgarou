@@ -6,7 +6,7 @@ from region.tile import Tile
 class Player(GameEntity):
 
     def __init__(self):
-        GameEntity.__init__(self, pos=(1,1), image_ref="PLAYER_PALADIN", z_level=2)
+        GameEntity.__init__(self, pos=(1,1), image_ref="PLAYER_PALADIN", z_level=2, blocks=True)
         self.name = "PLAYER"
         self.mule_list = []
         self.fighter_list = []
