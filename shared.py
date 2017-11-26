@@ -12,6 +12,7 @@ class Global:
         self._log_message = True
         self._logger = utilities.Logger()
         self._images = {}
+        self._fonts = {}
         self.game = None
 
     @property
@@ -40,6 +41,11 @@ class Global:
         if self._images is None or self._images == {}:
             self._images = utilities.load_all_images()
 
+    def load_fonts(self):
+        if self._fonts is None or self._fonts == {}:
+            pass
+            # self._fonts = utilities.load_all_fonts()
+
     def clean_before_save(self):
         """
         Clean the dictionary
@@ -56,6 +62,13 @@ class Global:
             return surface
         else:
             return self._images[image_key]
+
+    def font(self, font_key, size):
+        key = "{}{}".format(font_key, size)
+        if key not in self._fonts:
+            self.logger.warn("Adding [{} {}] to font dictionary".format(font_key, size))
+            self._fonts[key] = pg.font.Font(os.path.join(FONT_FOLDER, font_key), size)
+        return self._fonts[key]
 
 
 GLOBAL = Global()

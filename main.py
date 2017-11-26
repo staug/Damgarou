@@ -136,10 +136,13 @@ class Launcher:
         GLOBAL.logger.trace("Loading Images")
         GLOBAL.load_images()
         GLOBAL.logger.trace("Loading Images - Done")
+        GLOBAL.logger.trace("Loading Fonts")
+        GLOBAL.load_fonts()
+        GLOBAL.logger.trace("Loading Fonts - Done")
 
     def implement_menu(self):
 
-        font = pg.font.Font(os.path.join(default.FONT_FOLDER, default.FONT_NAME), 18)
+        font = GLOBAL.font(default.FONT_NAME, 14)
 
         button_start = thorpy.make_button("Start", func=self.start)
         button_start.set_size((100, None))

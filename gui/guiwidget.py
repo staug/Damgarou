@@ -1,7 +1,7 @@
 import pygame as pg
 import os
 import default
-
+from shared import GLOBAL
 
 class Widget:
 
@@ -119,14 +119,12 @@ def _parse_color(color):
 
 class Label(Widget):
 
-    LABEL_FONT = 'freesansbold.ttf'
-
     def __init__(self, position, dimension, text, font, color, bg=None, adapt_width_to_text=False):
         self._position = position
         self._dimension = dimension
         self._adapt_width_to_text = adapt_width_to_text
         if font is None:
-            self._font = pg.font.Font(ProgressBar.PROGRESSBAR_FONT, 14)
+            self._font = GLOBAL.font(default.FONT_NAME, 14)
         else:
             self._font = font
         self._text = text
@@ -157,12 +155,10 @@ class Label(Widget):
     def draw(self, screen):
         if self._bg:
             screen.fill(self._bg, self.bg_rect)
-        screen.blit(self.image, self.font_rect)
+        screen.blit(self.image, self.font_rect, area=((0, 0), self._dimension))
 
 
 class Button(Widget):
-
-    BUTTON_FONT = 'freesansbold.ttf'
 
     # Based on pygbutton
     def __init__(self, position, dimension, text, function, font):
@@ -172,7 +168,7 @@ class Button(Widget):
         self._function = function
 
         if font is None:
-            self._font = pg.font.Font(Button.BUTTON_FONT, 14)
+            self._font = GLOBAL.font(default.FONT_NAME, 14)
         else:
             self._font = font
 
