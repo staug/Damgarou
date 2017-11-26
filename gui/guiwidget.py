@@ -108,6 +108,58 @@ class ProgressBar(Widget):
                                       self._position[1]+int(float(self._dimension[1]-self._font.get_height())/2)))
 
 
+def _parse_color(color):
+    if color is not None:
+        try:
+            return pg.Color(color)
+        except ValueError:
+            return pg.Color(*color)
+    return color
+
+
+class Label(Widget):
+
+    LABEL_FONT = 'freesansbold.ttf'
+
+    def __init__(self, position, dimension, text, font, color, bg=None, adapt_width_to_text=False):
+        self._position = position
+        self._dimension = dimension
+        self._adapt_width_to_text = adapt_width_to_text
+        if font is None:
+            self._font = pg.font.Font(ProgressBar.PROGRESSBAR_FONT, 14)
+        else:
+            self._font = font
+        self._text = text
+        self._bg = _parse_color(bg)
+        self._color = _parse_color(color)
+
+        self._update_text()
+
+    def set_text(self, text):
+        """Set the text to display."""
+        self._text = text
+        self._update_text()
+
+    def _update_text(self):
+        """Update the surface using the current properties and text."""
+        if self._bg:
+            render_args = (self._text, True, self._color, self._bg)
+            self.bg_rect = pg.Rect(self._position, self._dimension)
+        else:
+            render_args = (self._text, True, self._color)
+        self.image = self._font.render(*render_args)
+        if self._adapt_width_to_text:
+            self._dimension = (self.image.get_rect().width, self._dimension[1])
+            if self._bg:
+                self.bg_rect.width = self.image.get_rect().width
+        self.font_rect = pg.Rect(self._position, self._dimension)
+
+    def draw(self, screen):
+        if self._bg:
+            screen.fill(self._bg, self.bg_rect)
+        screen.blit(self.image, self.font_rect)
+
+
 class Button(Widget):
 
     BUTTON_FONT = 'freesansbold.ttf'

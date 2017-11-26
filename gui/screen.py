@@ -3,7 +3,7 @@ import thorpy
 from shared import GLOBAL
 from default import *
 from utilities import FieldOfView
-from gui.guiwidget import Widget, ProgressBar
+from gui.guiwidget import Widget, ProgressBar, Label
 import dill as pick
 
 
@@ -172,6 +172,7 @@ class PlayingScreen(Screen):
 
     def post_init(self):
         self.widgets.append(ProgressBar((10, 10), (100, 10), GLOBAL.game.player, "test_attribute", 100, RED, BLUE))
+        self.widgets.append(Label((40, 40), (30, 45), "Youpla", None, RED, bg=WHITE, adapt_width_to_text=True))
 
     def draw(self):
         # Erase All
