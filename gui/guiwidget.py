@@ -3,16 +3,39 @@ import os
 import default
 from shared import GLOBAL
 
+
 class Widget:
 
+    def __init__(self):
+        self.position = (0, 0)
+        self.rect = None
+        self.image = None
+
     def update(self):
+        """
+        In general this method is not really usefull, but it is called from the master.
+        Can be used to prepare the image
+        :return: 
+        """
         pass
 
     def handle_event(self, event):
+        """
+        Called to handle event - return True if the event has been processed, False otherwise
+        :param event: a Pygame Event
+        :return: True if the event has been processed, false otherwise
+        """
         pass
 
     def draw(self, screen):
-        pass
+        """
+        Default implementation: blit the premade image on the screen surface. Assumes that a rect has been created.
+        :param screen: the surface to blit on.
+        :return: 
+        """
+        assert self.image, "Image doesn't exist so can't blit"
+        assert self.rect, "Rect doesn't exist so can't blit"
+        screen.blit(self.image, self.rect)
 
 
 class ProgressBar(Widget):
@@ -117,63 +140,187 @@ def _parse_color(color):
     return color
 
 
+def rounded_surface(rect, color,radius=0.2):
+    """
+    AAfilledRoundedRect(surface,rect,color,radius=0.4)
+
+    surface : destination
+    rect    : rectangle
+    color   : rgb or rgba
+    radius  : 0 <= radius <= 1
+    """
+
+    rect         = pg.Rect(rect)
+    color        = pg.Color(*color)
+    alpha        = color.a
+    color.a      = 0
+    rect.topleft = 0,0
+    rect_surface    = pg.Surface(rect.size, pg.SRCALPHA)
+
+    circle       = pg.Surface([min(rect.size)*3]*2, pg.SRCALPHA)
+    pg.draw.ellipse(circle,(0,0,0),circle.get_rect(),0)
+    circle       = pg.transform.smoothscale(circle,[int(min(rect.size)*radius)]*2)
+
+    radius              = rect_surface.blit(circle,(0,0))
+    radius.bottomright  = rect.bottomright
+    rect_surface.blit(circle,radius)
+    radius.topright     = rect.topright
+    rect_surface.blit(circle,radius)
+    radius.bottomleft   = rect.bottomleft
+    rect_surface.blit(circle,radius)
+
+    rect_surface.fill((0,0,0),rect.inflate(-radius.w,0))
+    rect_surface.fill((0,0,0),rect.inflate(0,-radius.h))
+
+    rect_surface.fill(color,special_flags=pg.BLEND_RGBA_MAX)
+    rect_surface.fill((255,255,255,alpha),special_flags=pg.BLEND_RGBA_MIN)
+
+    return rect_surface
+
+
 class Label(Widget):
 
-    def __init__(self, position, dimension, text, font, color, bg=None, adapt_width_to_text=False):
-        self._position = position
-        self._dimension = dimension
-        self._adapt_width_to_text = adapt_width_to_text
-        if font is None:
-            self._font = GLOBAL.font(default.FONT_NAME, 14)
-        else:
-            self._font = font
-        self._text = text
-        self._bg = _parse_color(bg)
-        self._color = _parse_color(color)
+    DEFAULT_OPTIONS = {
+        "font_name": default.FONT_NAME,
+        "font_size": 14,
+        "font_color": (255, 255, 255),
 
-        self._update_text()
+        "bg_image": None,  # The background image if any
+        "bg_color": None,  # Transparent if None
+
+        "text_margin_x": 5,  # Minimum margin on the right & left, only relevant if a background is set (Color/image)
+        "text_margin_y": 5,  # Minimum margin on the top & down, only relevant if a background is set (Color/image)
+        "text_align_x": "CENTER",
+        "text_align_y": "CENTER",
+
+        "dimension": (10, 10),
+        "adapt_text_width": True,  # if set to true, will adapt the width dimension to the text size
+        "adapt_text_height": True,  # if set to true, will adapt the width dimension to the text size
+
+        "theme": True, # Set to LIGHT to have it match to Kenney. Theme will enforce margin, override bg_color
+    }
+
+    def __init__(self, text=None, position=(0, 0), **kwargs):
+        Widget.__init__(self)
+        
+        for key in Label.DEFAULT_OPTIONS:
+            self.__setattr__(key, kwargs.get(key, Label.DEFAULT_OPTIONS[key]))
+        #assert len(kwargs) == 0, "Unrecognized attribute {}".format(kwargs)
+
+        self.position = position
+
+        # Now adapt some parameters
+        self.font = GLOBAL.font(self.font_name, self.font_size)
+
+        # Do we have a theme?
+        if self.theme:
+            self.text_margin_x = self.text_margin_y = 20
+
+        self.set_text(text)
 
     def set_text(self, text):
         """Set the text to display."""
-        self._text = text
-        self._update_text()
+        self.text = text
+        if self.text is None:
+            self.text = " "
+        self.update_image()
 
-    def _update_text(self):
-        """Update the surface using the current properties and text."""
-        if self._bg:
-            render_args = (self._text, True, self._color, self._bg)
-            self.bg_rect = pg.Rect(self._position, self._dimension)
+    def update_image(self):
+        """
+        Update the surface using the current properties and text.
+        Prepare:
+        * An image for the font rendered (and its background if it is there)
+        * A Rect for the image, already positionned
+        *
+        """
+
+        font_image = self.font.render(self.text, True, _parse_color(self.font_color))
+        font_rect = font_image.get_rect().move(self.position)
+
+        if not self.adapt_text_width:
+            font_rect.width = min(81, self.dimension[0] - 2 * self.text_margin_x)
+        if not self.adapt_text_height:
+            font_rect.height = min(81, self.dimension[1] - 2 * self.text_margin_y)
+
+        if self.theme or self.bg_color:
+            width_background, height_background = font_rect.width + 2 * self.text_margin_x, \
+                                                  font_rect.height + 2 * self.text_margin_y
+            background_rect = pg.Rect(self.position, (width_background, height_background))
+            font_rect.move_ip(self.text_margin_x, self.text_margin_y)
+
+            if self.bg_color:
+                self.image = pg.Surface(background_rect.size, pg.SRCALPHA)
+                self.image.fill(self.bg_color)
+                # TODO: handle text alignments
+                self.image.blit(font_image, (self.text_margin_x, self.text_margin_y),
+                                area=pg.Rect((0, 0), (font_rect.width, font_rect.height)))
+
+            if self.theme:
+                border_ext_color = _parse_color((109, 75, 39))
+                border_int_color = _parse_color((180, 123, 65))
+                background_color = _parse_color((255, 241, 210))
+
+                rect = pg.Rect((0, 0), background_rect.size)
+                background_image = rounded_surface(rect, border_ext_color)
+                background_image.blit(rounded_surface(rect.inflate(-10, -10), border_int_color), (5, 5))
+                background_image.blit(rounded_surface(rect.inflate(-30, -30), background_color), (15, 15))
+                # TODO: handle text alignments
+                background_image.blit(font_image, (self.text_margin_x, self.text_margin_y),
+                                      area=pg.Rect((0, 0), (font_rect.width, font_rect.height)))
+                self.image = background_image
+
+            self.rect = self.image.get_rect().move(self.position)
         else:
-            render_args = (self._text, True, self._color)
-        self.image = self._font.render(*render_args)
-        if self._adapt_width_to_text:
-            self._dimension = (self.image.get_rect().width, self._dimension[1])
-            if self._bg:
-                self.bg_rect.width = self.image.get_rect().width
-        self.font_rect = pg.Rect(self._position, self._dimension)
-
-    def draw(self, screen):
-        if self._bg:
-            screen.fill(self._bg, self.bg_rect)
-        screen.blit(self.image, self.font_rect, area=((0, 0), self._dimension))
+            self.image = font_image
+            self.rect = font_rect
 
 
 class Button(Widget):
 
+    DEFAULT_OPTIONS = {
+        "font_name": default.FONT_NAME,
+        "font_size": 14,
+        "font_color": (255, 255, 255),
+
+        "bg_image": None,  # The background image if any
+        "bg_color": None,  # Transparent if None
+
+        "text_margin_x": 5,  # Minimum margin on the right & left, only relevant if a background is set (Color/image)
+        "text_margin_y": 5,  # Minimum margin on the top & down, only relevant if a background is set (Color/image)
+        "text_align_x": "CENTER",
+        "text_align_y": "CENTER",
+
+        "dimension": (10, 10),
+        "adapt_text_width": True,  # if set to true, will adapt the width dimension to the text size
+        "adapt_text_height": False,  # if set to true, will adapt the width dimension to the text size
+
+        "theme": True, # Set to LIGHT to have it match to Kenney. Theme will enforce margin, override bg_color
+    }
+
     # Based on pygbutton
-    def __init__(self, position, dimension, text, function, font):
-        self._position = position
-        self._dimension = dimension
-        self._text = text
-        self._function = function
+    def __init__(self, callback_function=None, text=None, position=(0, 0), **kwargs):
 
-        if font is None:
-            self._font = GLOBAL.font(default.FONT_NAME, 14)
-        else:
-            self._font = font
+        assert callback_function, "Button defined without callback function"
 
-    def update(self):
-        pass
+        Widget.__init__(self)
+        
+        original_kwargs = kwargs.copy()
+        for key in Button.DEFAULT_OPTIONS:
+            self.__setattr__(key, original_kwargs.pop(key, Button.DEFAULT_OPTIONS[key]))
+        if len(original_kwargs) != 0:
+            print("Warning: unused attributes in Button {}".format(original_kwargs))
+
+        self.position = position
+        self.callback_function = callback_function
+
+        label = Label(position=position, text=text, **kwargs)
+        self.image = label.image
+        self.rect = label.rect
+
+    def handle_event(self, event):
+        if event.type == pg.MOUSEBUTTONDOWN and self.rect.collidepoint(event.pos):
+            self.callback_function()
+
 
 def display_single_message_on_screen(text, position="CENTER", font_size=18, erase_screen_first=True):
     """

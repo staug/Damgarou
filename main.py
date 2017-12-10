@@ -1,16 +1,14 @@
-import os
+import random
 import sys
 
-import pygame as pg
-import thorpy
-import random
 import dill as pick
-
+import pygame as pg
 
 import default
 from entity.player import Player
 from entity.town import Entrance, Bank, GuildFighter, GuildMule, Shop, Tavern, Trade, Townhall, Temple
 from gui import guiwidget
+from gui.guiwidget import Button
 from gui.screen import PlayingScreen, BuildingScreen
 from region.region import RegionFactory
 from shared import GLOBAL
@@ -45,6 +43,7 @@ class Game:
         guiwidget.display_single_message_on_screen("Generating World - Wilderness")
         player_spawn_pos = None  # this will be a town on a wilderness
 
+        name = None
         for _i in range(1):
             name = MName.place_name()
             town_list = []
@@ -75,7 +74,7 @@ class Game:
         self.player.assign_entity_to_region(self.current_region)
         (self.player.x, self.player.y) = player_spawn_pos
 
-        #Post init on screens
+        # Post init on screens
         for screen_name in self.screens:
             self.screens[screen_name].post_init()
 
@@ -128,7 +127,6 @@ class Launcher:
         pg.font.init()
         pg.display.set_mode((default.GAME_WIDTH, default.GAME_HEIGHT), pg.RESIZABLE)
         pg.display.set_caption(default.GAME_TITLE + "-" + default.GAME_VER)
-        thorpy.set_theme("human")
         GLOBAL.logger.trace("Initializing Pygame - Done")
 
     @staticmethod
@@ -141,46 +139,41 @@ class Launcher:
         GLOBAL.logger.trace("Loading Fonts - Done")
 
     def implement_menu(self):
+        button_start = Button(position=(10, 10), text="Start", callback_function=self.start)
+        button_load = Button(position=(10, 80), text="Load", callback_function=self.load)
+        button_quit = Button(position=(10, 160), text="Quit", callback_function=Launcher.quit)
+        self.widgets = [button_start, button_load, button_quit]
 
-        font = GLOBAL.font(default.FONT_NAME, 14)
+    def draw(self):
+        # Erase All
+        screen = pg.display.get_surface()
+        screen.fill((0, 0, 0, 0))
 
-        button_start = thorpy.make_button("Start", func=self.start)
-        button_start.set_size((100, None))
-        button_start.set_font(font)
-        button_start.set_font_size(16)
+        for widget in self.widgets:
+            widget.draw(screen)
 
-        button_load = thorpy.make_button("Load", func=self.load)
-        button_load.set_size((100, None))
-        button_load.set_font(font)
-        button_load.set_font_size(16)
+        pg.display.flip()
 
-        button_quit = thorpy.make_button("Quit", func=Launcher.quit)
-        button_quit.set_size((100, None))
-        button_quit.set_font(font)
-        button_quit.set_font_size(16)
+    def update(self):
+        for widget in self.widgets:
+            widget.update()
 
-        box = thorpy.Box.make(elements=[button_start,
-                                        button_load,
-                                        button_quit])
-        box.set_main_color((0, 0, 0, 0))
-
-        self.widgets = thorpy.Menu(box)
-        for element in self.widgets.get_population():
-            # Note: assume that the pygame.display.set_mode() was called before
-            element.surface = pg.display.get_surface()
-
-        box.set_center(pg.display.get_surface().get_rect().center)
-
-        box.blit()
-        box.update()
+    def events(self):
+        for event in pg.event.get():
+            if event.type == pg.QUIT:
+                Launcher.quit()
+            else:
+                handled = False
+                for widget in self.widgets:
+                    if not handled:
+                        handled = widget.handle_event(event)
 
     def run(self):
         self.implement_menu()
         while self.launcher_running:
-            for event in pg.event.get():
-                if event.type == pg.QUIT:
-                    Launcher.quit()
-                self.widgets.react(event)
+            self.events()
+            self.update()
+            self.draw()
 
     def start(self):
         self.launcher_running = False
@@ -195,7 +188,6 @@ class Launcher:
             GLOBAL.game.reinit_graphics_after_save()
 
         # Done: starting the game
-        self.widgets = []  # Killing the menu. A bit forced, but prevent some problems.
         GLOBAL.game.start()
 
     @staticmethod

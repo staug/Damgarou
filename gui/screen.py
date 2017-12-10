@@ -172,7 +172,9 @@ class PlayingScreen(Screen):
 
     def post_init(self):
         self.widgets.append(ProgressBar((10, 10), (100, 10), GLOBAL.game.player, "test_attribute", 100, RED, BLUE))
-        self.widgets.append(Label((40, 40), (30, 45), "THIS is loooong", None, RED, bg=WHITE, adapt_width_to_text=True))
+        self.widgets.append(Label((40, 40), "This is a test"))
+
+        self.widgets.append(Label((80, 20), "This is a test", theme=False, bg_color=RED, adapt_text_width=False, dimension=(120,80)))
 
     def draw(self):
         # Erase All
