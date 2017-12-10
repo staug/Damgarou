@@ -15,6 +15,14 @@ RED = (255, 0, 0)
 YELLOW = (255, 255, 0)
 BLUE = (0, 0, 255)
 
+# Themes for Buttons, labels...
+THEME_GRAY = {
+    "rounded" : True,  # True to have rounded corners
+    "with_decoration" : True,  # This adds small triangles
+    "borders": [(2, (255, 0, 0)), (2, (0, 255, 0))],  # list of margin + colors (external to int)
+    "bg_color": (0, 0, 255)
+}
+
 # Folders
 GAME_FOLDER = os.path.dirname(__file__)
 ASSET_FOLDER = os.path.join(GAME_FOLDER, "assets")

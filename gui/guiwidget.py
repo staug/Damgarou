@@ -39,6 +39,7 @@ class Widget:
 
 
 class ProgressBar(Widget):
+    # TODO Refactor according to widget standards
     """
     A progress bar widget. Tracks the value of an object.
     """
@@ -111,7 +112,7 @@ class ProgressBar(Widget):
     def draw(self, screen):
         # Calculate the width of the bar
         bar_width = 1
-        if self._max_value> 0:
+        if self._max_value > 0:
             bar_width = max(1, int(float(self._current_value) / self._max_value * self._dimension[0]))
 
         # Background part
@@ -124,11 +125,11 @@ class ProgressBar(Widget):
         bar.fill(self._bar_color)
         screen.blit(bar, self._position)
 
-        #finally, some centered text with the values
+        # finally, some centered text with the values
         if self._with_text:
             fontSurface = self._font.render(str(self._current_value) + '/' + str(self._max_value), 1, (255, 255, 255))
             screen.blit(fontSurface, (self._position[0] + 10,
-                                      self._position[1]+int(float(self._dimension[1]-self._font.get_height())/2)))
+                                      self._position[1] + int(float(self._dimension[1] - self._font.get_height()) / 2)))
 
 
 def _parse_color(color):
@@ -140,7 +141,7 @@ def _parse_color(color):
     return color
 
 
-def rounded_surface(rect, color,radius=0.2):
+def rounded_surface(rect, color, radius=0.2):
     """
     AAfilledRoundedRect(surface,rect,color,radius=0.4)
 
@@ -150,46 +151,44 @@ def rounded_surface(rect, color,radius=0.2):
     radius  : 0 <= radius <= 1
     """
 
-    rect         = pg.Rect(rect)
-    color        = pg.Color(*color)
-    alpha        = color.a
-    color.a      = 0
-    rect.topleft = 0,0
-    rect_surface    = pg.Surface(rect.size, pg.SRCALPHA)
+    rect = pg.Rect(rect)
+    color = pg.Color(*color)
+    alpha = color.a
+    color.a = 0
+    rect.topleft = 0, 0
+    rect_surface = pg.Surface(rect.size, pg.SRCALPHA)
 
-    circle       = pg.Surface([min(rect.size)*3]*2, pg.SRCALPHA)
-    pg.draw.ellipse(circle,(0,0,0),circle.get_rect(),0)
-    circle       = pg.transform.smoothscale(circle,[int(min(rect.size)*radius)]*2)
+    circle = pg.Surface([min(rect.size) * 3] * 2, pg.SRCALPHA)
+    pg.draw.ellipse(circle, (0, 0, 0), circle.get_rect(), 0)
+    circle = pg.transform.smoothscale(circle, [int(min(rect.size) * radius)] * 2)
 
-    radius              = rect_surface.blit(circle,(0,0))
-    radius.bottomright  = rect.bottomright
-    rect_surface.blit(circle,radius)
-    radius.topright     = rect.topright
-    rect_surface.blit(circle,radius)
-    radius.bottomleft   = rect.bottomleft
-    rect_surface.blit(circle,radius)
+    radius = rect_surface.blit(circle, (0, 0))
+    radius.bottomright = rect.bottomright
+    rect_surface.blit(circle, radius)
+    radius.topright = rect.topright
+    rect_surface.blit(circle, radius)
+    radius.bottomleft = rect.bottomleft
+    rect_surface.blit(circle, radius)
 
-    rect_surface.fill((0,0,0),rect.inflate(-radius.w,0))
-    rect_surface.fill((0,0,0),rect.inflate(0,-radius.h))
+    rect_surface.fill((0, 0, 0), rect.inflate(-radius.w, 0))
+    rect_surface.fill((0, 0, 0), rect.inflate(0, -radius.h))
 
-    rect_surface.fill(color,special_flags=pg.BLEND_RGBA_MAX)
-    rect_surface.fill((255,255,255,alpha),special_flags=pg.BLEND_RGBA_MIN)
+    rect_surface.fill(color, special_flags=pg.BLEND_RGBA_MAX)
+    rect_surface.fill((255, 255, 255, alpha), special_flags=pg.BLEND_RGBA_MIN)
 
     return rect_surface
 
 
 class Label(Widget):
-
     DEFAULT_OPTIONS = {
         "font_name": default.FONT_NAME,
         "font_size": 14,
         "font_color": (255, 255, 255),
 
-        "bg_image": None,  # The background image if any
-        "bg_color": None,  # Transparent if None
+        "bg_color": None,  # Transparent if None - ignored if a theme is given
 
-        "text_margin_x": 5,  # Minimum margin on the right & left, only relevant if a background is set (Color/image)
-        "text_margin_y": 5,  # Minimum margin on the top & down, only relevant if a background is set (Color/image)
+        "text_margin_x": 20,  # Minimum margin on the right & left, only relevant if a background is set (Color/image)
+        "text_margin_y": 10,  # Minimum margin on the top & down, only relevant if a background is set (Color/image)
         "text_align_x": "CENTER",
         "text_align_y": "CENTER",
 
@@ -197,15 +196,15 @@ class Label(Widget):
         "adapt_text_width": True,  # if set to true, will adapt the width dimension to the text size
         "adapt_text_height": True,  # if set to true, will adapt the width dimension to the text size
 
-        "theme": True, # Set to LIGHT to have it match to Kenney. Theme will enforce margin, override bg_color
+        "theme": default.THEME_GRAY,  # the main theme
     }
 
     def __init__(self, text=None, position=(0, 0), **kwargs):
         Widget.__init__(self)
-        
+
         for key in Label.DEFAULT_OPTIONS:
             self.__setattr__(key, kwargs.get(key, Label.DEFAULT_OPTIONS[key]))
-        #assert len(kwargs) == 0, "Unrecognized attribute {}".format(kwargs)
+        # assert len(kwargs) == 0, "Unrecognized attribute {}".format(kwargs)
 
         self.position = position
 
@@ -214,7 +213,11 @@ class Label(Widget):
 
         # Do we have a theme?
         if self.theme:
-            self.text_margin_x = self.text_margin_y = 20
+            border_size = 0
+            for border_info in self.theme["borders"]:
+                border_size += border_info[0]
+            self.text_margin_x = border_size + self.text_margin_x
+            self.text_margin_y = border_size + self.text_margin_y
 
         self.set_text(text)
 
@@ -238,9 +241,9 @@ class Label(Widget):
         font_rect = font_image.get_rect().move(self.position)
 
         if not self.adapt_text_width:
-            font_rect.width = min(81, self.dimension[0] - 2 * self.text_margin_x)
+            font_rect.width = self.dimension[0] - 2 * self.text_margin_x
         if not self.adapt_text_height:
-            font_rect.height = min(81, self.dimension[1] - 2 * self.text_margin_y)
+            font_rect.height = self.dimension[1] - 2 * self.text_margin_y
 
         if self.theme or self.bg_color:
             width_background, height_background = font_rect.width + 2 * self.text_margin_x, \
@@ -256,18 +259,38 @@ class Label(Widget):
                                 area=pg.Rect((0, 0), (font_rect.width, font_rect.height)))
 
             if self.theme:
-                border_ext_color = _parse_color((109, 75, 39))
-                border_int_color = _parse_color((180, 123, 65))
-                background_color = _parse_color((255, 241, 210))
-
                 rect = pg.Rect((0, 0), background_rect.size)
-                background_image = rounded_surface(rect, border_ext_color)
-                background_image.blit(rounded_surface(rect.inflate(-10, -10), border_int_color), (5, 5))
-                background_image.blit(rounded_surface(rect.inflate(-30, -30), background_color), (15, 15))
-                # TODO: handle text alignments
-                background_image.blit(font_image, (self.text_margin_x, self.text_margin_y),
-                                      area=pg.Rect((0, 0), (font_rect.width, font_rect.height)))
-                self.image = background_image
+                margin = 0
+                color = (0, 0, 0) # if no border, and we need to add deco, we do a black...
+
+                if self.theme["borders"]:
+                    # First, we start by creating a surface, which is the external one.
+                    margin = self.theme["borders"][0][0] * 2
+                    color = self.theme["borders"][0][1]
+                    self.image = rounded_surface(rect, color)
+
+                    if len(self.theme["borders"]) > 1:
+                        for index in range(1, len(self.theme["borders"])):
+                            color = self.theme["borders"][index][1]
+                            self.image.blit(
+                                rounded_surface(rect.inflate(-margin * 2, -margin * 2), color),
+                                (margin, margin)
+                            )
+                            margin += self.theme["borders"][index][0] * 2
+                    # add the internal:
+                    self.image.blit(rounded_surface(rect.inflate(-margin*2, -margin*2), self.theme["bg_color"]),
+                                (margin, margin))
+                elif self.theme["bg_color"]:
+                    # We just do something for the background
+                    self.image = rounded_surface(rect, self.theme["bg_color"])
+
+                # add the font:
+                self.image.blit(font_image, (self.text_margin_x, self.text_margin_y),
+                                area=pg.Rect((0, 0), (font_rect.width, font_rect.height)))
+
+                if self.theme["with_decoration"]:
+                    x = 10
+                    pg.draw.polygon(self.image, color, [(x, margin), (x+4, margin), (x+2, margin + 2)], 0)
 
             self.rect = self.image.get_rect().move(self.position)
         else:
@@ -276,14 +299,15 @@ class Label(Widget):
 
 
 class Button(Widget):
-
+    """
+    A simple Button, based on a label (without an image)
+    """
     DEFAULT_OPTIONS = {
         "font_name": default.FONT_NAME,
         "font_size": 14,
         "font_color": (255, 255, 255),
 
-        "bg_image": None,  # The background image if any
-        "bg_color": None,  # Transparent if None
+        "bg_color": None,  # Transparent button if None and if no Theme is set
 
         "text_margin_x": 5,  # Minimum margin on the right & left, only relevant if a background is set (Color/image)
         "text_margin_y": 5,  # Minimum margin on the top & down, only relevant if a background is set (Color/image)
@@ -294,7 +318,7 @@ class Button(Widget):
         "adapt_text_width": True,  # if set to true, will adapt the width dimension to the text size
         "adapt_text_height": False,  # if set to true, will adapt the width dimension to the text size
 
-        "theme": True, # Set to LIGHT to have it match to Kenney. Theme will enforce margin, override bg_color
+        "theme": default.THEME_GRAY,  # the Theme to use
     }
 
     # Based on pygbutton
@@ -303,7 +327,7 @@ class Button(Widget):
         assert callback_function, "Button defined without callback function"
 
         Widget.__init__(self)
-        
+
         original_kwargs = kwargs.copy()
         for key in Button.DEFAULT_OPTIONS:
             self.__setattr__(key, original_kwargs.pop(key, Button.DEFAULT_OPTIONS[key]))
@@ -351,5 +375,3 @@ def display_single_message_on_screen(text, position="CENTER", font_size=18, eras
 
     # And done...
     pg.display.update()
-
-
