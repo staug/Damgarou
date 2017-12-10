@@ -3,6 +3,7 @@ import os
 import default
 import random
 from shared import GLOBAL
+from copy import deepcopy
 
 
 class Widget:
@@ -40,7 +41,7 @@ class Widget:
 
 
 class ProgressBar(Widget):
-    # TODO Refactor according to widget standards
+    # TODO Refactor according to widget standards & using teh rounded surface with radius = 1
     """
     A progress bar widget. Tracks the value of an object.
     """
@@ -133,16 +134,7 @@ class ProgressBar(Widget):
                                       self._position[1] + int(float(self._dimension[1] - self._font.get_height()) / 2)))
 
 
-def _parse_color(color):
-    if color is not None:
-        try:
-            return pg.Color(color)
-        except ValueError:
-            return pg.Color(*color)
-    return color
-
-
-def rounded_surface(rect, color, radius=0.2):
+def rounded_surface(rect, color, radius=1):
     """
     AAfilledRoundedRect(surface,rect,color,radius=0.4)
 
@@ -184,7 +176,7 @@ class Label(Widget):
     DEFAULT_OPTIONS = {
         "font_name": default.FONT_NAME,
         "font_size": 14,
-        "font_color": (255, 255, 255),
+        "font_color": (255, 255, 255),  # ignored if a theme is given
 
         "bg_color": None,  # Transparent if None - ignored if a theme is given
 
@@ -193,19 +185,21 @@ class Label(Widget):
         "text_align_x": "CENTER",
         "text_align_y": "CENTER",
 
-        "dimension": (10, 10),
-        "adapt_text_width": True,  # if set to true, will adapt the width dimension to the text size
-        "adapt_text_height": True,  # if set to true, will adapt the width dimension to the text size
+        "dimension": (250, 10),
+        "adapt_text_width": True,  # if set to true, will grow the width dimension to the text size
+        "adapt_text_height": True,  # if set to true, will grow the width dimension to the text size
 
-        "theme": default.THEME_GRAY,  # the main theme
+        "theme": default.THEME_LIGHT_GRAY,  # the main theme
     }
 
     def __init__(self, text=None, position=(0, 0), **kwargs):
         Widget.__init__(self)
 
+        original_kwargs = deepcopy(kwargs)
         for key in Label.DEFAULT_OPTIONS:
-            self.__setattr__(key, kwargs.get(key, Label.DEFAULT_OPTIONS[key]))
-        # assert len(kwargs) == 0, "Unrecognized attribute {}".format(kwargs)
+            self.__setattr__(key, original_kwargs.pop(key, Label.DEFAULT_OPTIONS[key]))
+        if len(original_kwargs) != 0:
+            print("Warning: unused attributes in Label {}".format(original_kwargs))
 
         self.position = position
 
@@ -219,6 +213,10 @@ class Label(Widget):
                 border_size += border_info[0]
             self.text_margin_x = border_size + self.text_margin_x
             self.text_margin_y = border_size + self.text_margin_y
+            self.font_color = self.theme["font_color"]
+
+        if not self.theme and not self.bg_color:
+            self.text_margin_x = self.text_margin_y = 0
 
         self.set_text(text)
 
@@ -238,13 +236,30 @@ class Label(Widget):
         *
         """
 
-        font_image = self.font.render(self.text, True, _parse_color(self.font_color))
+        font_image = self.font.render(self.text, True, self.font_color)
         font_rect = font_image.get_rect().move(self.position)
+        pos_font_x = self.text_margin_x
+        pos_font_y = self.text_margin_y
 
         if not self.adapt_text_width:
             font_rect.width = self.dimension[0] - 2 * self.text_margin_x
+        else:
+            if font_rect.width < self.dimension[0] - 2 * self.text_margin_x:
+                # and we need to reposition the label...
+                if self.text_align_x == "LEFT":
+                    pos_font_x = self.text_margin_x
+                elif self.text_align_x == "RIGHT":
+                    pos_font_x = self.dimension[0] - font_rect.width - self.text_margin_x
+                else:
+                    pos_font_x = int((self.dimension[0] - font_rect.width) / 2)
+                font_rect.width = self.dimension[0] - 2 * self.text_margin_x
+            else:
+                font_rect.width += 2 * self.text_margin_x
+                pos_font_x = self.text_margin_x
         if not self.adapt_text_height:
             font_rect.height = self.dimension[1] - 2 * self.text_margin_y
+        else:
+            font_rect.height = max(font_rect.height, self.dimension[1])
 
         if self.theme or self.bg_color:
             width_background, height_background = font_rect.width + 2 * self.text_margin_x, \
@@ -255,8 +270,8 @@ class Label(Widget):
             if self.bg_color:
                 self.image = pg.Surface(background_rect.size, pg.SRCALPHA)
                 self.image.fill(self.bg_color)
-                # TODO: handle text alignments
-                self.image.blit(font_image, (self.text_margin_x, self.text_margin_y),
+
+                self.image.blit(font_image, (pos_font_x, pos_font_y),
                                 area=pg.Rect((0, 0), (font_rect.width, font_rect.height)))
 
             if self.theme:
@@ -268,25 +283,29 @@ class Label(Widget):
                     # First, we start by creating a surface, which is the external one.
                     margin = self.theme["borders"][0][0] * 2
                     color = self.theme["borders"][0][1]
-                    self.image = rounded_surface(rect, color)
+                    self.image = rounded_surface(rect, color, radius=self.theme["rounded_angle"])
 
                     if len(self.theme["borders"]) > 1:
                         for index in range(1, len(self.theme["borders"])):
                             color = self.theme["borders"][index][1]
                             self.image.blit(
-                                rounded_surface(rect.inflate(-margin * 2, -margin * 2), color),
+                                rounded_surface(rect.inflate(-margin * 2, -margin * 2),
+                                                color,
+                                                radius=self.theme["rounded_angle"]),
                                 (margin, margin)
                             )
                             margin += self.theme["borders"][index][0] * 2
                     # add the internal:
-                    self.image.blit(rounded_surface(rect.inflate(-margin*2, -margin*2), self.theme["bg_color"]),
-                                (margin, margin))
+                    self.image.blit(rounded_surface(rect.inflate(-margin*2, -margin*2),
+                                                    self.theme["bg_color"],
+                                                    radius=self.theme["rounded_angle"]),
+                                    (margin, margin))
                 elif self.theme["bg_color"]:
                     # We just do something for the background
-                    self.image = rounded_surface(rect, self.theme["bg_color"])
+                    self.image = rounded_surface(rect, self.theme["bg_color"], radius=self.theme["rounded_angle"])
 
                 # add the font:
-                self.image.blit(font_image, (self.text_margin_x, self.text_margin_y),
+                self.image.blit(font_image, (pos_font_x, pos_font_y),
                                 area=pg.Rect((0, 0), (font_rect.width, font_rect.height)))
 
                 if self.theme["with_decoration"]:
@@ -337,10 +356,11 @@ class Button(Widget):
         "text_align_y": "CENTER",
 
         "dimension": (10, 10),
-        "adapt_text_width": True,  # if set to true, will adapt the width dimension to the text size
-        "adapt_text_height": False,  # if set to true, will adapt the width dimension to the text size
+        "adapt_text_width": True,  # if set to true, will grow the width dimension to the text size
+        "adapt_text_height": False,  # if set to true, will grow the height dimension to the text size
 
-        "theme": default.THEME_GRAY,  # the Theme to use
+        "theme_idle": default.THEME_LIGHT_BROWN,  # the Theme to use when nothing is there
+        "theme_hover": default.THEME_DARK_BROWN,  # the Theme to use when the mouse is over
     }
 
     # Based on pygbutton
@@ -350,7 +370,7 @@ class Button(Widget):
 
         Widget.__init__(self)
 
-        original_kwargs = kwargs.copy()
+        original_kwargs = deepcopy(kwargs)
         for key in Button.DEFAULT_OPTIONS:
             self.__setattr__(key, original_kwargs.pop(key, Button.DEFAULT_OPTIONS[key]))
         if len(original_kwargs) != 0:
@@ -359,13 +379,34 @@ class Button(Widget):
         self.position = position
         self.callback_function = callback_function
 
+        state = random.getstate()
+        kwargs["theme"] = self.theme_idle
         label = Label(position=position, text=text, **kwargs)
-        self.image = label.image
+        self.image = self.idle_image = label.image
+
+        random.setstate(state)  # To be sure to have the decoration on the same places...
+        kwargs["theme"] = self.theme_hover
+        label = Label(position=position, text=text, **kwargs)
+        self.hover_image = label.image
+
         self.rect = label.rect
+        self.hover = False
 
     def handle_event(self, event):
-        if event.type == pg.MOUSEBUTTONDOWN and self.rect.collidepoint(event.pos):
+        if event.type == pg.MOUSEBUTTONDOWN and self.hover:
+            self.hover = False
             self.callback_function()
+        elif event.type == pg.MOUSEMOTION:
+            if self.rect.collidepoint(event.pos):
+                self.hover = True
+            else:
+                self.hover = False
+
+    def update(self):
+        if self.hover:
+            self.image = self.hover_image
+        else:
+            self.image = self.idle_image
 
 
 def display_single_message_on_screen(text, position="CENTER", font_size=18, erase_screen_first=True):
