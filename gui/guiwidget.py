@@ -1,6 +1,7 @@
 import pygame as pg
 import os
 import default
+import random
 from shared import GLOBAL
 
 
@@ -289,10 +290,31 @@ class Label(Widget):
                                 area=pg.Rect((0, 0), (font_rect.width, font_rect.height)))
 
                 if self.theme["with_decoration"]:
-                    x = 10
-                    pg.draw.polygon(self.image, color, [(x, margin), (x+4, margin), (x+2, margin + 2)], 0)
+                    # No more than 1 every 75 pixels in average...
+                    for i in range(random.randint(0, int(self.image.get_rect().width / 75))):
+                        # Top
+                        x = random.randint(2 * margin, self.image.get_rect().width - 2 * margin)
+                        pg.draw.polygon(self.image, color, [(x, margin), (x+4, margin), (x+2, margin + 2)], 0)
+                    # No more than 1 every 75 pixels in average...
+                    for i in range(random.randint(0, int(self.image.get_rect().width / 75))):
+                        # Bottom
+                        x = random.randint(2 * margin, self.image.get_rect().width - 2 * margin)
+                        y = self.image.get_rect().height - 1
+                        pg.draw.polygon(self.image, color, [(x, y- margin), (x+4, y-margin), (x+2, y-margin - 2)], 0)
+                    # No more than 1 every 75 pixels in average...
+                    for i in range(random.randint(0, int(self.image.get_rect().height / 75))):
+                        # Left
+                        y = random.randint(2 * margin, self.image.get_rect().height - 2 * margin)
+                        pg.draw.polygon(self.image, color, [(margin, y), (margin, y + 4), (margin + 2, y + 2)], 0)
+                    # No more than 1 every 75 pixels in average...
+                    for i in range(random.randint(0, int(self.image.get_rect().height / 75))):
+                        # Right
+                        y = random.randint(2 * margin, self.image.get_rect().height - 2 * margin)
+                        x = self.image.get_rect().width - 1
+                        pg.draw.polygon(self.image, color, [(x - margin, y), (x - margin, y + 4), (x - margin - 2, y + 2)], 0)
 
             self.rect = self.image.get_rect().move(self.position)
+
         else:
             self.image = font_image
             self.rect = font_rect
