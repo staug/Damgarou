@@ -13,6 +13,9 @@ class Widget:
         self.rect = None
         self.image = None
 
+        self.container_parent = None
+        self.id_in_container = None
+
     def update(self):
         """
         In general this method is not really usefull, but it is called from the master.
@@ -38,6 +41,84 @@ class Widget:
         assert self.image, "Image doesn't exist so can't blit"
         assert self.rect, "Rect doesn't exist so can't blit"
         screen.blit(self.image, self.rect)
+
+
+class Container:
+    """
+    A set of class to align the rects of the widget it contains
+    """
+    def __init__(self, widgets=None, widget=None, avoid_reorder=True):
+        self.widgets = {}
+        self.internal_id = 0
+        if widget:
+            self.add_widget(widget, avoid_reorder=avoid_reorder)
+        if widgets:
+            self.add_widgets(widgets, avoid_reorder=avoid_reorder)
+
+    def add_widget(self, widget, id=None, avoid_reorder=False):
+        if not id:
+            id = self.internal_id
+            self.internal_id += 1
+        self.widgets[id] = widget
+        widget.container_parent = self
+        widget.id_in_container = id
+        if not avoid_reorder:
+            self.reorder_container()
+
+    def add_widgets(self, widget_list, avoid_reorder=False):
+        for widget in widget_list:
+            self.add_widget(widget, avoid_reorder=avoid_reorder)
+
+    def remove_widget(self, id, avoid_reorder=False):
+        if id in self.widgets.keys():
+            self.widgets[id].container_parent = None
+            self.widgets[id].id = None
+            self.widgets.pop(id)
+        if not avoid_reorder:
+            self.reorder_container()
+
+    def remove_all_widgets(self, avoid_reorder=False):
+        for widget_id in self.widgets.key():
+            self.remove_widget(widget_id, avoid_reorder=avoid_reorder)
+        self.internal_id = 0
+
+    def reorder_container(self):
+        pass
+
+    def widgets_as_list(self):
+        return self.widgets.values()
+
+class LineAlignedContainer(Container):
+
+    VERTICAL_LEFT = "VERTICAL_LEFT"
+    VERTICAL_CENTER = "VERTICAL_CENTER"
+    VERTICAL_RIGHT = "VERTICAL_RIGHT"
+
+    def __init__(self, start_position, alignment=VERTICAL_LEFT, end_position=None, space=None, auto_space=False, widget=None, widgets=None):
+        Container.__init__(self, widget=widget, widgets=widgets, avoid_reorder=True)
+        self.alignment = alignment
+        self.start_position = start_position
+        self.reorder_container()
+
+    def reorder_container(self):
+        if self.alignment == LineAlignedContainer.VERTICAL_LEFT:
+            position = self.start_position
+            if type(position) is tuple:
+                position = position[0]
+            for widget in self.widgets.values():
+                widget.rect.left = position
+        elif self.alignment == LineAlignedContainer.VERTICAL_RIGHT:
+            position = self.start_position
+            if type(position) is tuple:
+                position = position[0]
+            for widget in self.widgets.values():
+                widget.rect.right = position
+        else:
+            position = self.start_position
+            if type(position) is tuple:
+                position = position[0]
+            for widget in self.widgets.values():
+                widget.rect.centerx = position
 
 
 class ProgressBar(Widget):
