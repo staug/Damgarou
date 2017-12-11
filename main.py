@@ -142,7 +142,7 @@ class Launcher:
         button_start = Button(position=(20, 10), text="Start", callback_function=self.start)
         button_load = Button(position=(50, 80), text="Load", callback_function=self.load)
         button_quit = Button(position=(10, 160), text="Quit", callback_function=Launcher.quit)
-        line = LineAlignedContainer(60, widgets=(button_start, button_load, button_quit))
+        line = LineAlignedContainer((200, 150), end_position=(200,950), auto_space=True, widgets=(button_start, button_load, button_quit))
         self.widgets = line.widgets_as_list()
 
     def draw(self):

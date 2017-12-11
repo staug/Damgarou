@@ -45,10 +45,12 @@ class Widget:
 
 class Container:
     """
-    A set of class to align the rects of the widget it contains
+    A set of class to align the rects of the widget it contains.
+    A widget can only be a part of one container - a check is done to remove it when adding it.
     """
     def __init__(self, widgets=None, widget=None, avoid_reorder=True):
         self.widgets = {}
+        self.widget_id_order = []
         self.internal_id = 0
         if widget:
             self.add_widget(widget, avoid_reorder=avoid_reorder)
@@ -56,12 +58,19 @@ class Container:
             self.add_widgets(widgets, avoid_reorder=avoid_reorder)
 
     def add_widget(self, widget, id=None, avoid_reorder=False):
+        # remove the widget from a previous container:
+        if widget.container_parent:
+            widget.container_parent.remove_widget(widget)
+
         if not id:
             id = self.internal_id
             self.internal_id += 1
+
         self.widgets[id] = widget
+        self.widget_id_order.append(id)
         widget.container_parent = self
         widget.id_in_container = id
+
         if not avoid_reorder:
             self.reorder_container()
 
@@ -74,6 +83,7 @@ class Container:
             self.widgets[id].container_parent = None
             self.widgets[id].id = None
             self.widgets.pop(id)
+            self.widget_id_order.remove(id)
         if not avoid_reorder:
             self.reorder_container()
 
@@ -88,25 +98,68 @@ class Container:
     def widgets_as_list(self):
         return self.widgets.values()
 
+
 class LineAlignedContainer(Container):
+    """
+    A container that will aligned all its widgets according to a virtual line.
+    The widgets can be vertically aligned:
+    * Vertical left means that all widgets left side will be glued
+    * Vertical center means that all widgets will be centered according to the line
+    * Vertical right means that all the widgets right side will be aligned
+    The widgets can be horizontally aligned
+    #TODO horizontal containers
+    """
 
     VERTICAL_LEFT = "VERTICAL_LEFT"
     VERTICAL_CENTER = "VERTICAL_CENTER"
     VERTICAL_RIGHT = "VERTICAL_RIGHT"
 
     def __init__(self, start_position, alignment=VERTICAL_LEFT, end_position=None, space=None, auto_space=False, widget=None, widgets=None):
+        # TODO documentation on the parameters
         Container.__init__(self, widget=widget, widgets=widgets, avoid_reorder=True)
+
+        if auto_space:
+            assert type(end_position) is tuple and type(start_position) is tuple,\
+                "Auto space set but start position {} and end position {} are not tuple".format(start_position,
+                                                                                               end_position)
         self.alignment = alignment
         self.start_position = start_position
+        self.end_position = end_position
+        self.space = space
+        self.auto_space = auto_space
         self.reorder_container()
 
     def reorder_container(self):
+        start_y = space = None
+        reposition_y_axis = False
+
+        if self.auto_space:
+            start_y = self.start_position[1]
+            end_y = self.end_position[1]
+            total_widget_height = 0
+            for widget in self.widgets.values():
+                total_widget_height += widget.rect.height
+            space = max(0, int((end_y - start_y - total_widget_height) / len(self.widget_id_order)))
+            reposition_y_axis = True
+        elif self.space:
+            if type(self.start_position) is tuple:
+                start_y = self.start_position[1]
+            else:
+                start_y = self.widgets[self.widget_id_order[0]].rect.top
+            space = self.space
+            reposition_y_axis = True
+
+        if reposition_y_axis:
+            for widget_id in self.widget_id_order:
+                self.widgets[widget_id].rect.top = start_y
+                start_y += self.widgets[widget_id].rect.height + space
+
         if self.alignment == LineAlignedContainer.VERTICAL_LEFT:
             position = self.start_position
             if type(position) is tuple:
                 position = position[0]
-            for widget in self.widgets.values():
-                widget.rect.left = position
+            for widget_id in self.widget_id_order:
+                self.widgets[widget_id].rect.left = position
         elif self.alignment == LineAlignedContainer.VERTICAL_RIGHT:
             position = self.start_position
             if type(position) is tuple:
