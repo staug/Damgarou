@@ -104,15 +104,20 @@ class LineAlignedContainer(Container):
     A container that will aligned all its widgets according to a virtual line.
     The widgets can be vertically aligned:
     * Vertical left means that all widgets left side will be glued
-    * Vertical center means that all widgets will be centered according to the line
+    * Vertical center means that all widgets will be centered according to the vertical line
     * Vertical right means that all the widgets right side will be aligned
     The widgets can be horizontally aligned
-    #TODO horizontal containers
+    * Horizontal top means that all widgets top side will be glued
+    * Horizontal center means that all widgets will be centered according to the horizontal line
+    * Horizontal bottom means that all the widgets bottom side will be aligned
     """
 
     VERTICAL_LEFT = "VERTICAL_LEFT"
     VERTICAL_CENTER = "VERTICAL_CENTER"
     VERTICAL_RIGHT = "VERTICAL_RIGHT"
+    HORIZONTAL_TOP = "HORIZONTAL_TOP"
+    HORIZONTAL_CENTER = "HORIZONTAL_CENTER"
+    HORIZONTAL_BOTTOM = "HORIZONTAL_BOTTOM"
 
     def __init__(self, start_position, alignment=VERTICAL_LEFT, end_position=None, space=None, auto_space=False, widget=None, widgets=None):
         # TODO documentation on the parameters
@@ -130,6 +135,12 @@ class LineAlignedContainer(Container):
         self.reorder_container()
 
     def reorder_container(self):
+        if self.alignment in [LineAlignedContainer.VERTICAL_LEFT,LineAlignedContainer.VERTICAL_CENTER,LineAlignedContainer.VERTICAL_RIGHT]:
+            self._reorder_container_vertical()
+        else:
+            self._reorder_container_horizontal()
+
+    def _reorder_container_vertical(self):
         start_y = space = None
         reposition_y_axis = False
 
@@ -172,6 +183,50 @@ class LineAlignedContainer(Container):
                 position = position[0]
             for widget in self.widgets.values():
                 widget.rect.centerx = position
+
+    def _reorder_container_horizontal(self):
+        start_x = space = None
+        reposition_x_axis = False
+
+        if self.auto_space:
+            start_x = self.start_position[0]
+            end_x = self.end_position[0]
+            total_widget_width = 0
+            for widget in self.widgets.values():
+                total_widget_width += widget.rect.width
+            space = max(0, int((end_x - start_x - total_widget_width) / len(self.widget_id_order)))
+            reposition_x_axis = True
+        elif self.space:
+            if type(self.start_position) is tuple:
+                start_x = self.start_position[0]
+            else:
+                start_x = self.widgets[self.widget_id_order[0]].rect.left
+            space = self.space
+            reposition_x_axis = True
+
+        if reposition_x_axis:
+            for widget_id in self.widget_id_order:
+                self.widgets[widget_id].rect.left = start_x
+                start_x += self.widgets[widget_id].rect.width + space
+
+        if self.alignment == LineAlignedContainer.HORIZONTAL_TOP:
+            position = self.start_position
+            if type(position) is tuple:
+                position = position[1]
+            for widget_id in self.widget_id_order:
+                self.widgets[widget_id].rect.top = position
+        elif self.alignment == LineAlignedContainer.HORIZONTAL_BOTTOM:
+            position = self.start_position
+            if type(position) is tuple:
+                position = position[1]
+            for widget in self.widgets.values():
+                widget.rect.bottom = position
+        else:
+            position = self.start_position
+            if type(position) is tuple:
+                position = position[1]
+            for widget in self.widgets.values():
+                widget.rect.centery = position
 
 
 class ProgressBar(Widget):
