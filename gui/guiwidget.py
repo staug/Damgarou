@@ -78,6 +78,44 @@ class Container:
         for widget in widget_list:
             self.add_widget(widget, avoid_reorder=avoid_reorder)
 
+    def insert_widget_after(self, widget_to_insert, widget_reference, avoid_reorder=False):
+        """
+        Insert a widget just after the widget reference one. If the widget reference doesn't exist, add it at the end
+        :param widget_to_insert: the widget to insert
+        :param widget_reference: the widget after which it needs to be inserted
+        :return: Nothing
+        """
+        if widget_reference.id not in self.widget_id_order:
+            self.add_widget(widget_to_insert, avoid_reorder=True)
+        else:
+            copy_order = self.widget_id_order[:]
+            self.add_widget(widget_to_insert, avoid_reorder=True)
+            self.widget_id_order = copy_order[:copy_order.index(widget_reference.id)+1] +\
+                                   [widget_to_insert.id] +\
+                                   copy_order[copy_order.index(widget_reference.id)+1:]
+        if not avoid_reorder:
+            self.reorder_container()
+
+    def insert_widget_before(self, widget_to_insert, widget_reference, avoid_reorder=False):
+        """
+        Insert a widget just after the widget reference one. If the widget reference doesn't exist, add it at the beginning
+        :param widget_to_insert: the widget to insert
+        :param widget_reference: the widget after which it needs to be inserted
+        :return: Nothing
+        """
+        if widget_reference.id not in self.widget_id_order:
+            copy_order = self.widget_id_order[:]
+            self.add_widget(widget_to_insert, avoid_reorder=True)
+            self.widget_id_order = [widget_to_insert.id] + copy_order
+        else:
+            copy_order = self.widget_id_order[:]
+            self.add_widget(widget_to_insert, avoid_reorder=True)
+            self.widget_id_order = copy_order[:copy_order.index(widget_reference.id)] +\
+                                   [widget_to_insert.id] +\
+                                   copy_order[copy_order.index(widget_reference.id):]
+        if not avoid_reorder:
+            self.reorder_container()
+
     def remove_widget(self, id, avoid_reorder=False):
         if id in self.widgets.keys():
             self.widgets[id].container_parent = None
@@ -100,6 +138,10 @@ class Container:
 
     @property
     def rect(self):
+        """
+        This computes the rect that encompasses all widget
+        :return: The rect that encompasses all widgets
+        """
         if len(self.widget_id_order) == 0:
             return pg.Rect((0, 0), (0, 0))
         width = self.widgets[self.widget_id_order[-1]].rect.right - self.widgets[self.widget_id_order[0]].rect.left
@@ -108,6 +150,12 @@ class Container:
                        (width, height))
 
     def move(self, dx, dy):
+        """
+        Move all the rects of the widgets
+        :param dx: the delta x to move
+        :param dy: the delta y to move
+        :return:
+        """
         for widget in self.widgets.values():
             widget.rect.move_ip(dx, dy)
 
