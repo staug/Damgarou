@@ -98,6 +98,18 @@ class Container:
     def widgets_as_list(self):
         return self.widgets.values()
 
+    @property
+    def rect(self):
+        if len(self.widget_id_order) == 0:
+            return pg.Rect((0, 0), (0, 0))
+        width = self.widgets[self.widget_id_order[-1]].rect.right - self.widgets[self.widget_id_order[0]].rect.left
+        height = self.widgets[self.widget_id_order[-1]].rect.bottom - self.widgets[self.widget_id_order[0]].rect.top
+        return pg.Rect(self.widgets[self.widget_id_order[0]].rect.topleft,
+                       (width, height))
+
+    def move(self, dx, dy):
+        for widget in self.widgets.values():
+            widget.rect.move_ip(dx, dy)
 
 class LineAlignedContainer(Container):
     """
@@ -119,8 +131,28 @@ class LineAlignedContainer(Container):
     HORIZONTAL_CENTER = "HORIZONTAL_CENTER"
     HORIZONTAL_BOTTOM = "HORIZONTAL_BOTTOM"
 
-    def __init__(self, start_position, alignment=VERTICAL_LEFT, end_position=None, space=None, auto_space=False, widget=None, widgets=None):
-        # TODO documentation on the parameters
+    def __init__(self,
+                 start_position,
+                 alignment=VERTICAL_LEFT,
+                 end_position=None,
+                 space=None,
+                 auto_space=False,
+                 widget=None,
+                 widgets=None,
+                 avoid_reorder=False):
+        """
+        Define a new line aligned container, potentially with pre-made widget(s)
+        :param start_position: the start of the line. Can be a single coordinate
+        (handled as x or y axis dependent on the alignment)
+        :param alignment: one of the different alignment
+        (vertical/horizontal, mixed with which side of the widget needs to be glued)
+        :param end_position: optional end position. Only mandatory if auto_space is set.
+        :param space: the space between the widgets. If auto space is set to True this is ignored
+        :param auto_space: compute the space between widgets. Needs the end_position to be set.
+        :param widget: a single widget to add as part of the init.
+        :param widgets: a list of widgets to add as part of the init.
+        :param avoid_reorder: if set to False (default), will automatically reorder the container at the end of the init.
+        """
         Container.__init__(self, widget=widget, widgets=widgets, avoid_reorder=True)
 
         if auto_space:
@@ -132,7 +164,9 @@ class LineAlignedContainer(Container):
         self.end_position = end_position
         self.space = space
         self.auto_space = auto_space
-        self.reorder_container()
+
+        if not avoid_reorder:
+            self.reorder_container()
 
     def reorder_container(self):
         if self.alignment in [LineAlignedContainer.VERTICAL_LEFT,LineAlignedContainer.VERTICAL_CENTER,LineAlignedContainer.VERTICAL_RIGHT]:

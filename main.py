@@ -142,7 +142,10 @@ class Launcher:
         button_start = Button(position=(20, 10), text="Start", callback_function=self.start)
         button_load = Button(position=(50, 80), text="Load", callback_function=self.load)
         button_quit = Button(position=(10, 160), text="Quit", callback_function=Launcher.quit)
-        line = LineAlignedContainer((50, 150), end_position=(600,150), alignment=LineAlignedContainer.HORIZONTAL_CENTER, auto_space=True, widgets=(button_start, button_load, button_quit))
+        line = LineAlignedContainer(int(pg.display.get_surface().get_rect().width / 2),
+                                    alignment=LineAlignedContainer.VERTICAL_CENTER,
+                                    widgets=(button_start, button_load, button_quit), space=50)
+        line.move(0, int((pg.display.get_surface().get_rect().height - line.rect.height)/ 2))
         self.widgets = line.widgets_as_list()
 
     def draw(self):
