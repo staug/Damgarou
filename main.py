@@ -8,7 +8,7 @@ import default
 from entity.player import Player
 from entity.town import Entrance, Bank, GuildFighter, GuildMule, Shop, Tavern, Trade, Townhall, Temple
 from gui import guiwidget
-from gui.guiwidget import Button, LineAlignedContainer
+from gui.guiwidget import Button, LineAlignedContainer, MultiLineLabel
 from gui.screen import PlayingScreen, BuildingScreen
 from region.region import RegionFactory
 from shared import GLOBAL
@@ -145,8 +145,9 @@ class Launcher:
         line = LineAlignedContainer(int(pg.display.get_surface().get_rect().width / 2),
                                     alignment=LineAlignedContainer.VERTICAL_CENTER,
                                     widgets=(button_start, button_load, button_quit), space=50)
-        line.move(0, int((pg.display.get_surface().get_rect().height - line.rect.height)/ 2))
+        line.move(0, int((pg.display.get_surface().get_rect().height - line.rect.height) / 2))
         self.widgets = line.widgets_as_list()
+        self.widgets.append(MultiLineLabel(text="This is a very long text that needs to be splitted across multi elements. It goes on and on...", position=(10, 10)))
 
     def draw(self):
         # Erase All

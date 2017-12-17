@@ -134,7 +134,10 @@ class Container:
         pass
 
     def widgets_as_list(self):
-        return self.widgets.values()
+        listing = []
+        for widget in self.widgets.values():
+            listing.append(widget)
+        return listing
 
     @property
     def rect(self):
@@ -451,16 +454,20 @@ class Label(Widget):
 
         "bg_color": None,  # Transparent if None - ignored if a theme is given
 
-        "text_margin_x": 20,  # Minimum margin on the right & left, only relevant if a background is set (Color/image)
+        "text_margin_x": 10,  # Minimum margin on the right & left, only relevant if a background is set (Color/image)
         "text_margin_y": 10,  # Minimum margin on the top & down, only relevant if a background is set (Color/image)
         "text_align_x": "CENTER",
         "text_align_y": "CENTER",
 
-        "dimension": (250, 10),
+        "dimension": (20, 10),
         "adapt_text_width": True,  # if set to true, will grow the width dimension to the text size
         "adapt_text_height": True,  # if set to true, will grow the width dimension to the text size
 
         "theme": default.THEME_LIGHT_GRAY,  # the main theme
+
+        "multiline" : False,  # if set to True will potentially split the text
+        "char_limit" : 42,
+        "multiline_align": "LEFT"
     }
 
     def __init__(self, text=None, position=(0, 0), **kwargs):
@@ -471,6 +478,9 @@ class Label(Widget):
             self.__setattr__(key, original_kwargs.pop(key, Label.DEFAULT_OPTIONS[key]))
         if len(original_kwargs) != 0:
             print("Warning: unused attributes in Label {}".format(original_kwargs))
+
+        if self.multiline:
+            assert self.char_limit is not None, "Multiline set in labels without char_limit"
 
         self.position = position
 
@@ -506,9 +516,23 @@ class Label(Widget):
         * A Rect for the image, already positionned
         *
         """
+        font_image = None
+        if not self.multiline:
+            font_image = self.font.render(self.text, True, self.font_color)
+        else:
+            lines = wrap_text(self.text, self.char_limit)
+            label_images = [self.font.render(line, True, self.font_color) for line in lines]
+            width = max([label.get_rect().width for label in label_images])
+            height = sum([label.get_rect().height for label in label_images])
+            font_image = pg.Surface((width, height), pg.SRCALPHA)
+            y = 0
+            for label in label_images:
+                x = 0
+                font_image.blit(label, (x, y))
+                y += label.get_rect().height
 
-        font_image = self.font.render(self.text, True, self.font_color)
         font_rect = font_image.get_rect().move(self.position)
+
         pos_font_x = self.text_margin_x
         pos_font_y = self.text_margin_y
 
@@ -608,6 +632,33 @@ class Label(Widget):
         else:
             self.image = font_image
             self.rect = font_rect
+
+
+#Helper function for MultiLineLabel class
+def wrap_text(text, char_limit, separator=" "):
+    """Splits a string into a list of strings no longer than char_limit."""
+    words = text.split(separator)
+    lines = []
+    current_line = []
+    current_length = 0
+    for word in words:
+        if len(word) + current_length <= char_limit:
+            current_length += len(word) + len(separator)
+            current_line.append(word)
+        else:
+            lines.append(separator.join(current_line))
+            current_line = [word]
+            current_length = len(word) + len(separator)
+    if current_line:
+        lines.append(separator.join(current_line))
+    return lines
+
+
+class MultiLineLabel(Label):
+
+    def __init__(self, text=None, position=(0, 0), char_limit=42, multiline_align="LEFT", **kwargs):
+        Label.__init__(self, text=text, position=position, multiline=True, multiline_align=multiline_align,
+                       char_limit=char_limit, **kwargs)
 
 
 class Button(Widget):
