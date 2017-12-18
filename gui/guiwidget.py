@@ -48,55 +48,56 @@ class Container:
     A set of class to align the rects of the widget it contains.
     A widget can only be a part of one container - a check is done to remove it when adding it.
     """
-    def __init__(self, widgets=None, widget=None, avoid_reorder=True):
+    def __init__(self, widgets=None, widget=None, reorder=False):
         self.widgets = {}
         self.widget_id_order = []
         self.internal_id = 0
         if widget:
-            self.add_widget(widget, avoid_reorder=avoid_reorder)
+            self.add_widget(widget, reorder=reorder)
         if widgets:
-            self.add_widgets(widgets, avoid_reorder=avoid_reorder)
+            self.add_widgets(widgets, reorder=reorder)
 
-    def add_widget(self, widget, id=None, avoid_reorder=False):
+    def add_widget(self, widget, widget_id=None, reorder=True):
         # remove the widget from a previous container:
         if widget.container_parent:
-            widget.container_parent.remove_widget(widget)
+            widget.container_parent.remove_widget_by_id(widget)
 
-        if not id:
-            id = self.internal_id
+        if not widget_id:
+            widget_id = self.internal_id
             self.internal_id += 1
 
-        self.widgets[id] = widget
-        self.widget_id_order.append(id)
+        self.widgets[widget_id] = widget
+        self.widget_id_order.append(widget_id)
         widget.container_parent = self
-        widget.id_in_container = id
+        widget.id_in_container = widget_id
 
-        if not avoid_reorder:
+        if reorder:
             self.reorder_container()
 
-    def add_widgets(self, widget_list, avoid_reorder=False):
+    def add_widgets(self, widget_list, reorder=True):
         for widget in widget_list:
-            self.add_widget(widget, avoid_reorder=avoid_reorder)
+            self.add_widget(widget, reorder=reorder)
 
-    def insert_widget_after(self, widget_to_insert, widget_reference, avoid_reorder=False):
+    def insert_widget_after(self, widget_to_insert, widget_reference, reorder=True):
         """
         Insert a widget just after the widget reference one. If the widget reference doesn't exist, add it at the end
         :param widget_to_insert: the widget to insert
         :param widget_reference: the widget after which it needs to be inserted
+        :param reorder: if set to True will not trigger the reordering
         :return: Nothing
         """
         if widget_reference.id not in self.widget_id_order:
-            self.add_widget(widget_to_insert, avoid_reorder=True)
+            self.add_widget(widget_to_insert, reorder=True)
         else:
             copy_order = self.widget_id_order[:]
-            self.add_widget(widget_to_insert, avoid_reorder=True)
+            self.add_widget(widget_to_insert, reorder=True)
             self.widget_id_order = copy_order[:copy_order.index(widget_reference.id)+1] +\
                                    [widget_to_insert.id] +\
                                    copy_order[copy_order.index(widget_reference.id)+1:]
-        if not avoid_reorder:
+        if reorder:
             self.reorder_container()
 
-    def insert_widget_before(self, widget_to_insert, widget_reference, avoid_reorder=False):
+    def insert_widget_before(self, widget_to_insert, widget_reference, reorder=True):
         """
         Insert a widget just after the widget reference one. If the widget reference doesn't exist, add it at the beginning
         :param widget_to_insert: the widget to insert
@@ -105,29 +106,40 @@ class Container:
         """
         if widget_reference.id not in self.widget_id_order:
             copy_order = self.widget_id_order[:]
-            self.add_widget(widget_to_insert, avoid_reorder=True)
+            self.add_widget(widget_to_insert, reorder=True)
             self.widget_id_order = [widget_to_insert.id] + copy_order
         else:
             copy_order = self.widget_id_order[:]
-            self.add_widget(widget_to_insert, avoid_reorder=True)
+            self.add_widget(widget_to_insert, reorder=True)
             self.widget_id_order = copy_order[:copy_order.index(widget_reference.id)] +\
                                    [widget_to_insert.id] +\
                                    copy_order[copy_order.index(widget_reference.id):]
-        if not avoid_reorder:
+        if reorder:
             self.reorder_container()
 
-    def remove_widget(self, id, avoid_reorder=False):
-        if id in self.widgets.keys():
-            self.widgets[id].container_parent = None
-            self.widgets[id].id = None
-            self.widgets.pop(id)
-            self.widget_id_order.remove(id)
-        if not avoid_reorder:
+    def remove_widget_by_id(self, widget, reorder=True):
+        if widget is None or widget.id_in_container is None:
+            return
+        if widget.id_in_container in self.widgets.keys():
+            self.widgets[widget.id_in_container].container_parent = None
+            self.widgets[widget.id_in_container].id = None
+            self.widgets.pop(widget.id_in_container)
+            self.widget_id_order.remove(widget.id_in_container)
+        if reorder:
             self.reorder_container()
 
-    def remove_all_widgets(self, avoid_reorder=False):
+    def remove_widget_by_id(self, widget_id, reorder=True):
+        if widget_id in self.widgets.keys():
+            self.widgets[widget_id].container_parent = None
+            self.widgets[widget_id].id = None
+            self.widgets.pop(widget_id)
+            self.widget_id_order.remove(widget_id)
+        if reorder:
+            self.reorder_container()
+
+    def remove_all_widgets(self):
         for widget_id in self.widgets.key():
-            self.remove_widget(widget_id, avoid_reorder=avoid_reorder)
+            self.remove_widget_by_id(widget_id, reorder=False)
         self.internal_id = 0
 
     def reorder_container(self):
@@ -190,7 +202,7 @@ class LineAlignedContainer(Container):
                  auto_space=False,
                  widget=None,
                  widgets=None,
-                 avoid_reorder=False):
+                 reorder=False):
         """
         Define a new line aligned container, potentially with pre-made widget(s)
         :param start_position: the start of the line. Can be a single coordinate
@@ -202,9 +214,9 @@ class LineAlignedContainer(Container):
         :param auto_space: compute the space between widgets. Needs the end_position to be set.
         :param widget: a single widget to add as part of the init.
         :param widgets: a list of widgets to add as part of the init.
-        :param avoid_reorder: if set to False (default), will automatically reorder the container at the end of the init.
+        :param reorder: if set to False (default), will automatically reorder the container at the end of the init.
         """
-        Container.__init__(self, widget=widget, widgets=widgets, avoid_reorder=True)
+        Container.__init__(self, widget=widget, widgets=widgets, reorder=False)
 
         if auto_space:
             assert type(end_position) is tuple and type(start_position) is tuple,\
@@ -216,11 +228,13 @@ class LineAlignedContainer(Container):
         self.space = space
         self.auto_space = auto_space
 
-        if not avoid_reorder:
+        if not reorder:
             self.reorder_container()
 
     def reorder_container(self):
-        if self.alignment in [LineAlignedContainer.VERTICAL_LEFT,LineAlignedContainer.VERTICAL_CENTER,LineAlignedContainer.VERTICAL_RIGHT]:
+        if self.alignment in [LineAlignedContainer.VERTICAL_LEFT,
+                              LineAlignedContainer.VERTICAL_CENTER,
+                              LineAlignedContainer.VERTICAL_RIGHT]:
             self._reorder_container_vertical()
         else:
             self._reorder_container_horizontal()
@@ -447,6 +461,7 @@ def rounded_surface(rect, color, radius=1):
 
 
 class Label(Widget):
+
     DEFAULT_OPTIONS = {
         "font_name": default.FONT_NAME,
         "font_size": 14,
@@ -456,18 +471,26 @@ class Label(Widget):
 
         "text_margin_x": 10,  # Minimum margin on the right & left, only relevant if a background is set (Color/image)
         "text_margin_y": 10,  # Minimum margin on the top & down, only relevant if a background is set (Color/image)
-        "text_align_x": "CENTER",
+        "text_align_x": "LEFT",
         "text_align_y": "CENTER",
 
         "dimension": (20, 10),
         "adapt_text_width": True,  # if set to true, will grow the width dimension to the text size
         "adapt_text_height": True,  # if set to true, will grow the width dimension to the text size
 
+        # To set the theme
         "theme": default.THEME_LIGHT_GRAY,  # the main theme
 
+        # To make it multiline
         "multiline" : False,  # if set to True will potentially split the text
         "char_limit" : 42,
-        "multiline_align": "LEFT"
+        "multiline_align": "LEFT",
+
+        # To make it multiline and scrollable
+        "scrollable" : False,
+        "scrollable_position": "RIGHT",  # The position either at the rihgt or at the left
+        "scrollable_size" : 30,  # the space dedicated to the arrows
+        "scrollable_color" : (0,0,0)  # the color for the arrow - if no theme is used
     }
 
     def __init__(self, text=None, position=(0, 0), **kwargs):
@@ -481,6 +504,9 @@ class Label(Widget):
 
         if self.multiline:
             assert self.char_limit is not None, "Multiline set in labels without char_limit"
+        if self.scrollable:
+            assert self.multiline, "Scrollable needs to be multiline"
+            assert self.scrollable_size > 20, "Scrollable size needs to be greater than 20"
 
         self.position = position
 
@@ -517,17 +543,26 @@ class Label(Widget):
         *
         """
         font_image = None
+        height_scrollable = pos_scrollable_x = 0 # pos_scrolable is inside the font image
+
         if not self.multiline:
             font_image = self.font.render(self.text, True, self.font_color)
         else:
             lines = wrap_text(self.text, self.char_limit)
             label_images = [self.font.render(line, True, self.font_color) for line in lines]
             width = max([label.get_rect().width for label in label_images])
+            if self.scrollable:
+                pass
             height = sum([label.get_rect().height for label in label_images])
+            height_scrollable = min([label.get_rect().height for label in label_images])
             font_image = pg.Surface((width, height), pg.SRCALPHA)
             y = 0
             for label in label_images:
                 x = 0
+                if self.multiline_align == "RIGHT":
+                    x = width - label.get_rect().width
+                elif self.multiline_align == "CENTER":
+                    x = int((width - label.get_rect().width) / 2)
                 font_image.blit(label, (x, y))
                 y += label.get_rect().height
 
@@ -549,18 +584,41 @@ class Label(Widget):
                     pos_font_x = int((self.dimension[0] - font_rect.width) / 2)
                 font_rect.width = self.dimension[0] - 2 * self.text_margin_x
             else:
-                font_rect.width += 2 * self.text_margin_x
                 pos_font_x = self.text_margin_x
         if not self.adapt_text_height:
             font_rect.height = self.dimension[1] - 2 * self.text_margin_y
         else:
             font_rect.height = max(font_rect.height, self.dimension[1])
 
+        if self.scrollable:
+            pos_scrollable_x = 10
+            if self.scrollable_position == "RIGHT":
+                pos_scrollable_x += font_rect.width
+
+            font_image_tmp = pg.Surface((font_rect.width + self.scrollable_size, font_rect.height), pg.SRCALPHA)
+            font_image_tmp.blit(font_image, (0, 0))
+            font_image = font_image_tmp
+
+            font_rect = font_image.get_rect()
+            color = self.scrollable_color
+            if self.theme and self.theme["borders"]:
+                color = self.theme["borders"][-1][1]
+
+            pg.draw.polygon(font_image, color, ((pos_scrollable_x, 12), (pos_scrollable_x+10, 12), (pos_scrollable_x+5, 0)), 0)
+            pg.draw.polygon(font_image, color, ((pos_scrollable_x, font_rect.height - 14), (pos_scrollable_x+10, font_rect.height - 14), (pos_scrollable_x+5, font_rect.height - 2)), 0)
+
+            self.scroll_top_rect = pg.Rect((pos_scrollable_x, 0), (10, 12)).move(self.position)
+            self.scroll_bottom_rect = pg.Rect((pos_scrollable_x, font_rect.height - 14), (10, 12)).move(self.position)
+
         if self.theme or self.bg_color:
             width_background, height_background = font_rect.width + 2 * self.text_margin_x, \
                                                   font_rect.height + 2 * self.text_margin_y
             background_rect = pg.Rect(self.position, (width_background, height_background))
-            font_rect.move_ip(self.text_margin_x, self.text_margin_y)
+
+            if self.scrollable:
+                self.scroll_top_rect = self.scroll_top_rect.move((self.text_margin_x, self.text_margin_y))
+                self.scroll_bottom_rect = self.scroll_bottom_rect.move((self.text_margin_x, self.text_margin_y))
+
 
             if self.bg_color:
                 self.image = pg.Surface(background_rect.size, pg.SRCALPHA)
@@ -634,9 +692,12 @@ class Label(Widget):
             self.rect = font_rect
 
 
+
 #Helper function for MultiLineLabel class
 def wrap_text(text, char_limit, separator=" "):
     """Splits a string into a list of strings no longer than char_limit."""
+    if text is None:
+        text = ""
     words = text.split(separator)
     lines = []
     current_line = []
@@ -653,12 +714,66 @@ def wrap_text(text, char_limit, separator=" "):
         lines.append(separator.join(current_line))
     return lines
 
+#Helper function for MultiLineLabel class
+def join_text(lines, separator=' '):
+    """unit a list of string with the separator in between"""
+    if lines is None:
+        return ""
+
+    res = separator.join(lines)
+    '''
+    for line in lines:
+        res += line
+        res += separator
+    '''
+    return res.strip(separator)
 
 class MultiLineLabel(Label):
 
     def __init__(self, text=None, position=(0, 0), char_limit=42, multiline_align="LEFT", **kwargs):
         Label.__init__(self, text=text, position=position, multiline=True, multiline_align=multiline_align,
                        char_limit=char_limit, **kwargs)
+
+
+class ScrollableMultiLineLabel(MultiLineLabel):
+
+    def __init__(self, text=None, lines_to_display=3, position=(0,0), char_limit=42, multiline_align="LEFT", scrollable_position="RIGHT", scrollable_color=(0,0,0), scrollable_size=25, **kwargs):
+        lines = wrap_text(text, char_limit=char_limit)
+        temp_text = None
+        if len(lines) > lines_to_display:
+            temp_text = join_text(lines[0:lines_to_display])
+        else:
+            temp_text = text
+
+        self.scroll_top_rect = self.scroll_bottom_rect = None
+        MultiLineLabel.__init__(self, text=temp_text, position=position, scrollable=True, char_limit=char_limit, multiline_align=multiline_align, scrollable_color=scrollable_color, scrollable_position=scrollable_position, scrollable_size=scrollable_size, **kwargs)
+        self.longtext = text
+        self.first_line_to_display = 0
+        self.lines_to_display = lines_to_display
+
+    def handle_event(self, event):
+        if event.type == pg.MOUSEBUTTONDOWN:
+            if self.scroll_top_rect.collidepoint(event.pos):
+                self.scroll("UP")
+            elif self.scroll_bottom_rect.collidepoint(event.pos):
+                self.scroll("BOTTOM")
+
+    def add_text(self, text):
+        self.longtext += text
+
+    def scroll(self, direction):
+        lines = wrap_text(self.longtext, char_limit=self.char_limit)
+
+        if direction == "UP":
+            self.first_line_to_display = max(0, self.first_line_to_display - 1)
+        elif direction == "BOTTOM":
+            self.first_line_to_display = min (self.first_line_to_display + 1, len(lines) - self.lines_to_display)
+
+        if len(lines) > self.lines_to_display:
+            temp_text = join_text(lines[self.first_line_to_display:self.first_line_to_display + self.lines_to_display])
+            self.set_text(temp_text)
+        else:
+            self.set_text(self.longtext)
 
 
 class Button(Widget):
