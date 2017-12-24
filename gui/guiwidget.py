@@ -253,8 +253,8 @@ class Label2(Widget):
 
         "bg_color": None,  # Transparent if None - ignored if a theme is given
 
-        "text_margin_x": 10,  # Minimum margin on the right & left, only relevant if a background is set (Color/image)
-        "text_margin_y": 10,  # Minimum margin on the top & down, only relevant if a background is set (Color/image)
+        "text_margin_x": 40,  # Minimum margin on the right & left, only relevant if a background is set (Color/image)
+        "text_margin_y": 20,  # Minimum margin on the top & down, only relevant if a background is set (Color/image)
         "text_align_x": "LEFT",
         "text_align_y": "CENTER",
 
@@ -347,6 +347,7 @@ class Label2(Widget):
 
         # Now we can create the final image
         self.image = self.background_image.copy()
+        #TODO: change the position left/top of the text according to settings
         self.image.blit(self.text_image, (self.margin_x_left, self.margin_y_top), area=pg.Rect((0, 0),
                                                                                                self.text_rect.size))
         self.rect = self.image.get_rect()
