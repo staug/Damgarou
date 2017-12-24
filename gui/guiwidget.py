@@ -259,8 +259,8 @@ class Label2(Widget):
         "text_align_y": "CENTER",
 
         # To set the theme
-        # "theme": default.THEME_LIGHT_GRAY,  # the main theme or None
-        "theme": None,  # the main theme or None
+        "theme": default.THEME_LIGHT_BROWN,  # the main theme or None
+        # "theme": None,  # the main theme or None
 
         # To make it multiline and scrollable
         "scrollable_position": "RIGHT",  # The position either at the rihgt or at the left
@@ -271,7 +271,7 @@ class Label2(Widget):
     def __init__(self,
                  text=None,
                  position=(0, 0),
-                 dimension=(80, 20), # preferred dimensions of the total widget.
+                 dimension=(80, 20),  # preferred dimensions of the total widget.
                  # Note that x dimension might change with adapt_text_width parameter,
                  # and y_dimension changes if set to multiline and grow_height
                  style_dict=None,
@@ -335,7 +335,7 @@ class Label2(Widget):
         self.text = text
 
         if self.multiline:
-            #TODO
+            # TODO
             pass
         else:
             self.text_image = self.font.render(text, True, self.font_color)
@@ -371,7 +371,6 @@ class Label2(Widget):
         # And we finally move to the position
         self.rect.topleft = self.position
 
-
     def _compute_margin(self):
         """
         Set margin_x left/right, and margin_y top/bottom
@@ -379,9 +378,9 @@ class Label2(Widget):
         """
         if self.theme:
             self.margin_x_left = self.margin_x_right = self.style_dict.get("text_margin_x",
-                                                                      Label2.DEFAULT_OPTIONS["text_margin_x"])
+                                                                           Label2.DEFAULT_OPTIONS["text_margin_x"])
             self.margin_y_top = self.margin_y_bottom = self.style_dict.get("text_margin_y",
-                                                                      Label2.DEFAULT_OPTIONS["text_margin_y"])
+                                                                           Label2.DEFAULT_OPTIONS["text_margin_y"])
             for border_info in self.theme["borders"]:
                 self.margin_x_left += border_info[0]
                 self.margin_x_right += border_info[0]
@@ -389,15 +388,14 @@ class Label2(Widget):
                 self.margin_y_bottom += border_info[0]
         elif "bg_color" in self.style_dict:
             self.margin_x_left = self.margin_x_right = self.style_dict.get("text_margin_x",
-                                                                      Label2.DEFAULT_OPTIONS["text_margin_x"])
+                                                                           Label2.DEFAULT_OPTIONS["text_margin_x"])
             self.margin_y_top = self.margin_y_bottom = self.style_dict.get("text_margin_y",
-                                                                      Label2.DEFAULT_OPTIONS["text_margin_y"])
+                                                                           Label2.DEFAULT_OPTIONS["text_margin_y"])
         if self.scrollable:
             if self.style_dict.get("scrollable_position", Label2.DEFAULT_OPTIONS["scrollable_position"]) == "RIGHT":
                 self.margin_x_right += self.style_dict.get("scrollable_size", Label2.DEFAULT_OPTIONS["scrollable_size"])
             else:
                 self.margin_x_left += self.style_dict.get("scrollable_size", Label2.DEFAULT_OPTIONS["scrollable_size"])
-
 
     def _adjust_dimension(self):
         """
@@ -415,9 +413,7 @@ class Label2(Widget):
         self.background_image = pg.Surface(self.dimension, pg.SRCALPHA)
 
         bg_color = self.style_dict.get("bg_color", Label2.DEFAULT_OPTIONS["bg_color"])
-        if bg_color:
-            self.background_image.fill(bg_color)
-        elif self.theme:
+        if self.theme:
             rect = pg.Rect((0, 0), self.dimension)
             if self.theme["borders"]:
                 # First, we start by creating a surface, which is the external one.
@@ -438,28 +434,30 @@ class Label2(Widget):
                         margin += self.theme["borders"][index][0]
                 # add the internal:
                 self.background_image.blit(rounded_surface(rect.inflate(-margin * 2, -margin * 2),
-                                                self.theme["bg_color"],
-                                                radius=self.theme["rounded_angle"]),
-                                (margin, margin))
+                                                           self.theme["bg_color"],
+                                                           radius=self.theme["rounded_angle"]),
+                                           (margin, margin))
 
             # We finally add the decoration
-            #TODO
+            # TODO
 
             elif self.theme["bg_color"]:
                 # We just do something for the background
-                self.background_image = rounded_surface(rect, self.theme["bg_color"], radius=self.theme["rounded_angle"])
+                self.background_image = rounded_surface(rect, self.theme["bg_color"],
+                                                        radius=self.theme["rounded_angle"])
+        elif bg_color:
+            self.background_image.fill(bg_color)
 
         if self.scrollable:
-            #TODO Add the up/down arrow
+            # TODO Add the up/down arrow
             pass
 
         if force_recreate_decoration:
-            #TODO Set the decoration
+            # TODO Set the decoration
             pass
 
 
 class Label(Widget):
-
     DEFAULT_OPTIONS = {
         "font_name": default.FONT_NAME,
         "font_size": 14,
@@ -480,16 +478,16 @@ class Label(Widget):
         "theme": default.THEME_LIGHT_GRAY,  # the main theme
 
         # To make it multiline
-        "multiline" : False,  # if set to True will potentially split the text
-        "char_limit" : 42,
+        "multiline": False,  # if set to True will potentially split the text
+        "char_limit": 42,
         "multiline_align": "LEFT",
 
         # To make it multiline and scrollable
-        "scrollable" : False,
+        "scrollable": False,
         "scrollable_position": "RIGHT",  # The position either at the rihgt or at the left
-        "scrollable_size" : 30,  # the space dedicated to the arrows
-        "scrollable_color" : (0,0,0),  # the color for the arrow - if no theme is used
-        "font_dimension": (0,0)
+        "scrollable_size": 30,  # the space dedicated to the arrows
+        "scrollable_color": (0, 0, 0),  # the color for the arrow - if no theme is used
+        "font_dimension": (0, 0)
     }
 
     def __init__(self, text=None, position=(0, 0), **kwargs):
@@ -546,7 +544,7 @@ class Label(Widget):
         *
         """
         font_image = None
-        height_scrollable = pos_scrollable_x = 0 # pos_scrolable is inside the font image
+        height_scrollable = pos_scrollable_x = 0  # pos_scrolable is inside the font image
 
         if not self.multiline:
             font_image = self.font.render(self.text, True, self.font_color)
@@ -559,7 +557,7 @@ class Label(Widget):
                 height_scrollable = min([label.get_rect().height for label in label_images])
             else:
                 width = self.font_dimension[0]
-                height= self.font_dimension[1]
+                height = self.font_dimension[1]
             font_image = pg.Surface((width, height), pg.SRCALPHA)
             y = 0
             for label in label_images:
@@ -611,8 +609,11 @@ class Label(Widget):
             if self.theme and self.theme["borders"]:
                 color = self.theme["borders"][-1][1]
 
-            pg.draw.polygon(font_image, color, ((pos_scrollable_x, 12), (pos_scrollable_x+10, 12), (pos_scrollable_x+5, 0)), 0)
-            pg.draw.polygon(font_image, color, ((pos_scrollable_x, font_rect.height - 14), (pos_scrollable_x+10, font_rect.height - 14), (pos_scrollable_x+5, font_rect.height - 2)), 0)
+            pg.draw.polygon(font_image, color,
+                            ((pos_scrollable_x, 12), (pos_scrollable_x + 10, 12), (pos_scrollable_x + 5, 0)), 0)
+            pg.draw.polygon(font_image, color, (
+            (pos_scrollable_x, font_rect.height - 14), (pos_scrollable_x + 10, font_rect.height - 14),
+            (pos_scrollable_x + 5, font_rect.height - 2)), 0)
 
             self.scroll_top_rect = pg.Rect((pos_scrollable_x, 0), (10, 12)).move(self.position)
             self.scroll_bottom_rect = pg.Rect((pos_scrollable_x, font_rect.height - 14), (10, 12)).move(self.position)
@@ -626,7 +627,6 @@ class Label(Widget):
                 self.scroll_top_rect = self.scroll_top_rect.move((self.text_margin_x, self.text_margin_y))
                 self.scroll_bottom_rect = self.scroll_bottom_rect.move((self.text_margin_x, self.text_margin_y))
 
-
             if self.bg_color:
                 self.image = pg.Surface(background_rect.size, pg.SRCALPHA)
                 self.image.fill(self.bg_color)
@@ -637,7 +637,7 @@ class Label(Widget):
             if self.theme:
                 rect = pg.Rect((0, 0), background_rect.size)
                 margin = 0
-                color = (0, 0, 0) # if no border, and we need to add deco, we do a black...
+                color = (0, 0, 0)  # if no border, and we need to add deco, we do a black...
 
                 if self.theme["borders"]:
                     # First, we start by creating a surface, which is the external one.
@@ -656,7 +656,7 @@ class Label(Widget):
                             )
                             margin += self.theme["borders"][index][0] * 2
                     # add the internal:
-                    self.image.blit(rounded_surface(rect.inflate(-margin*2, -margin*2),
+                    self.image.blit(rounded_surface(rect.inflate(-margin * 2, -margin * 2),
                                                     self.theme["bg_color"],
                                                     radius=self.theme["rounded_angle"]),
                                     (margin, margin))
@@ -675,26 +675,32 @@ class Label(Widget):
                         for i in range(random.randint(0, int(self.image.get_rect().width / 75))):
                             # Top
                             x = random.randint(2 * margin, self.image.get_rect().width - 2 * margin)
-                            self.decoration_instruction.append("pg.draw.polygon(self.image, color, [({x}, {margin}), ({x}+4, {margin}), ({x}+2, {margin} + 2)], 0)".format(x=x, margin=margin))
+                            self.decoration_instruction.append(
+                                "pg.draw.polygon(self.image, color, [({x}, {margin}), ({x}+4, {margin}), ({x}+2, {margin} + 2)], 0)".format(
+                                    x=x, margin=margin))
                         # No more than 1 every 75 pixels in average...
                         for i in range(random.randint(0, int(self.image.get_rect().width / 75))):
                             # Bottom
                             x = random.randint(2 * margin, self.image.get_rect().width - 2 * margin)
                             y = self.image.get_rect().height - 1
                             self.decoration_instruction.append(
-                                "pg.draw.polygon(self.image, color, [({x}, {y}-{margin}), ({x}+4, {y}-{margin}), ({x}+2, {y}-{margin}-2)], 0)".format(x=x, margin=margin, y=y))
+                                "pg.draw.polygon(self.image, color, [({x}, {y}-{margin}), ({x}+4, {y}-{margin}), ({x}+2, {y}-{margin}-2)], 0)".format(
+                                    x=x, margin=margin, y=y))
                         # No more than 1 every 75 pixels in average...
                         for i in range(random.randint(0, int(self.image.get_rect().height / 75))):
                             # Left
                             y = random.randint(2 * margin, self.image.get_rect().height - 2 * margin)
                             self.decoration_instruction.append(
-                                "pg.draw.polygon(self.image, color, [({margin}, {y}), ({margin}, {y}+4), ({margin}+2, {y}+2)], 0)".format(y=y, margin=margin))
+                                "pg.draw.polygon(self.image, color, [({margin}, {y}), ({margin}, {y}+4), ({margin}+2, {y}+2)], 0)".format(
+                                    y=y, margin=margin))
                         # No more than 1 every 75 pixels in average...
                         for i in range(random.randint(0, int(self.image.get_rect().height / 75))):
                             # Right
                             y = random.randint(2 * margin, self.image.get_rect().height - 2 * margin)
                             x = self.image.get_rect().width - 1
-                            self.decoration_instruction.append("pg.draw.polygon(self.image, color, [({x}-{margin},{y}), ({x}-{margin},{y}+4), ({x}-{margin}-2,{y}+2)], 0)".format(x=x, margin=margin, y=y))
+                            self.decoration_instruction.append(
+                                "pg.draw.polygon(self.image, color, [({x}-{margin},{y}), ({x}-{margin},{y}+4), ({x}-{margin}-2,{y}+2)], 0)".format(
+                                    x=x, margin=margin, y=y))
 
                     for instruction in self.decoration_instruction:
                         exec(instruction)
@@ -706,8 +712,7 @@ class Label(Widget):
             self.rect = font_rect
 
 
-
-#Helper function for MultiLineLabel class
+# Helper function for MultiLineLabel class
 def wrap_text(text, char_limit, separator=" "):
     """Splits a string into a list of strings no longer than char_limit."""
     if text is None:
@@ -728,7 +733,8 @@ def wrap_text(text, char_limit, separator=" "):
         lines.append(separator.join(current_line))
     return lines
 
-#Helper function for MultiLineLabel class
+
+# Helper function for MultiLineLabel class
 def join_text(lines, separator=' '):
     """unit a list of string with the separator in between"""
     if lines is None:
@@ -736,6 +742,7 @@ def join_text(lines, separator=' '):
 
     res = separator.join(lines)
     return res.strip(separator)
+
 
 class MultiLineLabel(Label):
 
@@ -746,7 +753,8 @@ class MultiLineLabel(Label):
 
 class ScrollableMultiLineLabel(MultiLineLabel):
 
-    def __init__(self, text=None, lines_to_display=3, position=(0,0), char_limit=30, multiline_align="LEFT", scrollable_position="RIGHT", scrollable_color=(0,0,0), scrollable_size=21, **kwargs):
+    def __init__(self, text=None, lines_to_display=3, position=(0, 0), char_limit=30, multiline_align="LEFT",
+                 scrollable_position="RIGHT", scrollable_color=(0, 0, 0), scrollable_size=21, **kwargs):
         lines = wrap_text(text, char_limit=char_limit)
         temp_text = None
         if len(lines) > lines_to_display:
@@ -766,7 +774,9 @@ class ScrollableMultiLineLabel(MultiLineLabel):
         kwargs["font_dimension"] = (width, 3 * height)
 
         self.scroll_top_rect = self.scroll_bottom_rect = None
-        MultiLineLabel.__init__(self, text=temp_text, position=position, scrollable=True, char_limit=char_limit, multiline_align=multiline_align, scrollable_color=scrollable_color, scrollable_position=scrollable_position, scrollable_size=scrollable_size, **kwargs)
+        MultiLineLabel.__init__(self, text=temp_text, position=position, scrollable=True, char_limit=char_limit,
+                                multiline_align=multiline_align, scrollable_color=scrollable_color,
+                                scrollable_position=scrollable_position, scrollable_size=scrollable_size, **kwargs)
         self.longtext = text
         self.first_line_to_display = 0
         self.lines_to_display = lines_to_display
@@ -787,7 +797,7 @@ class ScrollableMultiLineLabel(MultiLineLabel):
         if direction == "UP":
             self.first_line_to_display = max(0, self.first_line_to_display - 1)
         elif direction == "BOTTOM":
-            self.first_line_to_display = min (self.first_line_to_display + 1, len(lines) - self.lines_to_display)
+            self.first_line_to_display = min(self.first_line_to_display + 1, len(lines) - self.lines_to_display)
 
         if len(lines) > self.lines_to_display:
             temp_text = join_text(lines[self.first_line_to_display:self.first_line_to_display + self.lines_to_display])
