@@ -8,7 +8,7 @@ import default
 from entity.player import Player
 from entity.town import Entrance, Bank, GuildFighter, GuildMule, Shop, Tavern, Trade, Townhall, Temple
 from gui import guiwidget
-from gui.guiwidget import Button, ScrollableMultiLineLabel, MouseWidget
+from gui.guiwidget import Button, ScrollableMultiLineLabel, MouseWidget, Label2
 from gui.guicontainer import LineAlignedContainer
 from gui.screen import PlayingScreen, BuildingScreen
 from region.region import RegionFactory
@@ -150,6 +150,7 @@ class Launcher:
         self.widgets = line.widgets_as_list()
         self.widgets.append(ScrollableMultiLineLabel(text="This is a very long text that needs to be splitted across multi elements. It goes on and on... It will be even longer if it goes on like that. And you might want to use a long splitter. ", position=(10, 10)))
         self.widgets.append(MouseWidget(GLOBAL.img("TOWN")))
+        self.widgets.append(Label2(text="First new one, this is a very long one", position=(30, 220), grow_width_with_text=True))
 
     def draw(self):
         # Erase All

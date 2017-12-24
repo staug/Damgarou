@@ -259,7 +259,8 @@ class Label2(Widget):
         "text_align_y": "CENTER",
 
         # To set the theme
-        "theme": default.THEME_LIGHT_GRAY,  # the main theme or None
+        # "theme": default.THEME_LIGHT_GRAY,  # the main theme or None
+        "theme": None,  # the main theme or None
 
         # To make it multiline and scrollable
         "scrollable_position": "RIGHT",  # The position either at the rihgt or at the left
@@ -294,7 +295,8 @@ class Label2(Widget):
 
         # Set the standard attributes
         self.position = position
-        self.dimension = dimension
+        self.dimension = [dimension[0],
+                          dimension[1]]
 
         self.multiline = multiline
         self.scrollable = scrollable
@@ -318,6 +320,44 @@ class Label2(Widget):
         # Margins contain the predefined margin + the margin from the border (if theme) + the margin from the scrollable
         self.margin_x_left = self.margin_x_right = 0
         self.margin_y_top = self.margin_y_bottom = 0
+        self._compute_margin()
+
+        self.set_text(text, force_recreate_decoration=True)
+
+    def set_text(self, text, recreate_background=True, force_recreate_decoration=False):
+        """
+        Compute the text_image and the text_rect
+        :param text:
+        :param recreate_background:
+        :param force_recreate_decoration:
+        :return:
+        """
+        self.text = text
+
+        if self.multiline:
+            #TODO
+            pass
+        else:
+            self.text_image = self.font.render(text, True, self.font_color)
+            self.text_rect = self.text_image.get_rect()
+
+        if recreate_background:
+            self._adjust_dimension()
+            self._create_background(force_recreate_decoration=force_recreate_decoration)
+
+        # Now we can create the final image
+        self.image = self.background_image.copy()
+        self.image.blit(self.text_image, (self.margin_x_left, self.margin_y_top), area=pg.Rect((0, 0),
+                                                                                               self.text_rect.size))
+        self.rect = self.image.get_rect()
+        self.rect.topleft = self.position
+
+
+    def _compute_margin(self):
+        """
+        Set margin_x left/right, and margin_y top/bottom
+        :return:
+        """
         if self.theme:
             self.margin_x_left = self.margin_x_right = self.style_dict.get("text_margin_x",
                                                                       Label2.DEFAULT_OPTIONS["text_margin_x"])
@@ -328,7 +368,7 @@ class Label2(Widget):
                 self.margin_x_right += border_info[0]
                 self.margin_y_top += border_info[0]
                 self.margin_y_bottom += border_info[0]
-        elif self.style_dict["bg_color"]:
+        elif "bg_color" in self.style_dict:
             self.margin_x_left = self.margin_x_right = self.style_dict.get("text_margin_x",
                                                                       Label2.DEFAULT_OPTIONS["text_margin_x"])
             self.margin_y_top = self.margin_y_bottom = self.style_dict.get("text_margin_y",
@@ -339,20 +379,6 @@ class Label2(Widget):
             else:
                 self.margin_x_left += self.style_dict.get("scrollable_size", Label2.DEFAULT_OPTIONS["scrollable_size"])
 
-        self.set_text(text)
-
-    def set_text(self, text, recreate_background=True, force_recreate_decoration=False):
-        self.text = text
-
-        if self.multiline:
-            pass
-        else:
-            self.text_image = self.font.render(text, True, self.font_color)
-            self.text_rect = self.text_image.get_rect()
-
-        if recreate_background:
-            self._adjust_dimension()
-            self._create_background()
 
     def _adjust_dimension(self):
         """
@@ -407,6 +433,12 @@ class Label2(Widget):
         if self.scrollable:
             #TODO Add the up/down arrow
             pass
+
+        if force_recreate_decoration:
+            #TODO Set the decoration
+            pass
+
+        self.rect = self.background_image.get_rect()
 
 class Label(Widget):
 
