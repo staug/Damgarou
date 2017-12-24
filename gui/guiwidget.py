@@ -2,6 +2,7 @@ import pygame as pg
 import os
 import default
 import random
+
 from shared import GLOBAL
 from copy import deepcopy
 
@@ -20,7 +21,6 @@ class Widget:
         """
         In general this method is not really usefull, but it is called from the master.
         Can be used to prepare the image
-        :return: 
         """
         pass
 
@@ -36,296 +36,81 @@ class Widget:
         """
         Default implementation: blit the premade image on the screen surface. Assumes that a rect has been created.
         :param screen: the surface to blit on.
-        :return: 
         """
         assert self.image, "Image doesn't exist so can't blit"
         assert self.rect, "Rect doesn't exist so can't blit"
         screen.blit(self.image, self.rect)
 
-
-class Container:
-    """
-    A set of class to align the rects of the widget it contains.
-    A widget can only be a part of one container - a check is done to remove it when adding it.
-    """
-    def __init__(self, widgets=None, widget=None, reorder=False):
-        self.widgets = {}
-        self.widget_id_order = []
-        self.internal_id = 0
-        if widget:
-            self.add_widget(widget, reorder=reorder)
-        if widgets:
-            self.add_widgets(widgets, reorder=reorder)
-
-    def add_widget(self, widget, widget_id=None, reorder=True):
-        # remove the widget from a previous container:
-        if widget.container_parent:
-            widget.container_parent.remove_widget_by_id(widget)
-
-        if not widget_id:
-            widget_id = self.internal_id
-            self.internal_id += 1
-
-        self.widgets[widget_id] = widget
-        self.widget_id_order.append(widget_id)
-        widget.container_parent = self
-        widget.id_in_container = widget_id
-
-        if reorder:
-            self.reorder_container()
-
-    def add_widgets(self, widget_list, reorder=True):
-        for widget in widget_list:
-            self.add_widget(widget, reorder=reorder)
-
-    def insert_widget_after(self, widget_to_insert, widget_reference, reorder=True):
-        """
-        Insert a widget just after the widget reference one. If the widget reference doesn't exist, add it at the end
-        :param widget_to_insert: the widget to insert
-        :param widget_reference: the widget after which it needs to be inserted
-        :param reorder: if set to True will not trigger the reordering
-        :return: Nothing
-        """
-        if widget_reference.id not in self.widget_id_order:
-            self.add_widget(widget_to_insert, reorder=True)
-        else:
-            copy_order = self.widget_id_order[:]
-            self.add_widget(widget_to_insert, reorder=True)
-            self.widget_id_order = copy_order[:copy_order.index(widget_reference.id)+1] +\
-                                   [widget_to_insert.id] +\
-                                   copy_order[copy_order.index(widget_reference.id)+1:]
-        if reorder:
-            self.reorder_container()
-
-    def insert_widget_before(self, widget_to_insert, widget_reference, reorder=True):
-        """
-        Insert a widget just after the widget reference one. If the widget reference doesn't exist, add it at the beginning
-        :param widget_to_insert: the widget to insert
-        :param widget_reference: the widget after which it needs to be inserted
-        :return: Nothing
-        """
-        if widget_reference.id not in self.widget_id_order:
-            copy_order = self.widget_id_order[:]
-            self.add_widget(widget_to_insert, reorder=True)
-            self.widget_id_order = [widget_to_insert.id] + copy_order
-        else:
-            copy_order = self.widget_id_order[:]
-            self.add_widget(widget_to_insert, reorder=True)
-            self.widget_id_order = copy_order[:copy_order.index(widget_reference.id)] +\
-                                   [widget_to_insert.id] +\
-                                   copy_order[copy_order.index(widget_reference.id):]
-        if reorder:
-            self.reorder_container()
-
-    def remove_widget_by_id(self, widget, reorder=True):
-        if widget is None or widget.id_in_container is None:
-            return
-        if widget.id_in_container in self.widgets.keys():
-            self.widgets[widget.id_in_container].container_parent = None
-            self.widgets[widget.id_in_container].id = None
-            self.widgets.pop(widget.id_in_container)
-            self.widget_id_order.remove(widget.id_in_container)
-        if reorder:
-            self.reorder_container()
-
-    def remove_widget_by_id(self, widget_id, reorder=True):
-        if widget_id in self.widgets.keys():
-            self.widgets[widget_id].container_parent = None
-            self.widgets[widget_id].id = None
-            self.widgets.pop(widget_id)
-            self.widget_id_order.remove(widget_id)
-        if reorder:
-            self.reorder_container()
-
-    def remove_all_widgets(self):
-        for widget_id in self.widgets.key():
-            self.remove_widget_by_id(widget_id, reorder=False)
-        self.internal_id = 0
-
-    def reorder_container(self):
-        pass
-
-    def widgets_as_list(self):
-        listing = []
-        for widget in self.widgets.values():
-            listing.append(widget)
-        return listing
-
-    @property
-    def rect(self):
-        """
-        This computes the rect that encompasses all widget
-        :return: The rect that encompasses all widgets
-        """
-        if len(self.widget_id_order) == 0:
-            return pg.Rect((0, 0), (0, 0))
-        width = self.widgets[self.widget_id_order[-1]].rect.right - self.widgets[self.widget_id_order[0]].rect.left
-        height = self.widgets[self.widget_id_order[-1]].rect.bottom - self.widgets[self.widget_id_order[0]].rect.top
-        return pg.Rect(self.widgets[self.widget_id_order[0]].rect.topleft,
-                       (width, height))
-
     def move(self, dx, dy):
         """
-        Move all the rects of the widgets
-        :param dx: the delta x to move
-        :param dy: the delta y to move
-        :return:
+        Move the widget position according to dx, dy parameters. Perticularly important for composite widgets.
+        :param dx: the amount of pixel to move horizontally
+        :param dy: the amount of pixel to move vertically
         """
-        for widget in self.widgets.values():
-            widget.rect.move_ip(dx, dy)
 
-class LineAlignedContainer(Container):
+
+class MouseWidget(Widget):
     """
-    A container that will aligned all its widgets according to a virtual line.
-    The widgets can be vertically aligned:
-    * Vertical left means that all widgets left side will be glued
-    * Vertical center means that all widgets will be centered according to the vertical line
-    * Vertical right means that all the widgets right side will be aligned
-    The widgets can be horizontally aligned
-    * Horizontal top means that all widgets top side will be glued
-    * Horizontal center means that all widgets will be centered according to the horizontal line
-    * Horizontal bottom means that all the widgets bottom side will be aligned
+    Replace the mouse by a nice image.
     """
+    CENTER = "center"
+    TOP_LEFT = "top_left"
+    TOP_RIGHT = "top_right"
+    BOTTOM_LEFT = "bottom_left"
+    BOTTOM_RIGHT = "bottom_right"
 
-    VERTICAL_LEFT = "VERTICAL_LEFT"
-    VERTICAL_CENTER = "VERTICAL_CENTER"
-    VERTICAL_RIGHT = "VERTICAL_RIGHT"
-    HORIZONTAL_TOP = "HORIZONTAL_TOP"
-    HORIZONTAL_CENTER = "HORIZONTAL_CENTER"
-    HORIZONTAL_BOTTOM = "HORIZONTAL_BOTTOM"
-
-    def __init__(self,
-                 start_position,
-                 alignment=VERTICAL_LEFT,
-                 end_position=None,
-                 space=None,
-                 auto_space=False,
-                 widget=None,
-                 widgets=None,
-                 reorder=False):
+    def __init__(self, image_surface, image_click_position=CENTER):
         """
-        Define a new line aligned container, potentially with pre-made widget(s)
-        :param start_position: the start of the line. Can be a single coordinate
-        (handled as x or y axis dependent on the alignment)
-        :param alignment: one of the different alignment
-        (vertical/horizontal, mixed with which side of the widget needs to be glued)
-        :param end_position: optional end position. Only mandatory if auto_space is set.
-        :param space: the space between the widgets. If auto space is set to True this is ignored
-        :param auto_space: compute the space between widgets. Needs the end_position to be set.
-        :param widget: a single widget to add as part of the init.
-        :param widgets: a list of widgets to add as part of the init.
-        :param reorder: if set to False (default), will automatically reorder the container at the end of the init.
+        Initialize the mouse widget
+        :param image_surface: The surface that is used to replace the mouse.
+        :param image_click_position: Indicates the place of the image that is used as reference for the click
         """
-        Container.__init__(self, widget=widget, widgets=widgets, reorder=False)
+        Widget.__init__(self)
 
-        if auto_space:
-            assert type(end_position) is tuple and type(start_position) is tuple,\
-                "Auto space set but start position {} and end position {} are not tuple".format(start_position,
-                                                                                               end_position)
-        self.alignment = alignment
-        self.start_position = start_position
-        self.end_position = end_position
-        self.space = space
-        self.auto_space = auto_space
+        self.active = True
+        self.click_position = image_click_position
+        self.set_image(image_surface, image_click_position=image_click_position)
 
-        if not reorder:
-            self.reorder_container()
+        pg.mouse.set_visible(not self.active)
 
-    def reorder_container(self):
-        if self.alignment in [LineAlignedContainer.VERTICAL_LEFT,
-                              LineAlignedContainer.VERTICAL_CENTER,
-                              LineAlignedContainer.VERTICAL_RIGHT]:
-            self._reorder_container_vertical()
+    def set_active(self, state):
+        """
+        Turn on or off the widget, and put it back to the original states
+        :param state: True to use the widget, False otherwise
+        """
+        self.active = state and self.image
+        pg.mouse.set_visible(not self.active)
+
+    def set_image(self, image_surface, image_click_position=CENTER):
+        """
+        Set the image for the mouse cursor
+        :param image_surface: The surface that is used to replace the mouse.
+        :param image_click_position: Indicates the place of the image that is used as reference for the click
+        """
+        if image_surface:
+            assert type(image_surface) is pg.Surface, "Image surface used for mouse widget is not a pygame Surface"
+            self.image = image_surface
+            self.rect = image_surface.get_rect()
+            self.click_position = image_click_position
         else:
-            self._reorder_container_horizontal()
+            self.active = False
+        pg.mouse.set_visible(not self.active)
 
-    def _reorder_container_vertical(self):
-        start_y = space = None
-        reposition_y_axis = False
-
-        if self.auto_space:
-            start_y = self.start_position[1]
-            end_y = self.end_position[1]
-            total_widget_height = 0
-            for widget in self.widgets.values():
-                total_widget_height += widget.rect.height
-            space = max(0, int((end_y - start_y - total_widget_height) / len(self.widget_id_order)))
-            reposition_y_axis = True
-        elif self.space:
-            if type(self.start_position) is tuple:
-                start_y = self.start_position[1]
-            else:
-                start_y = self.widgets[self.widget_id_order[0]].rect.top
-            space = self.space
-            reposition_y_axis = True
-
-        if reposition_y_axis:
-            for widget_id in self.widget_id_order:
-                self.widgets[widget_id].rect.top = start_y
-                start_y += self.widgets[widget_id].rect.height + space
-
-        if self.alignment == LineAlignedContainer.VERTICAL_LEFT:
-            position = self.start_position
-            if type(position) is tuple:
-                position = position[0]
-            for widget_id in self.widget_id_order:
-                self.widgets[widget_id].rect.left = position
-        elif self.alignment == LineAlignedContainer.VERTICAL_RIGHT:
-            position = self.start_position
-            if type(position) is tuple:
-                position = position[0]
-            for widget in self.widgets.values():
-                widget.rect.right = position
-        else:
-            position = self.start_position
-            if type(position) is tuple:
-                position = position[0]
-            for widget in self.widgets.values():
-                widget.rect.centerx = position
-
-    def _reorder_container_horizontal(self):
-        start_x = space = None
-        reposition_x_axis = False
-
-        if self.auto_space:
-            start_x = self.start_position[0]
-            end_x = self.end_position[0]
-            total_widget_width = 0
-            for widget in self.widgets.values():
-                total_widget_width += widget.rect.width
-            space = max(0, int((end_x - start_x - total_widget_width) / len(self.widget_id_order)))
-            reposition_x_axis = True
-        elif self.space:
-            if type(self.start_position) is tuple:
-                start_x = self.start_position[0]
-            else:
-                start_x = self.widgets[self.widget_id_order[0]].rect.left
-            space = self.space
-            reposition_x_axis = True
-
-        if reposition_x_axis:
-            for widget_id in self.widget_id_order:
-                self.widgets[widget_id].rect.left = start_x
-                start_x += self.widgets[widget_id].rect.width + space
-
-        if self.alignment == LineAlignedContainer.HORIZONTAL_TOP:
-            position = self.start_position
-            if type(position) is tuple:
-                position = position[1]
-            for widget_id in self.widget_id_order:
-                self.widgets[widget_id].rect.top = position
-        elif self.alignment == LineAlignedContainer.HORIZONTAL_BOTTOM:
-            position = self.start_position
-            if type(position) is tuple:
-                position = position[1]
-            for widget in self.widgets.values():
-                widget.rect.bottom = position
-        else:
-            position = self.start_position
-            if type(position) is tuple:
-                position = position[1]
-            for widget in self.widgets.values():
-                widget.rect.centery = position
+    def handle_event(self, event):
+        if self.active:
+            if event.type == pg.MOUSEMOTION:
+                if self.click_position == MouseWidget.CENTER:
+                    self.rect.center = event.pos
+                elif self.click_position == MouseWidget.TOP_LEFT:
+                    self.rect.topleft = event.pos
+                elif self.click_position == MouseWidget.TOP_RIGHT:
+                    self.rect.topright = event.pos
+                elif self.click_position == MouseWidget.BOTTOM_LEFT:
+                    self.rect.bottomleft = event.pos
+                elif self.click_position == MouseWidget.BOTTOM_RIGHT:
+                    self.rect.bottomright = event.pos
+                else:
+                    raise Exception("Invalid click position on image: {}".format(self.click_position))
 
 
 class ProgressBar(Widget):
@@ -460,6 +245,169 @@ def rounded_surface(rect, color, radius=1):
     return rect_surface
 
 
+class Label2(Widget):
+    DEFAULT_OPTIONS = {
+        "font_name": default.FONT_NAME,
+        "font_size": 14,
+        "font_color": (255, 255, 255),  # ignored if a theme is given
+
+        "bg_color": None,  # Transparent if None - ignored if a theme is given
+
+        "text_margin_x": 10,  # Minimum margin on the right & left, only relevant if a background is set (Color/image)
+        "text_margin_y": 10,  # Minimum margin on the top & down, only relevant if a background is set (Color/image)
+        "text_align_x": "LEFT",
+        "text_align_y": "CENTER",
+
+        # To set the theme
+        "theme": default.THEME_LIGHT_GRAY,  # the main theme or None
+
+        # To make it multiline and scrollable
+        "scrollable_position": "RIGHT",  # The position either at the rihgt or at the left
+        "scrollable_size": 30,  # the space dedicated to the arrows
+        "scrollable_color": (0, 0, 0),  # the color for the arrow - if no theme is used
+    }
+
+    def __init__(self,
+                 text=None,
+                 position=(0, 0),
+                 dimension=(80, 20), # preferred dimensions of the total widget.
+                 # Note that x dimension might change with adapt_text_width parameter,
+                 # and y_dimension changes if set to multiline and grow_height
+                 style_dict=None,
+                 grow_width_with_text=False,
+                 grow_height_with_text=False,
+                 multiline=False,
+                 scrollable=False):
+
+        Widget.__init__(self)
+        self.text = None
+
+        self.style_dict = style_dict or {}
+        assert type(self.style_dict) is dict, "Style dict must be a dictionnary if provided"
+
+        self.text_rect = None  # The text rect is the rect for the text. The widget rect is defined in parent.
+        self.rect = None
+
+        self.text_image = None  # This is the pre_rendered image of teh text
+        self.background_image = None  # This is the pre_rendered image of the background
+        self.image = None  # Note: final image = backgound image + text image
+
+        # Set the standard attributes
+        self.position = position
+        self.dimension = dimension
+
+        self.multiline = multiline
+        self.scrollable = scrollable
+        self.grow_width_with_text = grow_width_with_text
+        self.grow_height_with_text = grow_height_with_text
+
+        # Get the style attributes
+        self.font = GLOBAL.font(self.style_dict.get("font_name", Label2.DEFAULT_OPTIONS["font_name"]),
+                                self.style_dict.get("font_size", Label2.DEFAULT_OPTIONS["font_size"]))
+        self.theme = self.style_dict.get("theme", Label2.DEFAULT_OPTIONS["theme"])
+        self.decoration_instructions = []
+
+        if self.theme:
+            assert type(self.theme) is dict, "Theme must be a dictionnary if set"
+            self.font_color = self.theme.get("font_color",
+                                             self.style_dict.get("font_color",
+                                                                 Label2.DEFAULT_OPTIONS["font_color"]))
+        else:
+            self.font_color = self.style_dict.get("font_color", Label2.DEFAULT_OPTIONS["font_color"])
+
+        # Margins contain the predefined margin + the margin from the border (if theme) + the margin from the scrollable
+        self.margin_x_left = self.margin_x_right = 0
+        self.margin_y_top = self.margin_y_bottom = 0
+        if self.theme:
+            self.margin_x_left = self.margin_x_right = self.style_dict.get("text_margin_x",
+                                                                      Label2.DEFAULT_OPTIONS["text_margin_x"])
+            self.margin_y_top = self.margin_y_bottom = self.style_dict.get("text_margin_y",
+                                                                      Label2.DEFAULT_OPTIONS["text_margin_y"])
+            for border_info in self.theme["borders"]:
+                self.margin_x_left += border_info[0]
+                self.margin_x_right += border_info[0]
+                self.margin_y_top += border_info[0]
+                self.margin_y_bottom += border_info[0]
+        elif self.style_dict["bg_color"]:
+            self.margin_x_left = self.margin_x_right = self.style_dict.get("text_margin_x",
+                                                                      Label2.DEFAULT_OPTIONS["text_margin_x"])
+            self.margin_y_top = self.margin_y_bottom = self.style_dict.get("text_margin_y",
+                                                                      Label2.DEFAULT_OPTIONS["text_margin_y"])
+        if self.scrollable:
+            if self.style_dict.get("scrollable_position", Label2.DEFAULT_OPTIONS["scrollable_position"]) == "RIGHT":
+                self.margin_x_right += self.style_dict.get("scrollable_size", Label2.DEFAULT_OPTIONS["scrollable_size"])
+            else:
+                self.margin_x_left += self.style_dict.get("scrollable_size", Label2.DEFAULT_OPTIONS["scrollable_size"])
+
+        self.set_text(text)
+
+    def set_text(self, text, recreate_background=True, force_recreate_decoration=False):
+        self.text = text
+
+        if self.multiline:
+            pass
+        else:
+            self.text_image = self.font.render(text, True, self.font_color)
+            self.text_rect = self.text_image.get_rect()
+
+        if recreate_background:
+            self._adjust_dimension()
+            self._create_background()
+
+    def _adjust_dimension(self):
+        """
+        Change the dimension of the total widget to accomodate the text and the margin
+        Assumes that the text_rect has been setup previously
+        :return:
+        """
+        if self.grow_width_with_text:
+            self.dimension[0] = max(self.dimension[0], self.text_rect.width + self.margin_x_left + self.margin_x_right)
+        if self.grow_height_with_text:
+            self.dimension[1] = max(self.dimension[1], self.text_rect.height + self.margin_y_bottom + self.margin_y_top)
+
+    def _create_background(self, force_recreate_decoration=False):
+        # this assumes that dimension is correctly set
+        self.background_image = pg.Surface(self.dimension, pg.SRCALPHA)
+
+        bg_color = self.style_dict.get("bg_color", Label2.DEFAULT_OPTIONS["bg_color"])
+        if bg_color:
+            self.background_image.fill(bg_color)
+        elif self.theme:
+            rect = pg.Rect((0, 0), self.dimension)
+            if self.theme["borders"]:
+                # First, we start by creating a surface, which is the external one.
+
+                margin = self.theme["borders"][0][0]
+                color = self.theme["borders"][0][1]
+                self.background_image = rounded_surface(rect, color, radius=self.theme["rounded_angle"])
+
+                if len(self.theme["borders"]) > 1:
+                    for index in range(1, len(self.theme["borders"])):
+                        color = self.theme["borders"][index][1]
+                        self.background_image.blit(
+                            rounded_surface(rect.inflate(-margin * 2, -margin * 2),
+                                            color,
+                                            radius=self.theme["rounded_angle"]),
+                            (margin, margin)
+                        )
+                        margin += self.theme["borders"][index][0]
+                # add the internal:
+                self.background_image.blit(rounded_surface(rect.inflate(-margin * 2, -margin * 2),
+                                                self.theme["bg_color"],
+                                                radius=self.theme["rounded_angle"]),
+                                (margin, margin))
+
+            # We finally add the decoration
+            #TODO
+
+            elif self.theme["bg_color"]:
+                # We just do something for the background
+                self.background_image = rounded_surface(rect, self.theme["bg_color"], radius=self.theme["rounded_angle"])
+
+        if self.scrollable:
+            #TODO Add the up/down arrow
+            pass
+
 class Label(Widget):
 
     DEFAULT_OPTIONS = {
@@ -490,7 +438,8 @@ class Label(Widget):
         "scrollable" : False,
         "scrollable_position": "RIGHT",  # The position either at the rihgt or at the left
         "scrollable_size" : 30,  # the space dedicated to the arrows
-        "scrollable_color" : (0,0,0)  # the color for the arrow - if no theme is used
+        "scrollable_color" : (0,0,0),  # the color for the arrow - if no theme is used
+        "font_dimension": (0,0)
     }
 
     def __init__(self, text=None, position=(0, 0), **kwargs):
@@ -525,6 +474,10 @@ class Label(Widget):
         if not self.theme and not self.bg_color:
             self.text_margin_x = self.text_margin_y = 0
 
+        if self.scrollable:
+            self.adapt_text_width = False
+            self.adapt_text_height = False
+
         self.set_text(text)
 
     def set_text(self, text):
@@ -550,11 +503,13 @@ class Label(Widget):
         else:
             lines = wrap_text(self.text, self.char_limit)
             label_images = [self.font.render(line, True, self.font_color) for line in lines]
-            width = max([label.get_rect().width for label in label_images])
-            if self.scrollable:
-                pass
-            height = sum([label.get_rect().height for label in label_images])
-            height_scrollable = min([label.get_rect().height for label in label_images])
+            if not self.scrollable:
+                width = max([label.get_rect().width for label in label_images])
+                height = sum([label.get_rect().height for label in label_images])
+                height_scrollable = min([label.get_rect().height for label in label_images])
+            else:
+                width = self.font_dimension[0]
+                height= self.font_dimension[1]
             font_image = pg.Surface((width, height), pg.SRCALPHA)
             y = 0
             for label in label_images:
@@ -572,7 +527,8 @@ class Label(Widget):
         pos_font_y = self.text_margin_y
 
         if not self.adapt_text_width:
-            font_rect.width = self.dimension[0] - 2 * self.text_margin_x
+            if not self.scrollable:
+                font_rect.width = self.dimension[0] - 2 * self.text_margin_x
         else:
             if font_rect.width < self.dimension[0] - 2 * self.text_margin_x:
                 # and we need to reposition the label...
@@ -586,7 +542,8 @@ class Label(Widget):
             else:
                 pos_font_x = self.text_margin_x
         if not self.adapt_text_height:
-            font_rect.height = self.dimension[1] - 2 * self.text_margin_y
+            if not self.scrollable:
+                font_rect.height = self.dimension[1] - 2 * self.text_margin_y
         else:
             font_rect.height = max(font_rect.height, self.dimension[1])
 
@@ -663,27 +620,34 @@ class Label(Widget):
 
                 if self.theme["with_decoration"]:
                     # No more than 1 every 75 pixels in average...
-                    for i in range(random.randint(0, int(self.image.get_rect().width / 75))):
-                        # Top
-                        x = random.randint(2 * margin, self.image.get_rect().width - 2 * margin)
-                        pg.draw.polygon(self.image, color, [(x, margin), (x+4, margin), (x+2, margin + 2)], 0)
-                    # No more than 1 every 75 pixels in average...
-                    for i in range(random.randint(0, int(self.image.get_rect().width / 75))):
-                        # Bottom
-                        x = random.randint(2 * margin, self.image.get_rect().width - 2 * margin)
-                        y = self.image.get_rect().height - 1
-                        pg.draw.polygon(self.image, color, [(x, y- margin), (x+4, y-margin), (x+2, y-margin - 2)], 0)
-                    # No more than 1 every 75 pixels in average...
-                    for i in range(random.randint(0, int(self.image.get_rect().height / 75))):
-                        # Left
-                        y = random.randint(2 * margin, self.image.get_rect().height - 2 * margin)
-                        pg.draw.polygon(self.image, color, [(margin, y), (margin, y + 4), (margin + 2, y + 2)], 0)
-                    # No more than 1 every 75 pixels in average...
-                    for i in range(random.randint(0, int(self.image.get_rect().height / 75))):
-                        # Right
-                        y = random.randint(2 * margin, self.image.get_rect().height - 2 * margin)
-                        x = self.image.get_rect().width - 1
-                        pg.draw.polygon(self.image, color, [(x - margin, y), (x - margin, y + 4), (x - margin - 2, y + 2)], 0)
+                    if not hasattr(self, "decoration_instruction") or len(self.decoration_instruction) == 0:
+                        self.decoration_instruction = []
+                        for i in range(random.randint(0, int(self.image.get_rect().width / 75))):
+                            # Top
+                            x = random.randint(2 * margin, self.image.get_rect().width - 2 * margin)
+                            self.decoration_instruction.append("pg.draw.polygon(self.image, color, [({x}, {margin}), ({x}+4, {margin}), ({x}+2, {margin} + 2)], 0)".format(x=x, margin=margin))
+                        # No more than 1 every 75 pixels in average...
+                        for i in range(random.randint(0, int(self.image.get_rect().width / 75))):
+                            # Bottom
+                            x = random.randint(2 * margin, self.image.get_rect().width - 2 * margin)
+                            y = self.image.get_rect().height - 1
+                            self.decoration_instruction.append(
+                                "pg.draw.polygon(self.image, color, [({x}, {y}-{margin}), ({x}+4, {y}-{margin}), ({x}+2, {y}-{margin}-2)], 0)".format(x=x, margin=margin, y=y))
+                        # No more than 1 every 75 pixels in average...
+                        for i in range(random.randint(0, int(self.image.get_rect().height / 75))):
+                            # Left
+                            y = random.randint(2 * margin, self.image.get_rect().height - 2 * margin)
+                            self.decoration_instruction.append(
+                                "pg.draw.polygon(self.image, color, [({margin}, {y}), ({margin}, {y}+4), ({margin}+2, {y}+2)], 0)".format(y=y, margin=margin))
+                        # No more than 1 every 75 pixels in average...
+                        for i in range(random.randint(0, int(self.image.get_rect().height / 75))):
+                            # Right
+                            y = random.randint(2 * margin, self.image.get_rect().height - 2 * margin)
+                            x = self.image.get_rect().width - 1
+                            self.decoration_instruction.append("pg.draw.polygon(self.image, color, [({x}-{margin},{y}), ({x}-{margin},{y}+4), ({x}-{margin}-2,{y}+2)], 0)".format(x=x, margin=margin, y=y))
+
+                    for instruction in self.decoration_instruction:
+                        exec(instruction)
 
             self.rect = self.image.get_rect().move(self.position)
 
@@ -721,11 +685,6 @@ def join_text(lines, separator=' '):
         return ""
 
     res = separator.join(lines)
-    '''
-    for line in lines:
-        res += line
-        res += separator
-    '''
     return res.strip(separator)
 
 class MultiLineLabel(Label):
@@ -737,13 +696,24 @@ class MultiLineLabel(Label):
 
 class ScrollableMultiLineLabel(MultiLineLabel):
 
-    def __init__(self, text=None, lines_to_display=3, position=(0,0), char_limit=42, multiline_align="LEFT", scrollable_position="RIGHT", scrollable_color=(0,0,0), scrollable_size=25, **kwargs):
+    def __init__(self, text=None, lines_to_display=3, position=(0,0), char_limit=30, multiline_align="LEFT", scrollable_position="RIGHT", scrollable_color=(0,0,0), scrollable_size=21, **kwargs):
         lines = wrap_text(text, char_limit=char_limit)
         temp_text = None
         if len(lines) > lines_to_display:
             temp_text = join_text(lines[0:lines_to_display])
         else:
             temp_text = text
+
+        # FIXING KWARGS DIMENSION
+        font_name = kwargs.get("font_name", default.FONT_NAME)
+        font_size = kwargs.get("font_size", 14)
+        font = GLOBAL.font(font_name, font_size)
+        test = ""
+        for i in range(char_limit):
+            test += 'W'
+        font_image = font.render(test, True, (0, 0, 0))
+        (width, height) = font_image.get_rect().size
+        kwargs["font_dimension"] = (width, 3 * height)
 
         self.scroll_top_rect = self.scroll_bottom_rect = None
         MultiLineLabel.__init__(self, text=temp_text, position=position, scrollable=True, char_limit=char_limit, multiline_align=multiline_align, scrollable_color=scrollable_color, scrollable_position=scrollable_position, scrollable_size=scrollable_size, **kwargs)
