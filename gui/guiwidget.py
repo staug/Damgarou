@@ -253,8 +253,8 @@ class Label2(Widget):
 
         "bg_color": None,  # Transparent if None - ignored if a theme is given
 
-        "text_margin_x": 40,  # Minimum margin on the right & left, only relevant if a background is set (Color/image)
-        "text_margin_y": 20,  # Minimum margin on the top & down, only relevant if a background is set (Color/image)
+        "text_margin_x": 10,  # Minimum margin on the right & left, only relevant if a background is set (Color/image)
+        "text_margin_y": 10,  # Minimum margin on the top & down, only relevant if a background is set (Color/image)
         "text_align_x": "LEFT",
         "text_align_y": "CENTER",
 
@@ -345,12 +345,30 @@ class Label2(Widget):
             self._adjust_dimension()
             self._create_background(force_recreate_decoration=force_recreate_decoration)
 
-        # Now we can create the final image
+        # Now we can create the final image: we copy the background and the text
         self.image = self.background_image.copy()
-        #TODO: change the position left/top of the text according to settings
-        self.image.blit(self.text_image, (self.margin_x_left, self.margin_y_top), area=pg.Rect((0, 0),
-                                                                                               self.text_rect.size))
         self.rect = self.image.get_rect()
+
+        # We test to know if we have extra space...
+        position_to_blit_text = [self.margin_x_left, self.margin_y_top]
+        # Test horizontally:
+        extra_space_x = self.rect.width - (self.text_rect.width + self.margin_x_left + self.margin_x_right)
+        if extra_space_x > 0:
+            position_x = self.style_dict.get("text_align_x", Label2.DEFAULT_OPTIONS["text_align_x"])
+            if position_x == "CENTER":
+                position_to_blit_text[0] += int(extra_space_x / 2)
+            elif position_x == "RIGHT":
+                position_to_blit_text[0] += extra_space_x
+        extra_space_y = self.rect.height - (self.text_rect.height + self.margin_y_top + self.margin_y_bottom)
+        if extra_space_y > 0:
+            position_y = self.style_dict.get("text_align_y", Label2.DEFAULT_OPTIONS["text_align_y"])
+            if position_y == "CENTER":
+                position_to_blit_text[1] += int(extra_space_y / 2)
+            elif position_y == "BOTTOM":
+                position_to_blit_text[1] += extra_space_y
+        self.image.blit(self.text_image, position_to_blit_text, area=pg.Rect((0, 0), self.text_rect.size))
+
+        # And we finally move to the position
         self.rect.topleft = self.position
 
 
@@ -439,7 +457,6 @@ class Label2(Widget):
             #TODO Set the decoration
             pass
 
-        self.rect = self.background_image.get_rect()
 
 class Label(Widget):
 

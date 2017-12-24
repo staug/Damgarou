@@ -151,10 +151,11 @@ class Launcher:
         self.widgets.append(ScrollableMultiLineLabel(text="This is a very long text that needs to be splitted across multi elements. It goes on and on... It will be even longer if it goes on like that. And you might want to use a long splitter. ", position=(10, 10)))
         self.widgets.append(MouseWidget(GLOBAL.img("TOWN")))
         self.widgets.append(Label2(text="First new one, this is a very long one",
+                                   dimension=(400, 90),
                                    position=(30, 220),
-                                   grow_width_with_text=True,
-                                   grow_height_with_text=True,
-                                   style_dict={"bg_color": (255, 0, 0)}))
+                                   grow_width_with_text=False,
+                                   grow_height_with_text=False,
+                                   style_dict={"bg_color": (255, 0, 0), "text_align_x": "LEFT", "text_align_y": "TOP"}))
 
     def draw(self):
         # Erase All
