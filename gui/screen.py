@@ -1,9 +1,10 @@
 import pygame as pg
-import thorpy
+#import thorpy
 from shared import GLOBAL
 from default import *
 from utilities import FieldOfView
-from gui.guiwidget import Widget, ProgressBar, Label
+from gui.guiwidget import Widget, ProgressBar, Label, Button
+from gui.guicontainer import LineAlignedContainer
 import dill as pick
 
 
@@ -11,7 +12,6 @@ class Screen:
 
     def __init__(self):
         self.widgets = []
-        self.thorpy_widgets = None
 
     def events(self):
         pass
@@ -172,9 +172,7 @@ class PlayingScreen(Screen):
 
     def post_init(self):
         self.widgets.append(ProgressBar((10, 10), (100, 10), GLOBAL.game.player, "test_attribute", 100, RED, BLUE))
-        self.widgets.append(Label((40, 40), "This is a test"))
-
-        self.widgets.append(Label((80, 20), "This is a test", theme=False, bg_color=RED, adapt_text_width=False, dimension=(120,80)))
+        self.widgets.append(Label(position=(40, 40), text="This is a test"))
 
     def draw(self):
         # Erase All
@@ -218,27 +216,21 @@ class BuildingScreen(Screen):
         self.building = building
 
         if self.building.is_guild_fighter():
-            elements = []
             for fighter in self.building.fighter_list:
-                button = thorpy.make_button(fighter.name, func=lambda myfighter=fighter: test(myfighter))
-                button.set_size((100, None))
-                # button_start.set_font(font)
-                button.set_font_size(16)
-                elements.append(button)
+                button = Button(text=fighter.name, callback_function=lambda myfighter=fighter: test(myfighter), grow_width_with_text=True, grow_height_with_text=True)
+                self.widgets.append(button)
 
-            box = thorpy.Box.make(elements=elements)
-            box.set_main_color((0, 0, 0, 0))
-
-            self.thorpy_widgets = thorpy.Menu(box)
-            for element in self.thorpy_widgets.get_population():
-                element.surface = pg.display.get_surface()
+            line = LineAlignedContainer(int(pg.display.get_surface().get_rect().width / 2),
+                                        alignment=LineAlignedContainer.VERTICAL_CENTER,
+                                        widgets=self.widgets, space=50)
+            line.move(0, int((pg.display.get_surface().get_rect().height - line.rect.height) / 2))
 
     def draw(self):
         # Erase All
         screen = pg.display.get_surface()
         screen.fill(BGCOLOR)
 
-        if len(self.widgets) == 0 and len(self.thorpy_widgets.get_population()) == 0:
+        if len(self.widgets) == 0:
             font = pg.font.Font(os.path.join(FONT_FOLDER, FONT_NAME), 20)
             text = font.render("Building " + self.building.name, True, WHITE)
             text_rect = text.get_rect()
@@ -249,16 +241,13 @@ class BuildingScreen(Screen):
         else:
             for widget in self.widgets:
                 widget.draw(screen)
-            for element in self.thorpy_widgets.get_population():
-                element.blit()
 
         pg.display.flip()
 
     def update(self):
         for widget in self.widgets:
             widget.update()
-        for element in self.thorpy_widgets.get_population():
-            element.update()
+
 
     def events(self):
         for event in pg.event.get():
@@ -271,8 +260,7 @@ class BuildingScreen(Screen):
                 for widget in self.widgets:
                     if not handled:
                         handled = widget.handle_event(event)
-                if not handled:
-                    self.thorpy_widgets.react(event)
+
 
 
 def test(fighter):

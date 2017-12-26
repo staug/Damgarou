@@ -397,6 +397,8 @@ class Label(Widget):
         :return:
         """
         self.text = text
+        if self.text is None:
+            self.text = " "
 
         if self.multiline:
             self._compute_multiline_text_image(scroll_index=self.scroll_index)
