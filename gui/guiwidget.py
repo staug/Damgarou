@@ -83,10 +83,16 @@ class Style:
     }
 
     @staticmethod
-    def set_style():
+    def set_style(theme="GRAY"):
         font_name = default.FONT_NAME
-        theme_default = Style.THEME_LIGHT_GRAY
-        theme_default_hover = Style.THEME_DARK_GRAY
+        theme_default_hover = theme_default = None
+
+        if theme == "GRAY":
+            theme_default = Style.THEME_LIGHT_GRAY
+            theme_default_hover = Style.THEME_DARK_GRAY
+        if theme == "BROWN":
+            theme_default = Style.THEME_LIGHT_BROWN
+            theme_default_hover = Style.THEME_DARK_BROWN
 
         Button.DEFAULT_OPTIONS["font_name"] = font_name
         Button.DEFAULT_OPTIONS["theme_hover"] = theme_default_hover
