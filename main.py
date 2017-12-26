@@ -153,7 +153,7 @@ class Launcher:
         self.widgets.append(Label2(text="First new one, this is a very long one",
                                    dimension=(100, 40),
                                    position=(30, 220),
-                                   grow_width_with_text=True,
+                                   grow_width_with_text=False,
                                    grow_height_with_text=True,
                                    style_dict={"bg_color": (255, 0, 0), "text_align_x": "LEFT", "text_align_y": "TOP"}))
 

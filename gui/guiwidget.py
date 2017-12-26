@@ -366,7 +366,13 @@ class Label2(Widget):
                 position_to_blit_text[1] += int(extra_space_y / 2)
             elif position_y == "BOTTOM":
                 position_to_blit_text[1] += extra_space_y
-        self.image.blit(self.text_image, position_to_blit_text, area=pg.Rect((0, 0), self.text_rect.size))
+
+        text_dimension_to_blit = (
+            max(self.rect.width - self.margin_x_left - self.margin_x_right, 0),
+            max(self.rect.height - self.margin_y_top - self.margin_y_bottom, 0)
+        )
+        self.image.blit(self.text_image, position_to_blit_text, area=pg.Rect((0, 0),
+                                                                             text_dimension_to_blit))
 
         # And we finally move to the position
         self.rect.topleft = self.position
@@ -413,6 +419,8 @@ class Label2(Widget):
         self.background_image = pg.Surface(self.dimension, pg.SRCALPHA)
 
         bg_color = self.style_dict.get("bg_color", Label2.DEFAULT_OPTIONS["bg_color"])
+        margin = 0  # Also used in decoration later
+
         if self.theme:
             rect = pg.Rect((0, 0), self.dimension)
             if self.theme["borders"]:
@@ -438,9 +446,6 @@ class Label2(Widget):
                                                            radius=self.theme["rounded_angle"]),
                                            (margin, margin))
 
-            # We finally add the decoration
-            # TODO
-
             elif self.theme["bg_color"]:
                 # We just do something for the background
                 self.background_image = rounded_surface(rect, self.theme["bg_color"],
@@ -452,9 +457,44 @@ class Label2(Widget):
             # TODO Add the up/down arrow
             pass
 
-        if force_recreate_decoration:
-            # TODO Set the decoration
-            pass
+        if "with_decoration" in self.theme and self.theme["with_decoration"]:
+            if force_recreate_decoration:
+                self.decoration_instruction = []
+                # No more than 1 every 75 pixels in average...
+                for i in range(random.randint(0, int(self.background_image.get_rect().width / 75))):
+                    # Top
+                    x = random.randint(2 * margin, self.background_image.get_rect().width - 2 * margin)
+                    self.decoration_instruction.append(
+                        "pg.draw.polygon(self.background_image, color, "
+                        "[({x}, {margin}), ({x}+4, {margin}), ({x}+2, {margin} + 2)], 0)".format(
+                            x=x, margin=margin))
+                for i in range(random.randint(0, int(self.background_image.get_rect().width / 75))):
+                    # Bottom
+                    x = random.randint(2 * margin, self.background_image.get_rect().width - 2 * margin)
+                    y = self.background_image.get_rect().height - 1
+                    self.decoration_instruction.append(
+                        "pg.draw.polygon(self.background_image, color, "
+                        "[({x}, {y}-{margin}), ({x}+4, {y}-{margin}), ({x}+2, {y}-{margin}-2)], 0)".format(
+                            x=x, margin=margin, y=y))
+                for i in range(random.randint(0, int(self.background_image.get_rect().height / 75))):
+                    # Left
+                    y = random.randint(2 * margin, self.background_image.get_rect().height - 2 * margin)
+                    self.decoration_instruction.append(
+                        "pg.draw.polygon(self.background_image, color, "
+                        "[({margin}, {y}), ({margin}, {y}+4), ({margin}+2, {y}+2)], 0)".format(
+                            y=y, margin=margin))
+                # No more than 1 every 75 pixels in average...
+                for i in range(random.randint(0, int(self.background_image.get_rect().height / 75))):
+                    # Right
+                    y = random.randint(2 * margin, self.background_image.get_rect().height - 2 * margin)
+                    x = self.background_image.get_rect().width - 1
+                    self.decoration_instruction.append(
+                        "pg.draw.polygon(self.background_image, color, "
+                        "[({x}-{margin},{y}), ({x}-{margin},{y}+4), ({x}-{margin}-2,{y}+2)], 0)".format(
+                            x=x, margin=margin, y=y))
+
+            for instruction in self.decoration_instruction:
+                exec(instruction)
 
 
 class Label(Widget):

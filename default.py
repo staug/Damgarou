@@ -19,28 +19,28 @@ BLUE = (0, 0, 255)
 THEME_LIGHT_GRAY = {
     "rounded_angle": 0.1,  # 0 = no angle, 1 = full angle
     "with_decoration": True,  # This adds small triangles
-    "borders": [(2, (233, 233, 233)), (2, (203, 203, 203))],  # list of margin + colors (external to int)
+    "borders": [(4, (233, 233, 233)), (4, (203, 203, 203))],  # list of margin + colors (external to int)
     "bg_color": (229, 229, 229),
     "font_color": (155, 157, 173)
 }
 THEME_DARK_GRAY = {
     "rounded_angle": 0.1,  # 0 = no angle, 1 = full angle
     "with_decoration": True,  # This adds small triangles
-    "borders": [(2, (97, 99, 116)), (2, (155, 157, 173))],  # list of margin + colors (external to int)
+    "borders": [(4, (97, 99, 116)), (4, (155, 157, 173))],  # list of margin + colors (external to int)
     "bg_color": (131, 135, 150),
     "font_color": (233, 233, 233)
 }
 THEME_LIGHT_BROWN = {
     "rounded_angle": 0.1,  # 0 = no angle, 1 = full angle
     "with_decoration": True,  # This adds small triangles
-    "borders": [(2, (217, 205, 175)), (2, (177, 160, 119))],  # list of margin + colors (external to int)
+    "borders": [(4, (217, 205, 175)), (4, (177, 160, 119))],  # list of margin + colors (external to int)
     "bg_color": (211, 191, 143),
     "font_color": (155, 157, 173)
 }
 THEME_DARK_BROWN = {
     "rounded_angle": 0.1,  # 0 = no angle, 1 = full angle
     "with_decoration": True,  # This adds small triangles
-    "borders": [(2, (136, 102, 68)), (2, (183, 145, 106))],  # list of margin + colors (external to int)
+    "borders": [(4, (136, 102, 68)), (4, (183, 145, 106))],  # list of margin + colors (external to int)
     "bg_color": (151, 113, 74),
     "font_color": (233, 233, 233)
 }
