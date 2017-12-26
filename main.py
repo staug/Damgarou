@@ -8,7 +8,7 @@ import default
 from entity.player import Player
 from entity.town import Entrance, Bank, GuildFighter, GuildMule, Shop, Tavern, Trade, Townhall, Temple
 from gui import guiwidget
-from gui.guiwidget import Button, MouseWidget, Label
+from gui.guiwidget import Button, MouseWidget, Label, Style
 from gui.guicontainer import LineAlignedContainer
 from gui.screen import PlayingScreen, BuildingScreen
 from region.region import RegionFactory
@@ -140,7 +140,8 @@ class Launcher:
         GLOBAL.logger.trace("Loading Fonts - Done")
 
     def implement_menu(self):
-        button_start = Button(position=(20, 10), text="Start", callback_function=self.start)
+        Style.set_style()
+        button_start = Button(position=(20, 10), dimension=(2, 2), grow_height_with_text=True, grow_width_with_text=True, text="Start", callback_function=self.start)
         button_load = Button(position=(50, 80), text="Load", callback_function=self.load)
         button_quit = Button(position=(10, 160), text="Quit", callback_function=Launcher.quit)
         line = LineAlignedContainer(int(pg.display.get_surface().get_rect().width / 2),

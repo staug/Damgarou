@@ -4,7 +4,6 @@ import default
 import random
 
 from shared import GLOBAL
-from copy import deepcopy
 
 
 class Widget:
@@ -47,6 +46,54 @@ class Widget:
         :param dx: the amount of pixel to move horizontally
         :param dy: the amount of pixel to move vertically
         """
+
+
+class Style:
+    """
+    Handle the default style options
+    """
+    # Themes for Buttons, labels...
+    THEME_LIGHT_GRAY = {
+        "rounded_angle": 0.1,  # 0 = no angle, 1 = full angle
+        "with_decoration": True,  # This adds small triangles
+        "borders": [(4, (233, 233, 233)), (4, (203, 203, 203))],  # list of margin + colors (external to int)
+        "bg_color": (229, 229, 229),
+        "font_color": (155, 157, 173)
+    }
+    THEME_DARK_GRAY = {
+        "rounded_angle": 0.1,  # 0 = no angle, 1 = full angle
+        "with_decoration": True,  # This adds small triangles
+        "borders": [(4, (97, 99, 116)), (4, (155, 157, 173))],  # list of margin + colors (external to int)
+        "bg_color": (131, 135, 150),
+        "font_color": (233, 233, 233)
+    }
+    THEME_LIGHT_BROWN = {
+        "rounded_angle": 0.1,  # 0 = no angle, 1 = full angle
+        "with_decoration": True,  # This adds small triangles
+        "borders": [(4, (217, 205, 175)), (4, (177, 160, 119))],  # list of margin + colors (external to int)
+        "bg_color": (211, 191, 143),
+        "font_color": (155, 157, 173)
+    }
+    THEME_DARK_BROWN = {
+        "rounded_angle": 0.1,  # 0 = no angle, 1 = full angle
+        "with_decoration": True,  # This adds small triangles
+        "borders": [(4, (136, 102, 68)), (4, (183, 145, 106))],  # list of margin + colors (external to int)
+        "bg_color": (151, 113, 74),
+        "font_color": (233, 233, 233)
+    }
+
+    @staticmethod
+    def set_style():
+        font_name = default.FONT_NAME
+        theme_default = Style.THEME_LIGHT_GRAY
+        theme_default_hover = Style.THEME_DARK_GRAY
+
+        Button.DEFAULT_OPTIONS["font_name"] = font_name
+        Button.DEFAULT_OPTIONS["theme_hover"] = theme_default_hover
+        Button.DEFAULT_OPTIONS["theme_idle"] = theme_default
+
+        Label.DEFAULT_OPTIONS["font_name"] = font_name
+        Label.DEFAULT_OPTIONS["theme"] = theme_default
 
 
 class MouseWidget(Widget):
@@ -202,8 +249,8 @@ class ProgressBar(Widget):
 
         # finally, some centered text with the values
         if self._with_text:
-            fontSurface = self._font.render(str(self._current_value) + '/' + str(self._max_value), 1, (255, 255, 255))
-            screen.blit(fontSurface, (self._position[0] + 10,
+            fontsurface = self._font.render(str(self._current_value) + '/' + str(self._max_value), 1, (255, 255, 255))
+            screen.blit(fontsurface, (self._position[0] + 10,
                                       self._position[1] + int(float(self._dimension[1] - self._font.get_height()) / 2)))
 
 
@@ -253,14 +300,13 @@ class Label(Widget):
 
         "bg_color": None,  # Transparent if None - ignored if a theme is given
 
-        "text_margin_x": 10,  # Minimum margin on the right & left, only relevant if a background is set (Color/image)
-        "text_margin_y": 10,  # Minimum margin on the top & down, only relevant if a background is set (Color/image)
+        "text_margin_x": 5,  # Minimum margin on the right & left, only relevant if a background is set (Color/image)
+        "text_margin_y": 5,  # Minimum margin on the top & down, only relevant if a background is set (Color/image)
         "text_align_x": "LEFT",
         "text_align_y": "TOP",
 
         # To set the theme
-        "theme": default.THEME_LIGHT_BROWN,  # the main theme or None
-        # "theme": None,  # the main theme or None
+        "theme": None,  # the main theme or None
 
         # To make it multiline and scrollable
         "scrollable_position": "RIGHT",  # The position either at the rihgt or at the left
@@ -271,7 +317,7 @@ class Label(Widget):
     def __init__(self,
                  text=None,
                  position=(0, 0),
-                 dimension=(80, 20),  # preferred dimensions of the total widget.
+                 dimension=(10, 10),  # preferred dimensions of the total widget.
                  # Note that x dimension might change with adapt_text_width parameter,
                  # and y_dimension changes if set to multiline and grow_height
                  style_dict=None,
@@ -472,6 +518,11 @@ class Label(Widget):
         if self.grow_height_with_text:
             self.dimension[1] = max(self.dimension[1], self.text_rect.height + self.margin_y_bottom + self.margin_y_top)
 
+        if self.dimension[0] < self.margin_x_left + self.margin_x_right + 1:
+            self.dimension[0] = self.margin_x_left + self.margin_x_right + 1
+        if self.dimension[1] < self.margin_y_top + self.margin_y_bottom + 1:
+            self.dimension[1] = self.margin_y_top + self.margin_y_bottom + 1
+
     def _create_background(self, force_recreate_decoration=False):
         # this assumes that dimension is correctly set
         self.background_image = pg.Surface(self.dimension, pg.SRCALPHA)
@@ -512,7 +563,8 @@ class Label(Widget):
             self.background_image.fill(bg_color)
 
         if self.scrollable:
-            scrollable_position = self.style_dict.get("scrollable_position", Label.DEFAULT_OPTIONS["scrollable_position"])
+            scrollable_position = self.style_dict.get("scrollable_position",
+                                                      Label.DEFAULT_OPTIONS["scrollable_position"])
             scrollable_color = self.style_dict.get("scrollable_color", Label.DEFAULT_OPTIONS["scrollable_color"])
             if self.theme and self.theme["borders"]:
                 scrollable_color = self.theme["borders"][-1][1]
@@ -670,7 +722,7 @@ class Button(Widget):
                  callback_function=None,
                  text=None,
                  position=(0, 0),
-                 dimension=(180, 125),
+                 dimension=(10, 10),
                  style_dict=None,
                  grow_width_with_text=False,
                  grow_height_with_text=True,
@@ -686,7 +738,8 @@ class Button(Widget):
         self.style_dict = style_dict or {}
 
         state = random.getstate()
-        self.style_dict["font_color"] = self.style_dict.get("font_color_idle", Button.DEFAULT_OPTIONS["font_color_idle"])
+        self.style_dict["font_color"] = self.style_dict.get("font_color_idle",
+                                                            Button.DEFAULT_OPTIONS["font_color_idle"])
         self.style_dict["bg_color"] = self.style_dict.get("bg_color_idle", Button.DEFAULT_OPTIONS["bg_color_idle"])
         self.style_dict["theme"] = self.style_dict.get("theme_idle", Button.DEFAULT_OPTIONS["theme_idle"])
         label = Label(text=text,
@@ -698,7 +751,8 @@ class Button(Widget):
         self.image = self.idle_image = label.image
 
         random.setstate(state)  # To be sure to have the decoration on the same places...
-        self.style_dict["font_color"] = self.style_dict.get("font_color_hover", Button.DEFAULT_OPTIONS["font_color_hover"])
+        self.style_dict["font_color"] = self.style_dict.get("font_color_hover",
+                                                            Button.DEFAULT_OPTIONS["font_color_hover"])
         self.style_dict["bg_color"] = self.style_dict.get("bg_color_hover", Button.DEFAULT_OPTIONS["bg_color_hover"])
         self.style_dict["theme"] = self.style_dict.get("theme_hover", Button.DEFAULT_OPTIONS["theme_hover"])
         label = Label(text=text,
