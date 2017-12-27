@@ -2,6 +2,7 @@ import pygame as pg
 from default import *
 import random as rd
 
+
 # Set of utilities
 
 
@@ -148,13 +149,12 @@ class Publisher(object):
 
 
 class Logger:
-
     ERROR = 5
     WARN = 4
     INFORM = 3
     DEBUG = 2
     TRACE = 1
-    LABELS = ("", "[TRACE] ", "[DEBUG] ", "[INFORM] ","[WARN] ", "[ERROR] ")
+    LABELS = ("", "[TRACE] ", "[DEBUG] ", "[INFORM] ", "[WARN] ", "[ERROR] ")
 
     def __init__(self):
         self._log_level = Logger.TRACE
@@ -193,6 +193,7 @@ class EmptyLogger(Logger):
     def handle_published_message(self, message):
         pass
 
+
 # A STAR Algo
 # Version 1.1
 #
@@ -202,8 +203,8 @@ class EmptyLogger(Logger):
 
 class Path:
     def __init__(self, nodes, totalCost):
-        self.nodes = nodes;
-        self.totalCost = totalCost;
+        self.nodes = nodes
+        self.totalCost = totalCost
 
     def getNodes(self):
         return self.nodes
@@ -242,10 +243,10 @@ class AStar:
         return bestNode
 
     def _tracePath(self, n):
-        nodes = [];
-        totalCost = n.mCost;
-        p = n.parent;
-        nodes.insert(0, n);
+        nodes = []
+        totalCost = n.mCost
+        p = n.parent
+        nodes.insert(0, n)
 
         while 1:
             if p.parent is None:
@@ -274,16 +275,16 @@ class AStar:
             elif n.lid in self.o:
                 # already in open, check if better score
                 i = self.o.index(n.lid)
-                on = self.on[i];
+                on = self.on[i]
                 if n.mCost < on.mCost:
-                    self.on.pop(i);
-                    self.o.pop(i);
-                    self.on.append(n);
-                    self.o.append(n.lid);
+                    self.on.pop(i)
+                    self.o.pop(i)
+                    self.on.append(n)
+                    self.o.append(n.lid)
             else:
                 # new node, append to open list
-                self.on.append(n);
-                self.o.append(n.lid);
+                self.on.append(n)
+                self.o.append(n.lid)
 
         return None
 
@@ -339,8 +340,8 @@ class SQ_MapHandler:
         tile = self.m[x][y]
         if tile.tile_type != '2':  # Not a ground
             return None
-        #d = self.m[(y*self.w)+x]
-        #if d == -1:
+        # d = self.m[(y*self.w)+x]
+        # if d == -1:
         #    return None
         d = 1
         return Node(location, d, ((y * self.w) + x));
@@ -353,13 +354,17 @@ class SQ_MapHandler:
         dl = dest
 
         n = self._handleNode(cl.x + 1, cl.y, curnode, dl.x, dl.y)
-        if n: result.append(n)
+        if n:
+            result.append(n)
         n = self._handleNode(cl.x - 1, cl.y, curnode, dl.x, dl.y)
-        if n: result.append(n)
+        if n:
+            result.append(n)
         n = self._handleNode(cl.x, cl.y + 1, curnode, dl.x, dl.y)
-        if n: result.append(n)
+        if n:
+            result.append(n)
         n = self._handleNode(cl.x, cl.y - 1, curnode, dl.x, dl.y)
-        if n: result.append(n)
+        if n:
+            result.append(n)
 
         return result
 
@@ -377,24 +382,80 @@ class SQ_MapHandler:
         return None
 
 
-NAMES = ["Abaet","Acamen","Adeen","Aghon","Ahburn","Airen","Aldaren","Alkirk","Amitel","Anumil","Asen","Atgur","Auden","Aysen","Abarden","Achard","Aerden","Agnar","Ahdun","Airis","Alderman","Allso","Anfar","Asden","Aslan","Atlin","Ault","Aboloft","Ackmard","Afflon","Ahalfar","Aidan","Albright","Aldren","Amerdan","Anumi","Asdern","Atar","Auchfor","Ayrie",
-"Bacohl","Balati","Basden","Bedic","Beson","Bewul","Biston","Boaldelr","Breanon","Bredock","Bristan","Busma","Badeek","Baradeer","Bayde","Beeron","Besur","Biedgar","Bithon","Bolrock","Bredere","Breen","Buchmeid","Buthomar","Baduk","Barkydle","Beck","Bein","Besurlde","Bildon","Boal","Brakdern","Bredin","Brighton","Bue","Bydern",
-"Caelholdt","Camchak","Casden","Celorn","Cerdern","Cevelt","Chidak","Ciroc","Connell","Cosdeer","Cydare","Cyton","Cainon","Camilde","Cayold","Celthric","Cespar","Chamon","Cibrock","Codern","Cordale","Cuparun","Cylmar","Calden","Cardon","Celbahr","Cemark","Cether","Chesmarn","Cipyar","Colthan","Cos","Cusmirk","Cythnar",
-"Daburn","Dakamon","Dalmarn","Darkkon","Darmor","Dask","Derik","Dessfar","Doceon","Dorn","Drakone","Dritz","Dryn","Duran","Dyfar","Daermod","Dakkone","Dapvhir","Darko","Darpick","Deathmar","Derrin","Dinfar","Dochrohan","Dosoman","Drandon","Drophar","Duba","Durmark","Dyten","Dak","Dalburn","Darkboon","Darkspur","Dasbeck","Defearon","Desil","Dismer","Dokoran","Drakoe","Drit","Dryden","Dukran","Dusaro",
-"Eard","Efar","Ekgamut","Elson","Endor","Enro","Eritai","Etar","Ethen","Eythil","Eckard","Egmardern","Eli","Elthin","Enidin","Erikarn","Escariet","Etburn","Etmere","Efamar","Eiridan","Elik","Enbane","Enoon","Erim","Espardo","Etdar","Etran",
-"Faoturk","Fenrirr","Ficadon","Firedorn","Folmard","Fydar","Faowind","Fetmar","Fickfylo","Firiro","Fraderk","Fyn","Fearlock","Feturn","Fildon","Floran","Fronar",
-"Gafolern","Galiron","Gemardt","Gerirr","Gibolock","Gom","Gothikar","Gryn","Guthale","Gyin","Gai","Gametris","Gemedern","Geth","Gibolt","Gosford","Gresforn","Gundir","Gybol","Galain","Gauthus","Gemedes","Gib","Gith","Gothar","Grimie","Gustov","Gybrush",
-"Halmar","Hectar","Hermenze","Hildale","Hydale","Harrenhal","Hecton","Hermuck","Hildar","Hyten","Hasten","Heramon","Hezak","Hileict",
-"Iarmod","Ieserk","Illilorn","Ipedorn","Isen","Jackson","Janus","Jesco","Jex","Jin","Jun","Kafar","Keran","Kethren","Kiden","Kildarien","Kip","Kolmorn","Lackus","Lafornon","Ledale","Lephidiles","Letor","Liphanes","Ludokrin","Lurd","Macon","Marderdeen","Markdoon","Mathar","Mellamo","Meridan","Mes'ard","Mezo","Mickal","Miphates","Modric","Mufar","Mythik","Nadeer","Naphates","Nikpal","Niro","Nuthor","Nythil","O’tho","Occhi","Ohethlic","Omarn","Othelen","Padan","Peitar","Pendus","Phairdon","Phoenix","Picumar","Ponith","Prothalon","Qeisan","Quid","Qysan","Radag'mal","Rayth","Reth","Rhithin","Rikar","Ritic","Rogoth","Rydan","Ryodan","Rythern","Sabal","Samon","Scoth","Sed","Senthyril","Seryth","Setlo","Shane","Shillen","Sil'forrin","Soderman","Stenwulf","Suth","Syth","Talberon","Temilfist","Tespar","Thiltran","Tibolt","Tithan","Tolle","Tothale","Tuk","Tyden","Uerthe","Undin","Vaccon","Valynard","Vespar","Vider","Vildar","Virde","Voudim","Wak’dern","Wekmar","William","Wiltmar","Wrathran","Wyder","Xander","Xex","Y’reth","Yesirn","Zak","Zeke","Zidar","Zilocke","Zotar"
-"Idon","Ikar","Illium","Irefist","Isil","Jalil","Jayco","Jespar","Jib","Juktar","Justal","Kaldar","Kesad","Kib","Kilbas","Kimdar","Kirder","Kyrad","Lacspor","Lahorn","Leit","Lerin","Lidorn","Loban","Luphildern","Zakarn","Madarlon","Mardin","Marklin","Medarin","Meowol","Merkesh","Mesophan","Michael","Migorn","Mi'talrythin","Modum","Mujarin","Mythil","Nalfar","Neowyld","Nikrolin","Noford","Nuwolf","Zerin","Ocarin","Odaren","Okar","Orin","Oxbaren","Palid","Pelphides","Perder","Phemedes","Picon","Pildoor","Poran","Puthor","Qidan","Quiss","Zigmal","Randar","Reaper","Rethik","Rhysling","Rismak","Rogeir","Rophan","Ryfar","Rysdan","Zio","Sadareen","Samot","Scythe","Sedar","Serin","Sesmidat","Shade","Shard","Silco","Silpal","Sothale","Steven","Sutlin","Sythril","Telpur","Tempist","Tessino","Tholan","Ticharol","Tobale","Tolsar","Tousba","Tuscanar","Zutar","Ugmar","Updar","Vacone","Vectomon","Vethelot","Vigoth","Vinald","Voltain","Vythethi","Walkar","Werymn","Willican","Wishane","Wraythe","Wyeth","Xavier","Xithyl","Yabaro","Yssik",
-"Ironmark","Ithric","Jamik","Jaython","Jethil","Jibar","Julthor","Ieli","Kellan","Kesmon","Kibidon","Kilburn","Kinorn","Kodof","Ilgenar","Laderic","Laracal","Lephar","Lesphares","Lin","Lox","Lupin","Zecane","Mafar","Markard","Mashasen","Medin","Merdon","Mesah","Mesoton","Mick","Milo","Mitar","Mudon","Mylo","Ingel","Namorn","Nidale","Niktohal","Nothar","Nydale","Zessfar","Occelot","Odeir","Omaniron","Ospar","Xuio","Papur","Pender","Perol","Phexides","Pictal","Pixdale","Poscidion","Pyder","Quiad","Qupar","Zile","Raysdan","Resboron","Rhithik","Riandur","Riss","Rogist","Rulrindale","Ryfar","Rythen","Zoru","Safilix","Sasic","Secor","Senick","Sermak","Seth","Shadowbane","Shardo","Sildo","Sithik","Staph","Suktor","Syr","Yssith","Temil","Teslanar","Tethran","Tibers","Tilner","Tol’Solie","Toma","Towerlock","Tusdar","Zyten","Uhrd","Uther","Valkeri","Veldahar","Victor","Vilan","Vinkolt","Volux","Yepal","Wanar","Weshin","Wilte","Witfar","Wuthmon","Wyvorn","Xenil"]
+NAMES = ["Abaet", "Acamen", "Adeen", "Aghon", "Ahburn", "Airen", "Aldaren", "Alkirk", "Amitel", "Anumil", "Asen",
+         "Atgur", "Auden", "Aysen", "Abarden", "Achard", "Aerden", "Agnar", "Ahdun", "Airis", "Alderman", "Allso",
+         "Anfar", "Asden", "Aslan", "Atlin", "Ault", "Aboloft", "Ackmard", "Afflon", "Ahalfar", "Aidan", "Albright",
+         "Aldren", "Amerdan", "Anumi", "Asdern", "Atar", "Auchfor", "Ayrie",
+         "Bacohl", "Balati", "Basden", "Bedic", "Beson", "Bewul", "Biston", "Boaldelr", "Breanon", "Bredock", "Bristan",
+         "Busma", "Badeek", "Baradeer", "Bayde", "Beeron", "Besur", "Biedgar", "Bithon", "Bolrock", "Bredere", "Breen",
+         "Buchmeid", "Buthomar", "Baduk", "Barkydle", "Beck", "Bein", "Besurlde", "Bildon", "Boal", "Brakdern",
+         "Bredin", "Brighton", "Bue", "Bydern",
+         "Caelholdt", "Camchak", "Casden", "Celorn", "Cerdern", "Cevelt", "Chidak", "Ciroc", "Connell", "Cosdeer",
+         "Cydare", "Cyton", "Cainon", "Camilde", "Cayold", "Celthric", "Cespar", "Chamon", "Cibrock", "Codern",
+         "Cordale", "Cuparun", "Cylmar", "Calden", "Cardon", "Celbahr", "Cemark", "Cether", "Chesmarn", "Cipyar",
+         "Colthan", "Cos", "Cusmirk", "Cythnar",
+         "Daburn", "Dakamon", "Dalmarn", "Darkkon", "Darmor", "Dask", "Derik", "Dessfar", "Doceon", "Dorn", "Drakone",
+         "Dritz", "Dryn", "Duran", "Dyfar", "Daermod", "Dakkone", "Dapvhir", "Darko", "Darpick", "Deathmar", "Derrin",
+         "Dinfar", "Dochrohan", "Dosoman", "Drandon", "Drophar", "Duba", "Durmark", "Dyten", "Dak", "Dalburn",
+         "Darkboon", "Darkspur", "Dasbeck", "Defearon", "Desil", "Dismer", "Dokoran", "Drakoe", "Drit", "Dryden",
+         "Dukran", "Dusaro",
+         "Eard", "Efar", "Ekgamut", "Elson", "Endor", "Enro", "Eritai", "Etar", "Ethen", "Eythil", "Eckard",
+         "Egmardern", "Eli", "Elthin", "Enidin", "Erikarn", "Escariet", "Etburn", "Etmere", "Efamar", "Eiridan", "Elik",
+         "Enbane", "Enoon", "Erim", "Espardo", "Etdar", "Etran",
+         "Faoturk", "Fenrirr", "Ficadon", "Firedorn", "Folmard", "Fydar", "Faowind", "Fetmar", "Fickfylo", "Firiro",
+         "Fraderk", "Fyn", "Fearlock", "Feturn", "Fildon", "Floran", "Fronar",
+         "Gafolern", "Galiron", "Gemardt", "Gerirr", "Gibolock", "Gom", "Gothikar", "Gryn", "Guthale", "Gyin", "Gai",
+         "Gametris", "Gemedern", "Geth", "Gibolt", "Gosford", "Gresforn", "Gundir", "Gybol", "Galain", "Gauthus",
+         "Gemedes", "Gib", "Gith", "Gothar", "Grimie", "Gustov", "Gybrush",
+         "Halmar", "Hectar", "Hermenze", "Hildale", "Hydale", "Harrenhal", "Hecton", "Hermuck", "Hildar", "Hyten",
+         "Hasten", "Heramon", "Hezak", "Hileict",
+         "Iarmod", "Ieserk", "Illilorn", "Ipedorn", "Isen", "Jackson", "Janus", "Jesco", "Jex", "Jin", "Jun", "Kafar",
+         "Keran", "Kethren", "Kiden", "Kildarien", "Kip", "Kolmorn", "Lackus", "Lafornon", "Ledale", "Lephidiles",
+         "Letor", "Liphanes", "Ludokrin", "Lurd", "Macon", "Marderdeen", "Markdoon", "Mathar", "Mellamo", "Meridan",
+         "Mes'ard", "Mezo", "Mickal", "Miphates", "Modric", "Mufar", "Mythik", "Nadeer", "Naphates", "Nikpal", "Niro",
+         "Nuthor", "Nythil", "O’tho", "Occhi", "Ohethlic", "Omarn", "Othelen", "Padan", "Peitar", "Pendus", "Phairdon",
+         "Phoenix", "Picumar", "Ponith", "Prothalon", "Qeisan", "Quid", "Qysan", "Radag'mal", "Rayth", "Reth",
+         "Rhithin", "Rikar", "Ritic", "Rogoth", "Rydan", "Ryodan", "Rythern", "Sabal", "Samon", "Scoth", "Sed",
+         "Senthyril", "Seryth", "Setlo", "Shane", "Shillen", "Sil'forrin", "Soderman", "Stenwulf", "Suth", "Syth",
+         "Talberon", "Temilfist", "Tespar", "Thiltran", "Tibolt", "Tithan", "Tolle", "Tothale", "Tuk", "Tyden",
+         "Uerthe", "Undin", "Vaccon", "Valynard", "Vespar", "Vider", "Vildar", "Virde", "Voudim", "Wak’dern", "Wekmar",
+         "William", "Wiltmar", "Wrathran", "Wyder", "Xander", "Xex", "Y’reth", "Yesirn", "Zak", "Zeke", "Zidar",
+         "Zilocke", "Zotar"
+                    "Idon", "Ikar", "Illium", "Irefist", "Isil", "Jalil", "Jayco", "Jespar", "Jib", "Juktar", "Justal",
+         "Kaldar", "Kesad", "Kib", "Kilbas", "Kimdar", "Kirder", "Kyrad", "Lacspor", "Lahorn", "Leit", "Lerin",
+         "Lidorn", "Loban", "Luphildern", "Zakarn", "Madarlon", "Mardin", "Marklin", "Medarin", "Meowol", "Merkesh",
+         "Mesophan", "Michael", "Migorn", "Mi'talrythin", "Modum", "Mujarin", "Mythil", "Nalfar", "Neowyld", "Nikrolin",
+         "Noford", "Nuwolf", "Zerin", "Ocarin", "Odaren", "Okar", "Orin", "Oxbaren", "Palid", "Pelphides", "Perder",
+         "Phemedes", "Picon", "Pildoor", "Poran", "Puthor", "Qidan", "Quiss", "Zigmal", "Randar", "Reaper", "Rethik",
+         "Rhysling", "Rismak", "Rogeir", "Rophan", "Ryfar", "Rysdan", "Zio", "Sadareen", "Samot", "Scythe", "Sedar",
+         "Serin", "Sesmidat", "Shade", "Shard", "Silco", "Silpal", "Sothale", "Steven", "Sutlin", "Sythril", "Telpur",
+         "Tempist", "Tessino", "Tholan", "Ticharol", "Tobale", "Tolsar", "Tousba", "Tuscanar", "Zutar", "Ugmar",
+         "Updar", "Vacone", "Vectomon", "Vethelot", "Vigoth", "Vinald", "Voltain", "Vythethi", "Walkar", "Werymn",
+         "Willican", "Wishane", "Wraythe", "Wyeth", "Xavier", "Xithyl", "Yabaro", "Yssik",
+         "Ironmark", "Ithric", "Jamik", "Jaython", "Jethil", "Jibar", "Julthor", "Ieli", "Kellan", "Kesmon", "Kibidon",
+         "Kilburn", "Kinorn", "Kodof", "Ilgenar", "Laderic", "Laracal", "Lephar", "Lesphares", "Lin", "Lox", "Lupin",
+         "Zecane", "Mafar", "Markard", "Mashasen", "Medin", "Merdon", "Mesah", "Mesoton", "Mick", "Milo", "Mitar",
+         "Mudon", "Mylo", "Ingel", "Namorn", "Nidale", "Niktohal", "Nothar", "Nydale", "Zessfar", "Occelot", "Odeir",
+         "Omaniron", "Ospar", "Xuio", "Papur", "Pender", "Perol", "Phexides", "Pictal", "Pixdale", "Poscidion", "Pyder",
+         "Quiad", "Qupar", "Zile", "Raysdan", "Resboron", "Rhithik", "Riandur", "Riss", "Rogist", "Rulrindale", "Ryfar",
+         "Rythen", "Zoru", "Safilix", "Sasic", "Secor", "Senick", "Sermak", "Seth", "Shadowbane", "Shardo", "Sildo",
+         "Sithik", "Staph", "Suktor", "Syr", "Yssith", "Temil", "Teslanar", "Tethran", "Tibers", "Tilner", "Tol’Solie",
+         "Toma", "Towerlock", "Tusdar", "Zyten", "Uhrd", "Uther", "Valkeri", "Veldahar", "Victor", "Vilan", "Vinkolt",
+         "Volux", "Yepal", "Wanar", "Weshin", "Wilte", "Witfar", "Wuthmon", "Wyvorn", "Xenil"]
 
-PLACES = ['Adara', 'Adena', 'Adrianne', 'Alarice', 'Alvita', 'Amara', 'Ambika', 'Antonia', 'Araceli', 'Balandria', 'Basha',
-'Beryl', 'Bryn', 'Callia', 'Caryssa', 'Cassandra', 'Casondrah', 'Chatha', 'Ciara', 'Cynara', 'Cytheria', 'Dabria', 'Darcei',
-'Deandra', 'Deirdre', 'Delores', 'Desdomna', 'Devi', 'Dominique', 'Drucilla', 'Duvessa', 'Ebony', 'Fantine', 'Fuscienne',
-'Gabi', 'Gallia', 'Hanna', 'Hedda', 'Jerica', 'Jetta', 'Joby', 'Kacila', 'Kagami', 'Kala', 'Kallie', 'Keelia', 'Kerry',
-'Kerry-Ann', 'Kimberly', 'Killian', 'Kory', 'Lilith', 'Lucretia', 'Lysha', 'Mercedes', 'Mia', 'Maura', 'Perdita', 'Quella',
-'Riona', 'Safiya', 'Salina', 'Severin', 'Sidonia', 'Sirena', 'Solita', 'Tempest', 'Thea', 'Treva', 'Trista', 'Vala', 'Winta']
+PLACES = ['Adara', 'Adena', 'Adrianne', 'Alarice', 'Alvita', 'Amara', 'Ambika', 'Antonia', 'Araceli', 'Balandria',
+          'Basha',
+          'Beryl', 'Bryn', 'Callia', 'Caryssa', 'Cassandra', 'Casondrah', 'Chatha', 'Ciara', 'Cynara', 'Cytheria',
+          'Dabria', 'Darcei',
+          'Deandra', 'Deirdre', 'Delores', 'Desdomna', 'Devi', 'Dominique', 'Drucilla', 'Duvessa', 'Ebony', 'Fantine',
+          'Fuscienne',
+          'Gabi', 'Gallia', 'Hanna', 'Hedda', 'Jerica', 'Jetta', 'Joby', 'Kacila', 'Kagami', 'Kala', 'Kallie', 'Keelia',
+          'Kerry',
+          'Kerry-Ann', 'Kimberly', 'Killian', 'Kory', 'Lilith', 'Lucretia', 'Lysha', 'Mercedes', 'Mia', 'Maura',
+          'Perdita', 'Quella',
+          'Riona', 'Safiya', 'Salina', 'Severin', 'Sidonia', 'Sirena', 'Solita', 'Tempest', 'Thea', 'Treva', 'Trista',
+          'Vala', 'Winta']
+
 
 ###############################################################################
 # Markov Name model
@@ -634,7 +695,7 @@ class FieldOfView:
                 round_x = int(round(x))
                 round_y = int(round(y))
                 if round_x < 0 or round_y < 0 or round_x > region.tile_width or \
-                                round_y > region.tile_height:  # Ray is out of range
+                        round_y > region.tile_height:  # Ray is out of range
                     break
 
                 fov[round_x][round_y] = True  # Make tile visible
@@ -648,6 +709,7 @@ class FieldOfView:
                     break
 
         return fov
+
 
 # Graphical utilities
 def get_image(image_src_list, folder, image_name):
@@ -814,7 +876,6 @@ def _load_player(image_src_list, folder, image_name, width=16, height=16):
 
 
 def load_all_images():
-
     images = {}  # the actual list of images to be built
     image_src_list = {}  # a cache for objects
 
@@ -858,6 +919,7 @@ def load_all_images():
     images["BUILDING_TRADE"] = load_image(image_src_list, ICON_FOLDER, "trade.png", 0, 0, width=64, height=64)
     images["BUILDING_ENTRANCE"] = load_image(image_src_list, ICON_FOLDER, "entrance.png", 0, 0, width=64, height=64)
 
+    # UI Related section
     images["CURSOR_GAUNTLET_BLUE"] = get_image(image_src_list, UI_FOLDER, "cursorGauntlet_blue.png")
     images["CURSOR_GAUNTLET_BRONZE"] = get_image(image_src_list, UI_FOLDER, "cursorGauntlet_bronze.png")
     images["CURSOR_GAUNTLET_GREY"] = get_image(image_src_list, UI_FOLDER, "cursorGauntlet_grey.png")
@@ -867,5 +929,20 @@ def load_all_images():
     images["CURSOR_SWORD_BRONZE"] = get_image(image_src_list, UI_FOLDER, "cursorSword_bronze.png")
     images["CURSOR_SWORD_GOLD"] = get_image(image_src_list, UI_FOLDER, "cursorSword_gold.png")
     images["CURSOR_SWORD_SILVER"] = get_image(image_src_list, UI_FOLDER, "cursorSword_silver.png")
+
+    images["ICON_CHECK_BEIGE"] = get_image(image_src_list, UI_FOLDER, "iconCheck_beige.png")
+    images["ICON_CHECK_BLUE"] = get_image(image_src_list, UI_FOLDER, "iconCheck_blue.png")
+    images["ICON_CHECK_GREY"] = get_image(image_src_list, UI_FOLDER, "iconCheck_grey.png")
+    images["ICON_CHECK_BRONZE"] = get_image(image_src_list, UI_FOLDER, "iconCheck_bronze.png")
+
+    images["ICON_CIRCLE_BEIGE"] = get_image(image_src_list, UI_FOLDER, "iconCircle_beige.png")
+    images["ICON_CIRCLE_BLUE"] = get_image(image_src_list, UI_FOLDER, "iconCircle_blue.png")
+    images["ICON_CIRCLE_GREY"] = get_image(image_src_list, UI_FOLDER, "iconCircle_grey.png")
+    images["ICON_CIRCLE_BROWN"] = get_image(image_src_list, UI_FOLDER, "iconCircle_brown.png")
+
+    images["ICON_CROSS_BEIGE"] = get_image(image_src_list, UI_FOLDER, "iconCross_beige.png")
+    images["ICON_CROSS_BLUE"] = get_image(image_src_list, UI_FOLDER, "iconCross_blue.png")
+    images["ICON_CROSS_GREY"] = get_image(image_src_list, UI_FOLDER, "iconCross_grey.png")
+    images["ICON_CROSS_BROWN"] = get_image(image_src_list, UI_FOLDER, "iconCross_brown.png")
 
     return images
