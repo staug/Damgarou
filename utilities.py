@@ -857,5 +857,15 @@ def load_all_images():
     images["BUILDING_TOWNHALL"] = load_image(image_src_list, ICON_FOLDER, "townhall.png", 0, 0, width=64, height=64)
     images["BUILDING_TRADE"] = load_image(image_src_list, ICON_FOLDER, "trade.png", 0, 0, width=64, height=64)
     images["BUILDING_ENTRANCE"] = load_image(image_src_list, ICON_FOLDER, "entrance.png", 0, 0, width=64, height=64)
-    
+
+    images["CURSOR_GAUNTLET_BLUE"] = get_image(image_src_list, UI_FOLDER, "cursorGauntlet_blue.png")
+    images["CURSOR_GAUNTLET_BRONZE"] = get_image(image_src_list, UI_FOLDER, "cursorGauntlet_bronze.png")
+    images["CURSOR_GAUNTLET_GREY"] = get_image(image_src_list, UI_FOLDER, "cursorGauntlet_grey.png")
+    images["CURSOR_HAND_BEIGE"] = get_image(image_src_list, UI_FOLDER, "cursorHand_beige.png")
+    images["CURSOR_HAND_BLUE"] = get_image(image_src_list, UI_FOLDER, "cursorHand_blue.png")
+    images["CURSOR_HAND_GREY"] = get_image(image_src_list, UI_FOLDER, "cursorHand_grey.png")
+    images["CURSOR_SWORD_BRONZE"] = get_image(image_src_list, UI_FOLDER, "cursorSword_bronze.png")
+    images["CURSOR_SWORD_GOLD"] = get_image(image_src_list, UI_FOLDER, "cursorSword_gold.png")
+    images["CURSOR_SWORD_SILVER"] = get_image(image_src_list, UI_FOLDER, "cursorSword_silver.png")
+
     return images

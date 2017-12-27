@@ -29,6 +29,7 @@ LIVE_FOLDER = os.path.join(IMG_FOLDER, "LiveEntities")
 OBJECT_FOLDER = os.path.join(IMG_FOLDER, "Objects")
 PLAYER_FOLDER = os.path.join(IMG_FOLDER, "Player")
 ICON_FOLDER = os.path.join(IMG_FOLDER, "Icons")
+UI_FOLDER = os.path.join(IMG_FOLDER, "UIPack")
 
 # Graphical Settings
 TILESIZE_SCREEN = (32, 32)
