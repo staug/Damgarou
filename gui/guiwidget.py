@@ -696,9 +696,9 @@ class Label(Widget):
     def move(self, dx, dy):
         self.position = (self.position[0] + dx,
                          self.position[1] + dy)
-        self.rect.move(dx, dy)
+        self.rect.move_ip(dx, dy)
         if self.scrollable:
-            self.scroll_bottom_rect.move(dx, dy)
+            self.scroll_bottom_rect.move_ip(dx, dy)
             self.scroll_top_rect.mov(dx, dy)
 
 
@@ -791,7 +791,7 @@ class Button(Widget):
             self.image = self.idle_image
 
     def move(self, dx, dy):
-        self.rect.move(dx, dy)
+        self.rect.move_ip(dx, dy)
 
 
 def display_single_message_on_screen(text, position="CENTER", font_size=18, erase_screen_first=True):

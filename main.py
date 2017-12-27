@@ -141,16 +141,16 @@ class Launcher:
 
     def implement_menu(self):
         Style.set_style()
-        button_start = Button(position=(20, 10), dimension=(2, 2), grow_height_with_text=True, grow_width_with_text=True, text="Start", callback_function=self.start)
-        button_load = Button(position=(50, 80), text="Load", callback_function=self.load)
-        button_quit = Button(position=(10, 160), text="Quit", callback_function=Launcher.quit)
+        button_start = Button(position=(20, 10), dimension=(100, 0), grow_height_with_text=True, grow_width_with_text=True, text="Start", callback_function=self.start, style_dict={"text_align_x": "CENTER", "text_align_y": "CENTER"})
+        button_load = Button(position=(50, 80), dimension=(100, 0), grow_height_with_text=True, grow_width_with_text=True, text="Load", callback_function=self.load, style_dict={"text_align_x": "CENTER", "text_align_y": "CENTER"})
+        button_quit = Button(position=(10, 160), dimension=(100, 0), grow_height_with_text=True, grow_width_with_text=True, text="Quit", callback_function=Launcher.quit, style_dict={"text_align_x": "CENTER", "text_align_y": "CENTER"})
         line = LineAlignedContainer(int(pg.display.get_surface().get_rect().width / 2),
                                     alignment=LineAlignedContainer.VERTICAL_CENTER,
                                     widgets=(button_start, button_load, button_quit), space=50)
         line.move(0, int((pg.display.get_surface().get_rect().height - line.rect.height) / 2))
         self.widgets = line.widgets_as_list()
         #self.widgets.append(MouseWidget(GLOBAL.img("TOWN")))
-        self.widgets.append(Label(text="First new one and this is a very very long one that goes on forever",
+        self.widgets.append(Label(text="First new one and this is a very very long one that goes on forever and never quits. Maybe we want to make it scrollable?",
                                   dimension=(200, 80),
                                   position=(30, 220),
                                   grow_width_with_text=False,

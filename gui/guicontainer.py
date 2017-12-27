@@ -6,6 +6,7 @@ class Container:
     A set of class to align the rects of the widget it contains.
     A widget can only be a part of one container - a check is done to remove it when adding it.
     """
+
     def __init__(self, widgets=None, widget=None, reorder=False):
         self.widgets = {}
         self.widget_id_order = []
@@ -49,9 +50,9 @@ class Container:
         else:
             copy_order = self.widget_id_order[:]
             self.add_widget(widget_to_insert, reorder=True)
-            self.widget_id_order = copy_order[:copy_order.index(widget_reference.id)+1] +\
-                                   [widget_to_insert.id] +\
-                                   copy_order[copy_order.index(widget_reference.id)+1:]
+            self.widget_id_order = copy_order[:copy_order.index(widget_reference.id) + 1] + \
+                                   [widget_to_insert.id] + \
+                                   copy_order[copy_order.index(widget_reference.id) + 1:]
         if reorder:
             self.reorder_container()
 
@@ -69,8 +70,8 @@ class Container:
         else:
             copy_order = self.widget_id_order[:]
             self.add_widget(widget_to_insert, reorder=True)
-            self.widget_id_order = copy_order[:copy_order.index(widget_reference.id)] +\
-                                   [widget_to_insert.id] +\
+            self.widget_id_order = copy_order[:copy_order.index(widget_reference.id)] + \
+                                   [widget_to_insert.id] + \
                                    copy_order[copy_order.index(widget_reference.id):]
         if reorder:
             self.reorder_container()
@@ -130,7 +131,8 @@ class Container:
         :return:
         """
         for widget in self.widgets.values():
-            widget.rect.move_ip(dx, dy)
+            # widget.rect.move_ip(dx, dy)
+            widget.move(dx, dy)
 
 
 class LineAlignedContainer(Container):
@@ -178,9 +180,9 @@ class LineAlignedContainer(Container):
         Container.__init__(self, widget=widget, widgets=widgets, reorder=False)
 
         if auto_space:
-            assert type(end_position) is tuple and type(start_position) is tuple,\
+            assert type(end_position) is tuple and type(start_position) is tuple, \
                 "Auto space set but start position {} and end position {} are not tuple".format(start_position,
-                                                                                               end_position)
+                                                                                                end_position)
         self.alignment = alignment
         self.start_position = start_position
         self.end_position = end_position
@@ -218,9 +220,11 @@ class LineAlignedContainer(Container):
             space = self.space
             reposition_y_axis = True
 
+        # Now that everything is ready we prepare the move
         if reposition_y_axis:
             for widget_id in self.widget_id_order:
-                self.widgets[widget_id].rect.top = start_y
+                self.widgets[widget_id].move(0, start_y - self.widgets[widget_id].rect.top)
+                # self.widgets[widget_id].rect.top = start_y
                 start_y += self.widgets[widget_id].rect.height + space
 
         if self.alignment == LineAlignedContainer.VERTICAL_LEFT:
@@ -228,19 +232,22 @@ class LineAlignedContainer(Container):
             if type(position) is tuple:
                 position = position[0]
             for widget_id in self.widget_id_order:
-                self.widgets[widget_id].rect.left = position
+                self.widgets[widget_id].move(position - self.widgets[widget_id].rect.left, 0)
+                # self.widgets[widget_id].rect.left = position
         elif self.alignment == LineAlignedContainer.VERTICAL_RIGHT:
             position = self.start_position
             if type(position) is tuple:
                 position = position[0]
-            for widget in self.widgets.values():
-                widget.rect.right = position
+            for widget_id in self.widget_id_order:
+                # widget.rect.right = position
+                self.widgets[widget_id].move(position - self.widgets[widget_id].rect.right, 0)
         else:
             position = self.start_position
             if type(position) is tuple:
                 position = position[0]
-            for widget in self.widgets.values():
-                widget.rect.centerx = position
+            for widget_id in self.widget_id_order:
+                # widget.rect.centerx = position
+                self.widgets[widget_id].move(position - self.widgets[widget_id].rect.centerx, 0)
 
     def _reorder_container_horizontal(self):
         start_x = space = None
@@ -264,7 +271,7 @@ class LineAlignedContainer(Container):
 
         if reposition_x_axis:
             for widget_id in self.widget_id_order:
-                self.widgets[widget_id].rect.left = start_x
+                self.widgets[widget_id].move(start_x - self.widgets[widget_id].rect.left, 0)
                 start_x += self.widgets[widget_id].rect.width + space
 
         if self.alignment == LineAlignedContainer.HORIZONTAL_TOP:
@@ -272,16 +279,16 @@ class LineAlignedContainer(Container):
             if type(position) is tuple:
                 position = position[1]
             for widget_id in self.widget_id_order:
-                self.widgets[widget_id].rect.top = position
+                self.widgets[widget_id].move(0, position - self.widgets[widget_id].rect.top)
         elif self.alignment == LineAlignedContainer.HORIZONTAL_BOTTOM:
             position = self.start_position
             if type(position) is tuple:
                 position = position[1]
-            for widget in self.widgets.values():
-                widget.rect.bottom = position
+            for widget_id in self.widget_id_order:
+                self.widgets[widget_id].move(0, position - self.widgets[widget_id].rect.bottom)
         else:
             position = self.start_position
             if type(position) is tuple:
                 position = position[1]
-            for widget in self.widgets.values():
-                widget.rect.centery = position
+            for widget_id in self.widget_id_order:
+                self.widgets[widget_id].move(0, position - self.widgets[widget_id].rect.centery)
