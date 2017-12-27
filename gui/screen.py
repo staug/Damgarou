@@ -3,7 +3,7 @@ import pygame as pg
 from shared import GLOBAL
 from default import *
 from utilities import FieldOfView
-from gui.guiwidget import Widget, ProgressBar, Label, Button
+from gui.guiwidget import Widget, ProgressBar, Label, TextButton
 from gui.guicontainer import LineAlignedContainer
 import dill as pick
 
@@ -217,7 +217,7 @@ class BuildingScreen(Screen):
 
         if self.building.is_guild_fighter():
             for fighter in self.building.fighter_list:
-                button = Button(text=fighter.name, callback_function=lambda myfighter=fighter: test(myfighter), grow_width_with_text=True, grow_height_with_text=True)
+                button = TextButton(text=fighter.name, callback_function=lambda myfighter=fighter: test(myfighter), grow_width_with_text=True, grow_height_with_text=True)
                 self.widgets.append(button)
 
             line = LineAlignedContainer(int(pg.display.get_surface().get_rect().width / 2),

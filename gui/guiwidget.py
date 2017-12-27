@@ -46,6 +46,7 @@ class Widget:
         :param dx: the amount of pixel to move horizontally
         :param dy: the amount of pixel to move vertically
         """
+        pass
 
 
 class Style:
@@ -94,9 +95,9 @@ class Style:
             theme_default = Style.THEME_LIGHT_BROWN
             theme_default_hover = Style.THEME_DARK_BROWN
 
-        Button.DEFAULT_OPTIONS["font_name"] = font_name
-        Button.DEFAULT_OPTIONS["theme_hover"] = theme_default_hover
-        Button.DEFAULT_OPTIONS["theme_idle"] = theme_default
+        TextButton.DEFAULT_OPTIONS["font_name"] = font_name
+        TextButton.DEFAULT_OPTIONS["theme_hover"] = theme_default_hover
+        TextButton.DEFAULT_OPTIONS["theme_idle"] = theme_default
 
         Label.DEFAULT_OPTIONS["font_name"] = font_name
         Label.DEFAULT_OPTIONS["theme"] = theme_default
@@ -702,7 +703,7 @@ class Label(Widget):
             self.scroll_top_rect.mov(dx, dy)
 
 
-class Button(Widget):
+class TextButton(Widget):
     """
     A simple Button, based on a label (without an image)
     """
@@ -747,9 +748,9 @@ class Button(Widget):
 
         state = random.getstate()
         self.style_dict["font_color"] = self.style_dict.get("font_color_idle",
-                                                            Button.DEFAULT_OPTIONS["font_color_idle"])
-        self.style_dict["bg_color"] = self.style_dict.get("bg_color_idle", Button.DEFAULT_OPTIONS["bg_color_idle"])
-        self.style_dict["theme"] = self.style_dict.get("theme_idle", Button.DEFAULT_OPTIONS["theme_idle"])
+                                                            TextButton.DEFAULT_OPTIONS["font_color_idle"])
+        self.style_dict["bg_color"] = self.style_dict.get("bg_color_idle", TextButton.DEFAULT_OPTIONS["bg_color_idle"])
+        self.style_dict["theme"] = self.style_dict.get("theme_idle", TextButton.DEFAULT_OPTIONS["theme_idle"])
         label = Label(text=text,
                       position=position,
                       dimension=dimension,
@@ -760,9 +761,9 @@ class Button(Widget):
 
         random.setstate(state)  # To be sure to have the decoration on the same places...
         self.style_dict["font_color"] = self.style_dict.get("font_color_hover",
-                                                            Button.DEFAULT_OPTIONS["font_color_hover"])
-        self.style_dict["bg_color"] = self.style_dict.get("bg_color_hover", Button.DEFAULT_OPTIONS["bg_color_hover"])
-        self.style_dict["theme"] = self.style_dict.get("theme_hover", Button.DEFAULT_OPTIONS["theme_hover"])
+                                                            TextButton.DEFAULT_OPTIONS["font_color_hover"])
+        self.style_dict["bg_color"] = self.style_dict.get("bg_color_hover", TextButton.DEFAULT_OPTIONS["bg_color_hover"])
+        self.style_dict["theme"] = self.style_dict.get("theme_hover", TextButton.DEFAULT_OPTIONS["theme_hover"])
         label = Label(text=text,
                       position=position,
                       dimension=dimension,
@@ -787,6 +788,55 @@ class Button(Widget):
     def update(self):
         if self.hover:
             self.image = self.hover_image
+        else:
+            self.image = self.idle_image
+
+    def move(self, dx, dy):
+        self.rect.move_ip(dx, dy)
+
+
+class ImageButton(Widget):
+    """
+    A button with an image
+    """
+
+    def __init__(self,
+                 callback_function=None,
+                 image=None,
+                 image_hover=None,
+                 position=(0, 0)):
+        """
+
+        :param callback_function: the function used as part of callback
+        :param image: a surface that has the image that is displayed by default
+        :param image_hover: None or the image that is displayed when the mouse is over the button
+        :param position: the position for the widget
+        """
+        assert callback_function, "Button defined without callback function"
+
+        Widget.__init__(self)
+
+        self.callback_function = callback_function
+
+        self.image = self.idle_image = image
+        self.image_hover = image_hover or image
+
+        self.rect = self.image.get_rect().move(position)
+        self.hover = False
+
+    def handle_event(self, event):
+        if event.type == pg.MOUSEBUTTONDOWN and self.hover:
+            self.hover = False
+            self.callback_function()
+        elif event.type == pg.MOUSEMOTION:
+            if self.rect.collidepoint(event.pos):
+                self.hover = True
+            else:
+                self.hover = False
+
+    def update(self):
+        if self.hover:
+            self.image = self.image_hover
         else:
             self.image = self.idle_image
 
