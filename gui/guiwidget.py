@@ -844,6 +844,92 @@ class ImageButton(Widget):
         self.rect.move_ip(dx, dy)
 
 
+class RadioButtonGroup(Widget):
+
+    VERTICAL = "VERTICAL"
+    HORIZONTAL = "HORIZONTAL"
+
+    DEFAULT_OPTIONS = {
+        "space_icon_label": 10,  # the space between the radiobutton and its label
+        "space_between_components" : 0  # the space between components
+    }
+
+    def __init__(self,
+                 callback_function=None,
+                 texts=None,
+                 position=(0, 0),
+                 image=None,
+                 image_hover=None,
+                 orientation=VERTICAL,
+                 style_dict=None,
+                 selected_index=0
+                 ):
+
+        # TODO orientation
+        # TODO theme
+
+        assert callback_function, "Button defined without callback function"
+        assert type(image) is pg.Surface, "Image needs to be a Surface"
+        assert image_hover is None or type(image_hover) is pg.Surface, "Image hover needs to be a Surface"
+
+        assert texts, "No text set"
+        Widget.__init__(self)
+
+        self.selected_index = selected_index
+        self.callback_function = callback_function
+        self.position = position
+
+        style_dict = style_dict or {}
+        self.texts = texts
+
+        self.labels = [Label(text=text,
+                        position=(0,0),
+                        grow_height_with_text=True,
+                        grow_width_with_text=True,
+                        style_dict={
+                            "text_margin_x": 0,
+                            "text_margin_y": 0,
+                            "theme": None,
+                            "bg_color": None,
+                            "font_name": style_dict.get("font_name", Label.DEFAULT_OPTIONS["font_name"]),
+                            "font_size": style_dict.get("font_name", Label.DEFAULT_OPTIONS["font_size"]),
+                            "font_color": style_dict.get("font_name", Label.DEFAULT_OPTIONS["font_color"]),
+                        })
+                  for text in texts]
+        self.image_hover = image_hover or image
+        self.image_idle = image
+
+        self.height_ref = max(max([label.rect.height for label in self.labels]),
+                              self.image_idle.get_rect().height,
+                              image_hover.get_rect().height) + style_dict.get("space_between_components",
+                                                                              RadioButtonGroup.DEFAULT_OPTIONS["space_between_components"])
+        self.max_label_width = max([label.rect.width for label in self.labels])
+        margin = style_dict.get("space_icon_label", RadioButtonGroup.DEFAULT_OPTIONS["space_icon_label"])
+        self.width_ref = self.max_label_width + max(self.image_idle.get_rect().width, image_hover.get_rect().width) + margin
+
+        self._repaint()
+
+    def _repaint(self):
+        self.image = pg.Surface((self.width_ref, self.height_ref * len(self.labels)), pg.SRCALPHA)
+        self.rect = self.image.get_rect()
+
+        # Blit the images
+        for index, label in enumerate(self.labels):
+            self.image.blit(label.image, (self.width_ref - self.max_label_width, self.height_ref * index))
+            if index == self.selected_index:
+                self.image.blit(self.image_hover, (0, self.height_ref * index))
+            else:
+                self.image.blit(self.image_idle, (0, self.height_ref * index))
+
+        self.rect.move_ip(self.position)
+
+    def handle_event(self, event):
+        if event.type == pg.MOUSEBUTTONDOWN and self.rect.collidepoint(event.pos):
+            self.selected_index = int((event.pos[1] - self.rect.top) / self.height_ref)
+            self._repaint()
+            self.callback_function(self.texts[self.selected_index])
+
+
 def display_single_message_on_screen(text, position="CENTER", font_size=18, erase_screen_first=True):
     """
     Erase the screen, replace wit a simple message. Use for basic info.

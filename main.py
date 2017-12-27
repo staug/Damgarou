@@ -8,7 +8,7 @@ import default
 from entity.player import Player
 from entity.town import Entrance, Bank, GuildFighter, GuildMule, Shop, Tavern, Trade, Townhall, Temple
 from gui import guiwidget
-from gui.guiwidget import TextButton, MouseWidget, Label, Style, ImageButton
+from gui.guiwidget import TextButton, MouseWidget, Label, Style, ImageButton, RadioButtonGroup
 from gui.guicontainer import LineAlignedContainer
 from gui.screen import PlayingScreen, BuildingScreen
 from region.region import RegionFactory
@@ -158,6 +158,10 @@ class Launcher:
                                   scrollable=True,
                                   style_dict={"bg_color": (255, 0, 0), "text_align_x": "CENTER", "text_align_y": "TOP"}))
         self.widgets.append(ImageButton(callback_function=lambda: print("yo"), image=GLOBAL.img("CURSOR_SWORD_SILVER"), image_hover=GLOBAL.img("CURSOR_SWORD_GOLD"), position=(10, 10)))
+        self.widgets.append(RadioButtonGroup(callback_function=lambda x: print("test {}".format(x)),
+                                             position=(20, 500),texts=["First", "Second", "Third", "Fourth"],
+                                             image=GLOBAL.img("ICON_CHECK_BEIGE"),
+                                             image_hover=GLOBAL.img("ICON_CHECK_BLUE")))
         self.widgets.append(MouseWidget(GLOBAL.img("CURSOR_GAUNTLET_BLUE"), MouseWidget.TOP_LEFT))
 
     def draw(self):
