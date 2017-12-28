@@ -762,7 +762,8 @@ class TextButton(Widget):
         random.setstate(state)  # To be sure to have the decoration on the same places...
         self.style_dict["font_color"] = self.style_dict.get("font_color_hover",
                                                             TextButton.DEFAULT_OPTIONS["font_color_hover"])
-        self.style_dict["bg_color"] = self.style_dict.get("bg_color_hover", TextButton.DEFAULT_OPTIONS["bg_color_hover"])
+        self.style_dict["bg_color"] = self.style_dict.get("bg_color_hover",
+                                                          TextButton.DEFAULT_OPTIONS["bg_color_hover"])
         self.style_dict["theme"] = self.style_dict.get("theme_hover", TextButton.DEFAULT_OPTIONS["theme_hover"])
         label = Label(text=text,
                       position=position,
@@ -845,18 +846,17 @@ class ImageButton(Widget):
 
 
 class RadioButtonGroup(Widget):
-
     VERTICAL = "VERTICAL"
     HORIZONTAL = "HORIZONTAL"
 
     DEFAULT_OPTIONS = {
         "space_icon_label": 10,  # the space between the radiobutton and its label
-        "space_between_components" : 0,  # the space between components
+        "space_between_components": 0,  # the space between components
 
         "theme": None,
-        "bg_color" : None,
-        "extra_border_x" : 5,  # if there is a theme or bg_color, the extra border horizontally
-        "extra_border_y" : 5
+        "bg_color": None,
+        "extra_border_x": 5,  # if there is a theme or bg_color, the extra border horizontally
+        "extra_border_y": 5
     }
 
     def __init__(self,
@@ -870,9 +870,6 @@ class RadioButtonGroup(Widget):
                  selected_index=0
                  ):
 
-        # TODO orientation
-        # TODO theme
-
         assert callback_function, "Button defined without callback function"
         assert type(image) is pg.Surface, "Image needs to be a Surface"
         assert image_hover is None or type(image_hover) is pg.Surface, "Image hover needs to be a Surface"
@@ -883,35 +880,40 @@ class RadioButtonGroup(Widget):
         self.selected_index = selected_index
         self.callback_function = callback_function
         self.position = position
+        self.orientation = orientation
 
         self.style_dict = style_dict or {}
         self.texts = texts
         self.theme = self.style_dict.get("theme", RadioButtonGroup.DEFAULT_OPTIONS["theme"])
 
         self.labels = [Label(text=str(text),
-                        position=(0,0),
-                        grow_height_with_text=True,
-                        grow_width_with_text=True,
-                        style_dict={
-                            "text_margin_x": 0,
-                            "text_margin_y": 0,
-                            "theme": None,
-                            "bg_color": None,
-                            "font_name": self.style_dict.get("font_name", Label.DEFAULT_OPTIONS["font_name"]),
-                            "font_size": self.style_dict.get("font_name", Label.DEFAULT_OPTIONS["font_size"]),
-                            "font_color": self.style_dict.get("font_name", Label.DEFAULT_OPTIONS["font_color"]),
-                        })
-                  for text in texts]
+                             position=(0, 0),
+                             grow_height_with_text=True,
+                             grow_width_with_text=True,
+                             style_dict={
+                                 "text_margin_x": 0,
+                                 "text_margin_y": 0,
+                                 "theme": None,
+                                 "bg_color": None,
+                                 "font_name": self.style_dict.get("font_name", Label.DEFAULT_OPTIONS["font_name"]),
+                                 "font_size": self.style_dict.get("font_name", Label.DEFAULT_OPTIONS["font_size"]),
+                                 "font_color": self.style_dict.get("font_name", Label.DEFAULT_OPTIONS["font_color"]),
+                             })
+                       for text in texts]
         self.image_hover = image_hover or image
         self.image_idle = image
 
-        self.height_ref = max(max([label.rect.height for label in self.labels]),
+        self.max_label_width = max([label.rect.width for label in self.labels])
+        self.max_label_height = max([label.rect.height for label in self.labels])
+        margin = self.style_dict.get("space_icon_label", RadioButtonGroup.DEFAULT_OPTIONS["space_icon_label"])
+
+        self.width_ref = self.max_label_width + max(self.image_idle.get_rect().width,
+                                                    image_hover.get_rect().width) + margin
+        self.height_ref = max(self.max_label_height,
                               self.image_idle.get_rect().height,
                               image_hover.get_rect().height) + self.style_dict.get("space_between_components",
-                                                                              RadioButtonGroup.DEFAULT_OPTIONS["space_between_components"])
-        self.max_label_width = max([label.rect.width for label in self.labels])
-        margin = self.style_dict.get("space_icon_label", RadioButtonGroup.DEFAULT_OPTIONS["space_icon_label"])
-        self.width_ref = self.max_label_width + max(self.image_idle.get_rect().width, image_hover.get_rect().width) + margin
+                                                                                   RadioButtonGroup.DEFAULT_OPTIONS[
+                                                                                       "space_between_components"])
 
         self.margin_x_left = self.margin_x_right = 0
         self.margin_y_top = self.margin_y_bottom = 0
@@ -932,15 +934,28 @@ class RadioButtonGroup(Widget):
         Create the front part, i.e the parts containing the buttons and label
         :return:
         """
-        self.foreground_image = pg.Surface((self.width_ref, self.height_ref * len(self.labels)), pg.SRCALPHA)
+        if self.orientation == RadioButtonGroup.VERTICAL:
+            self.foreground_image = pg.Surface((self.width_ref, self.height_ref * len(self.labels)), pg.SRCALPHA)
 
-        # Blit the images
-        for index, label in enumerate(self.labels):
-            self.foreground_image.blit(label.image, (self.width_ref - self.max_label_width, self.height_ref * index))
-            if index == self.selected_index:
-                self.foreground_image.blit(self.image_hover, (0, self.height_ref * index))
-            else:
-                self.foreground_image.blit(self.image_idle, (0, self.height_ref * index))
+            # Blit the images
+            for index, label in enumerate(self.labels):
+                self.foreground_image.blit(label.image, (self.width_ref - self.max_label_width, self.height_ref * index))
+                if index == self.selected_index:
+                    self.foreground_image.blit(self.image_hover, (0, self.height_ref * index))
+                else:
+                    self.foreground_image.blit(self.image_idle, (0, self.height_ref * index))
+        else:
+            self.foreground_image = pg.Surface((self.width_ref * len(self.labels), self.height_ref), pg.SRCALPHA)
+            # Blit the images
+            for index, label in enumerate(self.labels):
+                margin = self.style_dict.get("space_icon_label", RadioButtonGroup.DEFAULT_OPTIONS["space_icon_label"])
+
+                self.foreground_image.blit(label.image,
+                                           (self.width_ref * (index + 1) - self.max_label_width - int(margin / 2), 0))
+                if index == self.selected_index:
+                    self.foreground_image.blit(self.image_hover, (self.width_ref * index, 0))
+                else:
+                    self.foreground_image.blit(self.image_idle, (self.width_ref * index, 0))
 
     def _create_background(self):
         """
@@ -996,9 +1011,11 @@ class RadioButtonGroup(Widget):
         """
         if self.theme:
             self.margin_x_left = self.margin_x_right = self.style_dict.get("extra_border_x",
-                                                                           RadioButtonGroup.DEFAULT_OPTIONS["extra_border_x"])
+                                                                           RadioButtonGroup.DEFAULT_OPTIONS[
+                                                                               "extra_border_x"])
             self.margin_y_top = self.margin_y_bottom = self.style_dict.get("extra_border_y",
-                                                                           RadioButtonGroup.DEFAULT_OPTIONS["extra_border_y"])
+                                                                           RadioButtonGroup.DEFAULT_OPTIONS[
+                                                                               "extra_border_y"])
             for border_info in self.theme["borders"]:
                 self.margin_x_left += border_info[0]
                 self.margin_x_right += border_info[0]
@@ -1006,16 +1023,20 @@ class RadioButtonGroup(Widget):
                 self.margin_y_bottom += border_info[0]
         elif "bg_color" in self.style_dict:
             self.margin_x_left = self.margin_x_right = self.style_dict.get("extra_border_x",
-                                                                           RadioButtonGroup.DEFAULT_OPTIONS["extra_border_x"])
+                                                                           RadioButtonGroup.DEFAULT_OPTIONS[
+                                                                               "extra_border_x"])
             self.margin_y_top = self.margin_y_bottom = self.style_dict.get("extra_border_y",
-                                                                           RadioButtonGroup.DEFAULT_OPTIONS["extra_border_y"])
+                                                                           RadioButtonGroup.DEFAULT_OPTIONS[
+                                                                               "extra_border_y"])
 
     def handle_event(self, event):
         if event.type == pg.MOUSEBUTTONDOWN and self.rect.collidepoint(event.pos):
-            self.selected_index = int((event.pos[1] - self.rect.top - self.margin_y_top) / self.height_ref)
+            if self.orientation == RadioButtonGroup.VERTICAL:
+                self.selected_index = int((event.pos[1] - self.rect.top - self.margin_y_top) / self.height_ref)
+            else:
+                self.selected_index = int((event.pos[0] - self.rect.left - self.margin_x_left) / self.width_ref)
 
             if self.selected_index < len(self.texts):
-
                 self._create_foreground()
                 self.image = self.background_image.copy()
                 self.image.blit(self.foreground_image, (self.margin_x_left, self.margin_y_top))

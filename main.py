@@ -162,6 +162,7 @@ class Launcher:
                                              position=(20, 500),texts=["First", "Second", "Third", "Fourth"],
                                              image=GLOBAL.img("ICON_CHECK_BEIGE"),
                                              image_hover=GLOBAL.img("ICON_CHECK_BLUE"),
+                                             orientation=RadioButtonGroup.HORIZONTAL,
                                              style_dict={
                                                  "theme": Style.THEME_DARK_BROWN
                                              }))
