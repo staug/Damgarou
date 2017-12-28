@@ -168,22 +168,37 @@ class MouseWidget(Widget):
 
 
 class ProgressBar(Widget):
-    # TODO Refactor according to widget standards & using teh rounded surface with radius = 1
     """
     A progress bar widget. Tracks the value of an object.
     """
-    PROGRESSBAR_FONT = 'freesansbold.ttf'
+    HORIZONTAL = "Horizontal"
+    VERTICAL = "Vertical"
+
+    DEFAULT_OPTIONS = {
+        "font_name": default.FONT_NAME,
+        "font_size": 14,
+        "font_color": (255, 255, 255),  # ignored if a theme is given
+
+        "bg_color": None,  # Transparent if None - ignored if a theme is given
+        "color": None,  # Transparent if None - ignored if a theme is given
+        "rounded": True,
+
+        "text_align_x": "LEFT",
+
+        # To set the theme
+        "theme": None,  # the main theme or None
+    }
 
     def __init__(self,
-                 position,
-                 dimension,
-                 object_to_follow,
-                 attribute_to_follow,
-                 max_value,
-                 bar_color,
-                 back_color=(0, 0, 0, 0),
-                 font=None,
-                 with_text=True):
+                 position=(0, 0),
+                 dimension=(100, 10),
+                 object_to_follow=None,
+                 attribute_to_follow=None,
+                 max_value=None,
+                 min_value=None,
+                 with_text=True,
+                 orientation=HORIZONTAL,
+                 style_dict=None):
         """
         Define a progress bar
         :param position: (x, y) on the screen
@@ -191,74 +206,103 @@ class ProgressBar(Widget):
         :param object_to_follow: the object to follow, linked to the attribute
         :param attribute_to_follow: the attribute to follow
         :param max_value: the maximum value the attribute can take
-        :param bar_color: (r, g, b) the color of the external part and of the filled part
-        :param back_color: (r, g, b, a) the color of the background when the bar is not filled. Default is transparent.
-        :param font: the font to print in case of text
+        :param min_value: the minimum value to display (None: no specific value)
+        :param orientation: Vertical or Horizontal
         :param with_text: display a text on the bar
         """
-
-        self._position = position
-        self._dimension = dimension
-
+        assert object_to_follow, "Object to follow in progress bar not defined"
+        assert max_value != 0, "Max value must be different from 0"
         assert hasattr(object_to_follow, attribute_to_follow), \
             "Progressbar: The object {} doesn't have an attribute {} that can be followed".format(object_to_follow,
                                                                                                   attribute_to_follow)
-        self._object_to_follow = object_to_follow
-        self._attribute_to_follow = attribute_to_follow
+        Widget.__init__(self)
 
-        self._max_value = max_value
-        self._bar_color = bar_color
-        self._back_color = back_color
+        self.dimension = dimension
+        self.orientation = orientation
 
-        self._current_value = getattr(object_to_follow, attribute_to_follow)
-        self._need_redraw = True
+        self.max_value = max_value
+        self.min_value = min_value
 
-        if font is None:
-            self._font = pg.font.Font(ProgressBar.PROGRESSBAR_FONT, 14)
-        else:
-            self._font = font
-        self._with_text = with_text
+        self.with_text = with_text and self.orientation == ProgressBar.HORIZONTAL
 
-    def handle_event(self, event):
-        pass
+        self.style_dict = style_dict or {}
+        self.theme = self.style_dict.get("theme", ProgressBar.DEFAULT_OPTIONS["theme"])
 
-    def change_target(self, object_to_follow, attribute_to_follow, max_value):
-        assert hasattr(object_to_follow, attribute_to_follow), \
-            "Progressbar: The object {} doesn't have an attribute {} that can be followed".format(object_to_follow,
-                                                                                                  attribute_to_follow)
-        self._object_to_follow = object_to_follow
-        self._attribute_to_follow = attribute_to_follow
-        self._max_value = max_value
-        self._need_redraw = True
+        if self.with_text:
+            self.font = GLOBAL.font(self.style_dict.get("font_name", ProgressBar.DEFAULT_OPTIONS["font_name"]),
+                                    self.style_dict.get("font_size", ProgressBar.DEFAULT_OPTIONS["font_size"]))
+            test_rect = self.font.render(str(max_value), True, (0, 0, 0)).get_rect()
+            self.dimension = [max(dimension[0], test_rect.width),
+                              max(dimension[1], test_rect.height)]
+
+        self.object_to_follow = object_to_follow
+        self.attribute_to_follow = attribute_to_follow
+        self.current_value = getattr(self.object_to_follow, self.attribute_to_follow)
+
+        self.background_image = None
+        self._prepare_image(recreate_background=True)
+
+        self.rect = self.image.get_rect()
+        self.rect.move_ip(position)
 
     def update(self):
-        new_value = getattr(self._object_to_follow, self._attribute_to_follow)
 
-        if new_value != self._current_value:
-            self._current_value = new_value
-            self._need_redraw = True
+        new_value = getattr(self.object_to_follow, self.attribute_to_follow)
+        if self.min_value:
+            new_value = max(self.min_value, new_value)
 
-    def draw(self, screen):
-        # Calculate the width of the bar
-        bar_width = 1
-        if self._max_value > 0:
-            bar_width = max(1, int(float(self._current_value) / self._max_value * self._dimension[0]))
+        if new_value != self.current_value:
+            self.current_value = new_value
+            self._prepare_image()
 
-        # Background part
-        total_bar = pg.Surface(self._dimension, pg.SRCALPHA)
-        total_bar.fill(self._back_color)
-        screen.blit(total_bar, self._position)
+    def _prepare_image(self, recreate_background=False):
+        self.image = pg.Surface(self.dimension, pg.SRCALPHA)
 
-        # Bar part
-        bar = pg.Surface((bar_width, self._dimension[1]))
-        bar.fill(self._bar_color)
-        screen.blit(bar, self._position)
+        rounded = self.style_dict.get("rounded", ProgressBar.DEFAULT_OPTIONS["rounded"])
+        bg_color = self.style_dict.get("bg_color", ProgressBar.DEFAULT_OPTIONS["bg_color"]) or (0, 0, 0, 0)
+        if self.theme:
+            rounded = self.theme["rounded_angle"] > 0
+            # bg_color = self.theme["bg_color"]
 
-        # finally, some centered text with the values
-        if self._with_text:
-            fontsurface = self._font.render(str(self._current_value) + '/' + str(self._max_value), 1, (255, 255, 255))
-            screen.blit(fontsurface, (self._position[0] + 10,
-                                      self._position[1] + int(float(self._dimension[1] - self._font.get_height()) / 2)))
+        # Background
+        if recreate_background:
+            if rounded:
+                self.background_image = rounded_surface(pg.Rect((0, 0), self.dimension), bg_color, radius=1)
+            else:
+                self.background_image = pg.Surface(self.dimension, pg.SRCALPHA)
+                self.background_image.fill(bg_color)
+
+        self.image.blit(self.background_image, (0, 0))
+
+        # Bar itself
+        computed = None
+        if self.orientation == ProgressBar.HORIZONTAL:
+            computed = max(0, int(float(self.current_value) / self.max_value * self.dimension[0]))
+        else:
+            computed = max(0, int(float(self.current_value) / self.max_value * self.dimension[1]))
+
+        color = self.style_dict.get("color", ProgressBar.DEFAULT_OPTIONS["color"])
+        if self.orientation == ProgressBar.HORIZONTAL:
+            if rounded:
+                bar_image = rounded_surface(pg.Rect((0, 0), (computed, self.dimension[1])), color, radius=1)
+            else:
+                bar_image = pg.Surface((computed, self.dimension[1]))
+                bar_image.fill(color)
+        else:
+            if rounded:
+                bar_image = rounded_surface(pg.Rect((0, 0), (self.dimension[0], computed)), color, radius=1)
+            else:
+                bar_image = pg.Surface((self.dimension[0], computed))
+                bar_image.fill(color)
+
+        self.image.blit(bar_image, (0, 0))
+
+        if self.with_text:
+            font_color = self.style_dict.get("font_color", ProgressBar.DEFAULT_OPTIONS["font_color"])
+            if self.theme:
+                font_color = self.theme["font_color"]
+            fontsurface = self.font.render(str(self.current_value) + '/' + str(self.max_value), True, font_color)
+            self.image.blit(fontsurface, (int((self.image.get_rect().width - fontsurface.get_rect().width)/2), 0))
 
 
 def rounded_surface(rect, color, radius=1):

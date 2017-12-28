@@ -3,7 +3,7 @@ import pygame as pg
 from shared import GLOBAL
 from default import *
 from utilities import FieldOfView
-from gui.guiwidget import Widget, ProgressBar, Label, TextButton
+from gui.guiwidget import Widget, ProgressBar, Label, TextButton, Style
 from gui.guicontainer import LineAlignedContainer
 import dill as pick
 
@@ -171,8 +171,20 @@ class PlayingScreen(Screen):
         self.widgets.append(PlayingScreen.PlayableScreen((10, 10)))
 
     def post_init(self):
-        self.widgets.append(ProgressBar((10, 10), (100, 10), GLOBAL.game.player, "test_attribute", 100, RED, BLUE))
-        self.widgets.append(Label(position=(40, 40), text="This is a test"))
+        self.widgets.append(ProgressBar(
+            position=(10, 10),
+            dimension=(100, 10),
+            object_to_follow=GLOBAL.game.player,
+            attribute_to_follow="test_attribute",
+            max_value= 100,
+            with_text=True,
+            style_dict={
+                "color": (255, 0, 0),
+                "bg_color": (0, 0, 255),
+                "rounded": True,
+                "theme": Style.THEME_DARK_BROWN
+            }
+        ))
 
     def draw(self):
         # Erase All
