@@ -161,7 +161,10 @@ class Launcher:
         self.widgets.append(RadioButtonGroup(callback_function=lambda x: print("test {}".format(x)),
                                              position=(20, 500),texts=["First", "Second", "Third", "Fourth"],
                                              image=GLOBAL.img("ICON_CHECK_BEIGE"),
-                                             image_hover=GLOBAL.img("ICON_CHECK_BLUE")))
+                                             image_hover=GLOBAL.img("ICON_CHECK_BLUE"),
+                                             style_dict={
+                                                 "theme": Style.THEME_DARK_BROWN
+                                             }))
         self.widgets.append(MouseWidget(GLOBAL.img("CURSOR_GAUNTLET_BLUE"), MouseWidget.TOP_LEFT))
 
     def draw(self):

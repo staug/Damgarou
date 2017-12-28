@@ -851,7 +851,12 @@ class RadioButtonGroup(Widget):
 
     DEFAULT_OPTIONS = {
         "space_icon_label": 10,  # the space between the radiobutton and its label
-        "space_between_components" : 0  # the space between components
+        "space_between_components" : 0,  # the space between components
+
+        "theme": None,
+        "bg_color" : None,
+        "extra_border_x" : 5,  # if there is a theme or bg_color, the extra border horizontally
+        "extra_border_y" : 5
     }
 
     def __init__(self,
@@ -879,10 +884,11 @@ class RadioButtonGroup(Widget):
         self.callback_function = callback_function
         self.position = position
 
-        style_dict = style_dict or {}
+        self.style_dict = style_dict or {}
         self.texts = texts
+        self.theme = self.style_dict.get("theme", RadioButtonGroup.DEFAULT_OPTIONS["theme"])
 
-        self.labels = [Label(text=text,
+        self.labels = [Label(text=str(text),
                         position=(0,0),
                         grow_height_with_text=True,
                         grow_width_with_text=True,
@@ -891,9 +897,9 @@ class RadioButtonGroup(Widget):
                             "text_margin_y": 0,
                             "theme": None,
                             "bg_color": None,
-                            "font_name": style_dict.get("font_name", Label.DEFAULT_OPTIONS["font_name"]),
-                            "font_size": style_dict.get("font_name", Label.DEFAULT_OPTIONS["font_size"]),
-                            "font_color": style_dict.get("font_name", Label.DEFAULT_OPTIONS["font_color"]),
+                            "font_name": self.style_dict.get("font_name", Label.DEFAULT_OPTIONS["font_name"]),
+                            "font_size": self.style_dict.get("font_name", Label.DEFAULT_OPTIONS["font_size"]),
+                            "font_color": self.style_dict.get("font_name", Label.DEFAULT_OPTIONS["font_color"]),
                         })
                   for text in texts]
         self.image_hover = image_hover or image
@@ -901,33 +907,120 @@ class RadioButtonGroup(Widget):
 
         self.height_ref = max(max([label.rect.height for label in self.labels]),
                               self.image_idle.get_rect().height,
-                              image_hover.get_rect().height) + style_dict.get("space_between_components",
+                              image_hover.get_rect().height) + self.style_dict.get("space_between_components",
                                                                               RadioButtonGroup.DEFAULT_OPTIONS["space_between_components"])
         self.max_label_width = max([label.rect.width for label in self.labels])
-        margin = style_dict.get("space_icon_label", RadioButtonGroup.DEFAULT_OPTIONS["space_icon_label"])
+        margin = self.style_dict.get("space_icon_label", RadioButtonGroup.DEFAULT_OPTIONS["space_icon_label"])
         self.width_ref = self.max_label_width + max(self.image_idle.get_rect().width, image_hover.get_rect().width) + margin
 
-        self._repaint()
+        self.margin_x_left = self.margin_x_right = 0
+        self.margin_y_top = self.margin_y_bottom = 0
+        self._compute_margin()
 
-    def _repaint(self):
-        self.image = pg.Surface((self.width_ref, self.height_ref * len(self.labels)), pg.SRCALPHA)
+        self.foreground_image = self.background_image = None
+        self._create_foreground()
+        self._create_background()
+
+        self.image = self.background_image.copy()
+        self.image.blit(self.foreground_image, (self.margin_x_left, self.margin_y_top))
+
         self.rect = self.image.get_rect()
+        self.rect.move_ip(self.position)
+
+    def _create_foreground(self):
+        """
+        Create the front part, i.e the parts containing the buttons and label
+        :return:
+        """
+        self.foreground_image = pg.Surface((self.width_ref, self.height_ref * len(self.labels)), pg.SRCALPHA)
 
         # Blit the images
         for index, label in enumerate(self.labels):
-            self.image.blit(label.image, (self.width_ref - self.max_label_width, self.height_ref * index))
+            self.foreground_image.blit(label.image, (self.width_ref - self.max_label_width, self.height_ref * index))
             if index == self.selected_index:
-                self.image.blit(self.image_hover, (0, self.height_ref * index))
+                self.foreground_image.blit(self.image_hover, (0, self.height_ref * index))
             else:
-                self.image.blit(self.image_idle, (0, self.height_ref * index))
+                self.foreground_image.blit(self.image_idle, (0, self.height_ref * index))
 
-        self.rect.move_ip(self.position)
+    def _create_background(self):
+        """
+        Create the backround part, i.e the parts containing the buttons and label
+        :return:
+        """
+        assert self.foreground_image, "Foreground image not computed before call to create background"
+        foreground_rect = self.foreground_image.get_rect()
+        self.background_image = pg.Surface((foreground_rect.width + self.margin_x_right + self.margin_x_left,
+                                            foreground_rect.height + self.margin_y_bottom + self.margin_y_top),
+                                           pg.SRCALPHA)
+
+        # Blit the images
+        bg_color = self.style_dict.get("bg_color", RadioButtonGroup.DEFAULT_OPTIONS["bg_color"])
+        margin = 0  # Also used in decoration later
+
+        if self.theme:
+            rect = self.background_image.get_rect()
+            if self.theme["borders"]:
+                # First, we start by creating a surface, which is the external one.
+
+                margin = self.theme["borders"][0][0]
+                color = self.theme["borders"][0][1]
+                self.background_image = rounded_surface(rect, color, radius=self.theme["rounded_angle"])
+
+                if len(self.theme["borders"]) > 1:
+                    for index in range(1, len(self.theme["borders"])):
+                        color = self.theme["borders"][index][1]
+                        self.background_image.blit(
+                            rounded_surface(rect.inflate(-margin * 2, -margin * 2),
+                                            color,
+                                            radius=self.theme["rounded_angle"]),
+                            (margin, margin)
+                        )
+                        margin += self.theme["borders"][index][0]
+                # add the internal:
+                self.background_image.blit(rounded_surface(rect.inflate(-margin * 2, -margin * 2),
+                                                           self.theme["bg_color"],
+                                                           radius=self.theme["rounded_angle"]),
+                                           (margin, margin))
+
+            elif self.theme["bg_color"]:
+                # We just do something for the background
+                self.background_image = rounded_surface(rect, self.theme["bg_color"],
+                                                        radius=self.theme["rounded_angle"])
+        elif bg_color:
+            self.background_image.fill(bg_color)
+
+    def _compute_margin(self):
+        """
+        Set margin_x left/right, and margin_y top/bottom
+        :return:
+        """
+        if self.theme:
+            self.margin_x_left = self.margin_x_right = self.style_dict.get("extra_border_x",
+                                                                           RadioButtonGroup.DEFAULT_OPTIONS["extra_border_x"])
+            self.margin_y_top = self.margin_y_bottom = self.style_dict.get("extra_border_y",
+                                                                           RadioButtonGroup.DEFAULT_OPTIONS["extra_border_y"])
+            for border_info in self.theme["borders"]:
+                self.margin_x_left += border_info[0]
+                self.margin_x_right += border_info[0]
+                self.margin_y_top += border_info[0]
+                self.margin_y_bottom += border_info[0]
+        elif "bg_color" in self.style_dict:
+            self.margin_x_left = self.margin_x_right = self.style_dict.get("extra_border_x",
+                                                                           RadioButtonGroup.DEFAULT_OPTIONS["extra_border_x"])
+            self.margin_y_top = self.margin_y_bottom = self.style_dict.get("extra_border_y",
+                                                                           RadioButtonGroup.DEFAULT_OPTIONS["extra_border_y"])
 
     def handle_event(self, event):
         if event.type == pg.MOUSEBUTTONDOWN and self.rect.collidepoint(event.pos):
-            self.selected_index = int((event.pos[1] - self.rect.top) / self.height_ref)
-            self._repaint()
-            self.callback_function(self.texts[self.selected_index])
+            self.selected_index = int((event.pos[1] - self.rect.top - self.margin_y_top) / self.height_ref)
+
+            if self.selected_index < len(self.texts):
+
+                self._create_foreground()
+                self.image = self.background_image.copy()
+                self.image.blit(self.foreground_image, (self.margin_x_left, self.margin_y_top))
+
+                self.callback_function(self.texts[self.selected_index])
 
 
 def display_single_message_on_screen(text, position="CENTER", font_size=18, erase_screen_first=True):
