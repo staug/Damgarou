@@ -8,8 +8,8 @@ import default
 from entity.player import Player
 from entity.town import Entrance, Bank, GuildFighter, GuildMule, Shop, Tavern, Trade, Townhall, Temple
 from gui import guiwidget
-from gui.guiwidget import TextButton, MouseWidget, Label, Style, ImageButton, RadioButtonGroup
 from gui.guicontainer import LineAlignedContainer
+from gui.guiwidget import TextButton, Style
 from gui.screen import PlayingScreen, BuildingScreen
 from region.region import RegionFactory
 from shared import GLOBAL
@@ -17,7 +17,6 @@ from utilities import MName
 
 
 class Game:
-
     GAME_STATE_PLAYING = 'Playing'
     GAME_STATE_INVENTORY = 'Inventory'
     GAME_STATE_MAP = 'Map'
@@ -141,32 +140,35 @@ class Launcher:
 
     def implement_menu(self):
         Style.set_style()
-        button_start = TextButton(position=(20, 10), dimension=(100, 0), grow_height_with_text=True, grow_width_with_text=True, text="Start", callback_function=self.start, style_dict={"text_align_x": "CENTER", "text_align_y": "CENTER"})
-        button_load = TextButton(position=(50, 80), dimension=(100, 0), grow_height_with_text=True, grow_width_with_text=True, text="Load", callback_function=self.load, style_dict={"text_align_x": "CENTER", "text_align_y": "CENTER"})
-        button_quit = TextButton(position=(10, 160), dimension=(100, 0), grow_height_with_text=True, grow_width_with_text=True, text="Quit", callback_function=Launcher.quit, style_dict={"text_align_x": "CENTER", "text_align_y": "CENTER"})
+        button_start = TextButton(position=(20, 10),
+                                  dimension=(200, 0),
+                                  grow_height_with_text=True,
+                                  grow_width_with_text=True,
+                                  text="Start",
+                                  callback_function=self.start,
+                                  style_dict={"text_align_x": "CENTER",
+                                              "text_align_y": "CENTER"})
+        button_load = TextButton(position=(50, 80),
+                                 dimension=(200, 0),
+                                 grow_height_with_text=True,
+                                 grow_width_with_text=True, text="Load",
+                                 callback_function=self.load,
+                                 style_dict={"text_align_x": "CENTER",
+                                             "text_align_y": "CENTER"})
+        button_quit = TextButton(position=(10, 160),
+                                 dimension=(200, 0),
+                                 grow_height_with_text=True,
+                                 grow_width_with_text=True,
+                                 text="Quit",
+                                 callback_function=Launcher.quit,
+                                 style_dict={"text_align_x": "CENTER",
+                                             "text_align_y": "CENTER"})
         line = LineAlignedContainer(int(pg.display.get_surface().get_rect().width / 2),
                                     alignment=LineAlignedContainer.VERTICAL_CENTER,
-                                    widgets=(button_start, button_load, button_quit), space=50)
+                                    widgets=(button_start, button_load, button_quit),
+                                    space=100)
         line.move(0, int((pg.display.get_surface().get_rect().height - line.rect.height) / 2))
         self.widgets = line.widgets_as_list()
-        self.widgets.append(Label(text="First new one and this is a very very long one that goes on forever and never quits. Maybe we want to make it scrollable?",
-                                  dimension=(200, 80),
-                                  position=(30, 220),
-                                  grow_width_with_text=False,
-                                  grow_height_with_text=True,
-                                  multiline=True,
-                                  scrollable=True,
-                                  style_dict={"bg_color": (255, 0, 0), "text_align_x": "CENTER", "text_align_y": "TOP"}))
-        self.widgets.append(ImageButton(callback_function=lambda: print("yo"), image=GLOBAL.img("CURSOR_SWORD_SILVER"), image_hover=GLOBAL.img("CURSOR_SWORD_GOLD"), position=(10, 10)))
-        self.widgets.append(RadioButtonGroup(callback_function=lambda x: print("test {}".format(x)),
-                                             position=(20, 500),texts=["First", "Second", "Third", "Fourth"],
-                                             image=GLOBAL.img("ICON_CHECK_BEIGE"),
-                                             image_hover=GLOBAL.img("ICON_CHECK_BLUE"),
-                                             orientation=RadioButtonGroup.HORIZONTAL,
-                                             style_dict={
-                                                 "theme": Style.THEME_DARK_BROWN
-                                             }))
-        self.widgets.append(MouseWidget(GLOBAL.img("CURSOR_GAUNTLET_BLUE"), MouseWidget.TOP_LEFT))
 
     def draw(self):
         # Erase All
@@ -187,7 +189,7 @@ class Launcher:
             if event.type == pg.QUIT:
                 Launcher.quit()
             elif event.type == pg.VIDEORESIZE:
-                pg.display.set_mode((event.w, event.h),pg.RESIZABLE)
+                pg.display.set_mode((event.w, event.h), pg.RESIZABLE)
             else:
                 handled = False
                 for widget in self.widgets:
