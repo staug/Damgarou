@@ -9,8 +9,9 @@ from entity.player import Player
 from entity.town import Entrance, Bank, GuildFighter, GuildMule, Shop, Tavern, Trade, Townhall, Temple
 from gui import guiwidget
 from gui.guicontainer import LineAlignedContainer
-from gui.guiwidget import TextButton, Style
-from gui.screen import PlayingScreen, BuildingScreen
+from gui.guiwidget import TextButton, Style, TextInput
+from gui.screen import PlayingScreen
+from gui.buildingscreen import BuildingScreen
 from region.region import RegionFactory
 from shared import GLOBAL
 from utilities import MName
@@ -169,6 +170,9 @@ class Launcher:
                                     space=100)
         line.move(0, int((pg.display.get_surface().get_rect().height - line.rect.height) / 2))
         self.widgets = line.widgets_as_list()
+        self.widgets.append(TextInput(text="ABCDEFGHIJKLMNOP",
+                                      position=(100,30),
+                                      confirmation_dict={}))
 
     def draw(self):
         # Erase All
@@ -190,6 +194,11 @@ class Launcher:
                 Launcher.quit()
             elif event.type == pg.VIDEORESIZE:
                 pg.display.set_mode((event.w, event.h), pg.RESIZABLE)
+                line = LineAlignedContainer(int(pg.display.get_surface().get_rect().width / 2),
+                                            alignment=LineAlignedContainer.VERTICAL_CENTER,
+                                            widgets=self.widgets,
+                                            space=100)
+                line.move(0, int((event.h - line.rect.height) / 2) - line.rect.top)
             else:
                 handled = False
                 for widget in self.widgets:
