@@ -21,7 +21,7 @@ GAME_FOLDER = os.path.dirname(__file__)
 ASSET_FOLDER = os.path.join(GAME_FOLDER, "assets")
 
 FONT_FOLDER = os.path.join(ASSET_FOLDER, "font")
-FONT_NAME = "Ubuntu-B.ttf"
+FONT_NAME = "UbuntuMono-R.ttf"
 
 IMG_FOLDER = os.path.join(ASSET_FOLDER, "img")
 ITEM_FOLDER = os.path.join(IMG_FOLDER, "Items")
