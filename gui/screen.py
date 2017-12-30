@@ -1,11 +1,10 @@
-import pygame as pg
-#import thorpy
-from shared import GLOBAL
-from default import *
-from utilities import FieldOfView
-from gui.guiwidget import Widget, ProgressBar, Label, TextButton, Style
-from gui.guicontainer import LineAlignedContainer
 import dill as pick
+import pygame as pg
+
+from default import *
+from gui.guiwidget import Widget, ProgressBar, Style
+from shared import GLOBAL
+from utilities import FieldOfView
 
 
 class Screen:
@@ -31,7 +30,6 @@ class Screen:
 
 
 class PlayingScreen(Screen):
-
     class Camera:
         def __init__(self):
             width_map, height_map = 10, 10  # Will be updated later in the update function,
@@ -176,7 +174,7 @@ class PlayingScreen(Screen):
             dimension=(100, 10),
             object_to_follow=GLOBAL.game.player,
             attribute_to_follow="test_attribute",
-            max_value= 100,
+            max_value=100,
             with_text=True,
             style_dict={
                 "color": (255, 0, 0),
@@ -212,67 +210,6 @@ class PlayingScreen(Screen):
                 for widget in self.widgets:
                     if not handled:
                         handled = widget.handle_event(event)
-
-
-class BuildingScreen(Screen):
-    """
-    This set of screens is to represent the action inside a building.
-    Pressing Escape will go back to the regular state.
-    """
-
-    def __init__(self):
-        Screen.__init__(self)
-        self.building = None
-
-    def attach_building(self, building):
-        self.building = building
-
-        if self.building.is_guild_fighter():
-            for fighter in self.building.fighter_list:
-                button = TextButton(text=fighter.name, callback_function=lambda myfighter=fighter: test(myfighter), grow_width_with_text=True, grow_height_with_text=True)
-                self.widgets.append(button)
-
-            line = LineAlignedContainer(int(pg.display.get_surface().get_rect().width / 2),
-                                        alignment=LineAlignedContainer.VERTICAL_CENTER,
-                                        widgets=self.widgets, space=50)
-            line.move(0, int((pg.display.get_surface().get_rect().height - line.rect.height) / 2))
-
-    def draw(self):
-        # Erase All
-        screen = pg.display.get_surface()
-        screen.fill(BGCOLOR)
-
-        if len(self.widgets) == 0:
-            font = pg.font.Font(os.path.join(FONT_FOLDER, FONT_NAME), 20)
-            text = font.render("Building " + self.building.name, True, WHITE)
-            text_rect = text.get_rect()
-
-            left_x = screen.get_rect().centerx - int(text_rect.width / 2)
-            top_y = screen.get_rect().centery - int(text_rect.height / 2)
-            screen.blit(text, (left_x, top_y))
-        else:
-            for widget in self.widgets:
-                widget.draw(screen)
-
-        pg.display.flip()
-
-    def update(self):
-        for widget in self.widgets:
-            widget.update()
-
-
-    def events(self):
-        for event in pg.event.get():
-            if event.type == pg.QUIT:
-                GLOBAL.game.quit()
-            elif event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE:
-                GLOBAL.game.game_state = GLOBAL.game.GAME_STATE_PLAYING
-            else:
-                handled = False
-                for widget in self.widgets:
-                    if not handled:
-                        handled = widget.handle_event(event)
-
 
 
 def test(fighter):

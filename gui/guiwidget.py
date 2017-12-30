@@ -2,6 +2,7 @@ import pygame as pg
 import os
 import default
 import random
+from gui.guicontainer import LineAlignedContainer
 
 from shared import GLOBAL
 
@@ -61,10 +62,24 @@ class Style:
         "bg_color": (229, 229, 229),
         "font_color": (155, 157, 173)
     }
+    THEME_LIGHT_GRAY_SINGLE = { # No external band
+        "rounded_angle": 0.1,  # 0 = no angle, 1 = full angle
+        "with_decoration": True,  # This adds small triangles
+        "borders": [(4, (203, 203, 203))],  # list of margin + colors (external to int)
+        "bg_color": (229, 229, 229),
+        "font_color": (155, 157, 173)
+    }
     THEME_DARK_GRAY = {
         "rounded_angle": 0.1,  # 0 = no angle, 1 = full angle
         "with_decoration": True,  # This adds small triangles
         "borders": [(4, (97, 99, 116)), (4, (155, 157, 173))],  # list of margin + colors (external to int)
+        "bg_color": (131, 135, 150),
+        "font_color": (233, 233, 233)
+    }
+    THEME_DARK_GRAY_SINGLE = {
+        "rounded_angle": 0.1,  # 0 = no angle, 1 = full angle
+        "with_decoration": True,  # This adds small triangles
+        "borders": [(4, (155, 157, 173))],  # list of margin + colors (external to int)
         "bg_color": (131, 135, 150),
         "font_color": (233, 233, 233)
     }
@@ -723,10 +738,12 @@ class Label(Widget):
 
     def handle_event(self, event):
         if event.type == pg.MOUSEBUTTONDOWN:
-            if self.scroll_top_rect.collidepoint(event.pos):
+            if hasattr(self, "scroll_top_rect") and self.scroll_top_rect.collidepoint(event.pos):
                 self.scroll("UP")
-            elif self.scroll_bottom_rect.collidepoint(event.pos):
+                return True
+            elif hasattr(self, "scroll_bottom_rect") and self.scroll_bottom_rect.collidepoint(event.pos):
                 self.scroll("BOTTOM")
+                return True
 
     def add_text(self, text):
         self.set_text(self.text + text)
@@ -745,6 +762,35 @@ class Label(Widget):
         if self.scrollable:
             self.scroll_bottom_rect.move_ip(dx, dy)
             self.scroll_top_rect.mov(dx, dy)
+
+
+class SimpleLabel(Label):
+    """
+    A simple widget (transparent background, no theme)
+    """
+
+    def __init__(self,
+                 text=None,
+                 position=(0, 0),
+                 dimension=(10, 10),
+                 style_dict=None,
+                 grow_width_with_text=True,
+                 grow_height_with_text=True,
+                 multiline=False,
+                 scrollable=False):
+
+        style_dict = style_dict or {}
+        style_dict["bg_color"] = style_dict["theme"] = None
+
+        Label.__init__(self,
+                       text=text,
+                       position=position,
+                       dimension=dimension,
+                       grow_width_with_text=grow_width_with_text,
+                       grow_height_with_text=grow_height_with_text,
+                       multiline=multiline,
+                       scrollable=scrollable,
+                       style_dict=style_dict)
 
 
 class TextButton(Widget):
@@ -824,6 +870,7 @@ class TextButton(Widget):
         if event.type == pg.MOUSEBUTTONDOWN and self.hover:
             self.hover = False
             self.callback_function()
+            return True
         elif event.type == pg.MOUSEMOTION:
             if self.rect.collidepoint(event.pos):
                 self.hover = True
@@ -873,6 +920,7 @@ class ImageButton(Widget):
         if event.type == pg.MOUSEBUTTONDOWN and self.hover:
             self.hover = False
             self.callback_function()
+            return True
         elif event.type == pg.MOUSEMOTION:
             if self.rect.collidepoint(event.pos):
                 self.hover = True
@@ -1086,7 +1134,170 @@ class RadioButtonGroup(Widget):
                 self.image.blit(self.foreground_image, (self.margin_x_left, self.margin_y_top))
 
                 self.callback_function(self.texts[self.selected_index])
+                return True
 
+
+class TextInput(Widget):
+
+    DEFAULT_OPTIONS = {
+        "bg_color": None,  # Transparent if None - ignored if a theme is given
+
+        "text_margin_x": 5,  # Minimum margin on the right & left, only relevant if a background is set (Color/image)
+        "text_margin_y": 5,  # Minimum margin on the top & down, only relevant if a background is set (Color/image)
+        "text_align_x": "LEFT",
+        "text_align_y": "TOP",
+
+        # To set the theme
+        "theme": None,  # the main theme or None
+
+    }
+
+    DEFAULT_INPUT_OPTIONS = {
+        "font_name": default.FONT_NAME,
+        "font_size": 14,
+        "font_color": (255, 255, 255),  # ignored if a theme is given
+
+        "bg_color": None,
+        "theme": None,  # Only the bg_color is used
+
+        "blink_cursor": True,
+        "blink_speed": 200
+    }
+
+    DEFAULT_CONFIRMATION_OPTIONS = {
+        "idle_image": None,
+        "hover_image": None,
+
+        "position": "BOTTOM",  # position compared to label
+
+        "text": "OK",  # ignored if idle image is given
+        "theme": None,  #
+        "bg_color": None,
+    }
+
+    def __init__(self,
+                 text=None,
+                 position=(0, 0),
+                 dimension=(10, 10),
+                 max_displayed_input=10,
+                 style_dict=None,  # The general part: theme, bgcolor
+                 input_dict=None,  # The style of the text zone - used for teh font charagcteristic
+                 confirmation_dict=None,  # Presence of a confirmation button (text or image, if text text content), position
+                 ):
+
+        Widget.__init__(self)
+
+        self.text = text or ""
+
+        # Create the label
+        self.input_zone = None
+        self.max_displayed_input = max_displayed_input
+        input_dict = input_dict or {}
+        self.font = GLOBAL.font(input_dict.get("font_name", TextInput.DEFAULT_INPUT_OPTIONS["font_name"]),
+                                input_dict.get("font_size", TextInput.DEFAULT_INPUT_OPTIONS["font_size"]))
+        test = ''
+        for i in range(self.max_displayed_input):
+            test += 'W'
+        size = self.font.size(test)
+
+        bg_color = input_dict.get("bg_color", TextInput.DEFAULT_INPUT_OPTIONS["bg_color"])
+        if input_dict.get("theme", TextInput.DEFAULT_INPUT_OPTIONS["theme"]):
+            theme = input_dict.get("theme", TextInput.DEFAULT_INPUT_OPTIONS["theme"])
+            bg_color = theme["bg_color"]
+
+        self.input_zone = Label(text=text[:max_displayed_input],
+                                dimension=size,
+                                style_dict={"bg_color":bg_color,
+                                            "text_margin_x":0,
+                                            "text_margin_y":0,
+                                            "theme":None},
+                                )
+
+        # Create the confirmation button
+        self.confirmation_button = None
+        self.confirmation_dict = confirmation_dict
+        if type(confirmation_dict) is dict:
+            # First, test to know if we need to do it in an image
+            idle_image = confirmation_dict.get("idle_image", TextInput.DEFAULT_CONFIRMATION_OPTIONS["idle_image"])
+            hover_image = confirmation_dict.get("hover_image", TextInput.DEFAULT_CONFIRMATION_OPTIONS["hover_image"])
+            if idle_image:
+                self.confirmation_button = ImageButton(callback_function=self.confirmation,
+                                                       image=idle_image,
+                                                       image_hover=hover_image)
+            else:
+                self.confirmation_button = TextButton(callback_function=self.confirmation,
+                                                      text=confirmation_dict.get("text",
+                                                                                 TextInput.DEFAULT_CONFIRMATION_OPTIONS[
+                                                                                     "text"]),
+                                                      dimension=self.input_zone.rect.size,
+                                                      grow_width_with_text=True,
+                                                      grow_height_with_text=True,
+                                                      style_dict={"text_align_x": "CENTER",
+                                                                  "theme_idle":Style.THEME_LIGHT_GRAY_SINGLE,
+                                                                  "theme_hover": Style.THEME_DARK_GRAY_SINGLE})
+
+
+        self._position_internal_rects()
+        self.move(position[0], position[1])
+
+    def _position_internal_rects(self):
+        size_x = self.input_zone.rect.width
+        size_y = self.input_zone.rect.height
+        position = None
+        if type(self.confirmation_dict) is dict:
+            position = self.confirmation_dict.get("position",
+                                                  TextInput.DEFAULT_CONFIRMATION_OPTIONS["position"])
+            if position == "RIGHT" or position == "LEFT":
+                size_x += 10 + self.confirmation_button.rect.width
+                size_y = max(self.confirmation_button.rect.height, size_y)
+                if position == "RIGHT":
+                    self.confirmation_button.move(self.input_zone.rect.width + 10, 0)
+                else:
+                    self.input_zone.move(self.confirmation_button.rect.width + 10, 0)
+                # Now we align the centers...
+                if self.input_zone.rect.height > self.confirmation_button.rect.height:
+                    self.confirmation_button.move(0,
+                                                  int((self.input_zone.rect.height - self.confirmation_button.rect.height)/2))
+                else:
+                    self.input_zone.move(0,
+                                         int((self.confirmation_button.rect.height - self.input_zone.rect.height) / 2))
+            else:
+                size_y += 10 + self.confirmation_button.rect.height
+                size_x = max(self.confirmation_button.rect.width, size_x)
+                if position == "BOTTOM":
+                    self.confirmation_button.move(0, self.input_zone.rect.height + 10)
+                else:
+                    self.input_zone.move(0, self.confirmation_button.rect.height + 10)
+                if self.input_zone.rect.width > self.confirmation_button.rect.width:
+                    self.confirmation_button.move(int((self.input_zone.rect.width - self.confirmation_button.rect.width)/2), 0)
+                else:
+                    self.input_zone.move(int((self.confirmation_button.rect.width - self.input_zone.rect.width) / 2) , 0)
+        self.rect = pg.Rect((0, 0), (size_x, size_y))
+
+    def confirmation(self, *args, **kwargs):
+        print(self.rect)
+        print("YOOO {} {}".format(args, kwargs))
+
+    def update(self):
+        if self.confirmation_button:
+            self.confirmation_button.update()
+        self.input_zone.update()
+
+    def handle_event(self, event):
+        if self.confirmation_button:
+            self.confirmation_button.handle_event(event)
+        self.input_zone.handle_event(event)
+
+    def draw(self, screen):
+        if self.confirmation_button:
+            self.confirmation_button.draw(screen)
+        self.input_zone.draw(screen)
+
+    def move(self, dx, dy):
+        if self.confirmation_button:
+            self.confirmation_button.move(dx, dy)
+        self.input_zone.move(dx, dy)
+        self.rect.move_ip(dx, dy)
 
 def display_single_message_on_screen(text, position="CENTER", font_size=18, erase_screen_first=True):
     """
