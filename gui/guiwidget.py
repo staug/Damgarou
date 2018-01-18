@@ -62,7 +62,7 @@ class Style:
         "bg_color": (229, 229, 229),
         "font_color": (155, 157, 173)
     }
-    THEME_LIGHT_GRAY_SINGLE = { # No external band
+    THEME_LIGHT_GRAY_SINGLE = {  # No external band
         "rounded_angle": 0.1,  # 0 = no angle, 1 = full angle
         "with_decoration": True,  # This adds small triangles
         "borders": [(4, (203, 203, 203))],  # list of margin + colors (external to int)
@@ -317,7 +317,7 @@ class ProgressBar(Widget):
             if self.theme:
                 font_color = self.theme["font_color"]
             fontsurface = self.font.render(str(self.current_value) + '/' + str(self.max_value), True, font_color)
-            self.image.blit(fontsurface, (int((self.image.get_rect().width - fontsurface.get_rect().width)/2), 0))
+            self.image.blit(fontsurface, (int((self.image.get_rect().width - fontsurface.get_rect().width) / 2), 0))
 
 
 def rounded_surface(rect, color, radius=1):
@@ -778,7 +778,6 @@ class SimpleLabel(Label):
                  grow_height_with_text=True,
                  multiline=False,
                  scrollable=False):
-
         style_dict = style_dict or {}
         style_dict["bg_color"] = style_dict["theme"] = None
 
@@ -1031,7 +1030,8 @@ class RadioButtonGroup(Widget):
 
             # Blit the images
             for index, label in enumerate(self.labels):
-                self.foreground_image.blit(label.image, (self.width_ref - self.max_label_width, self.height_ref * index))
+                self.foreground_image.blit(label.image,
+                                           (self.width_ref - self.max_label_width, self.height_ref * index))
                 if index == self.selected_index:
                     self.foreground_image.blit(self.image_hover, (0, self.height_ref * index))
                 else:
@@ -1138,40 +1138,21 @@ class RadioButtonGroup(Widget):
 
 
 class TextInput(Widget):
-
     DEFAULT_OPTIONS = {
-        "bg_color": None,  # Transparent if None - ignored if a theme is given
-
-        "text_margin_x": 5,  # Minimum margin on the right & left, only relevant if a background is set (Color/image)
-        "text_margin_y": 5,  # Minimum margin on the top & down, only relevant if a background is set (Color/image)
-        "text_align_x": "LEFT",
-        "text_align_y": "TOP",
-
-        # To set the theme
-        "theme": None,  # the main theme or None
-
-    }
-
-    DEFAULT_INPUT_OPTIONS = {
         "font_name": default.FONT_NAME,
         "font_size": 14,
         "font_color": (255, 255, 255),  # ignored if a theme is given
 
-        "bg_color": None,
-        "theme": None,  # Only the bg_color is used
-
         "blink_cursor": True,
-        "blink_speed": 200
-    }
+        "blink_speed": 200,
 
-    DEFAULT_CONFIRMATION_OPTIONS = {
+        "with_confirmation_button": True,
         "idle_image": None,
         "hover_image": None,
-
-        "position": "BOTTOM",  # position compared to label
-
         "text": "OK",  # ignored if idle image is given
-        "theme": None,  #
+        "position": "BOTTOM",  # position of the confirmation button compared to label
+
+        "theme": None,  # the global tehme
         "bg_color": None,
     }
 
@@ -1180,62 +1161,72 @@ class TextInput(Widget):
                  position=(0, 0),
                  dimension=(10, 10),
                  max_displayed_input=10,
-                 style_dict=None,  # The general part: theme, bgcolor
-                 input_dict=None,  # The style of the text zone - used for teh font charagcteristic
-                 confirmation_dict=None,  # Presence of a confirmation button (text or image, if text text content), position
+                 style_dict=None,
                  ):
 
         Widget.__init__(self)
 
         self.text = text or ""
+        self.selected = False
 
         # Create the label
         self.input_zone = None
         self.max_displayed_input = max_displayed_input
-        input_dict = input_dict or {}
-        self.font = GLOBAL.font(input_dict.get("font_name", TextInput.DEFAULT_INPUT_OPTIONS["font_name"]),
-                                input_dict.get("font_size", TextInput.DEFAULT_INPUT_OPTIONS["font_size"]))
+        self.style_dict = style_dict or {}
+        self.font = GLOBAL.font(self.style_dict.get("font_name", TextInput.DEFAULT_OPTIONS["font_name"]),
+                                self.style_dict.get("font_size", TextInput.DEFAULT_OPTIONS["font_size"]))
         test = ''
-        for i in range(self.max_displayed_input):
+        for i in range(self.max_displayed_input - 1):
             test += 'W'
         size = self.font.size(test)
 
-        bg_color = input_dict.get("bg_color", TextInput.DEFAULT_INPUT_OPTIONS["bg_color"])
-        if input_dict.get("theme", TextInput.DEFAULT_INPUT_OPTIONS["theme"]):
-            theme = input_dict.get("theme", TextInput.DEFAULT_INPUT_OPTIONS["theme"])
+        bg_color = self.style_dict.get("bg_color", TextInput.DEFAULT_OPTIONS["bg_color"])
+        if self.style_dict.get("theme", TextInput.DEFAULT_OPTIONS["theme"]):
+            theme = self.style_dict.get("theme", TextInput.DEFAULT_OPTIONS["theme"])
             bg_color = theme["bg_color"]
 
-        self.input_zone = Label(text=text[:max_displayed_input],
+        self.input_zone = Label(text=text[:max_displayed_input-2],
                                 dimension=size,
-                                style_dict={"bg_color":bg_color,
-                                            "text_margin_x":0,
-                                            "text_margin_y":0,
-                                            "theme":None},
+                                style_dict={"bg_color": bg_color,
+                                            "text_margin_x": 0,
+                                            "text_margin_y": 0,
+                                            "theme": None},
                                 )
+        self.blink_cursor = self.style_dict.get("blink_cursor", TextInput.DEFAULT_OPTIONS["blink_cursor"])
+        if self.blink_cursor:
+            self.input_zone_blink = Label(text=text[:max_displayed_input-2] + "|",
+                                dimension=size,
+                                style_dict={"bg_color": bg_color,
+                                            "text_margin_x": 0,
+                                            "text_margin_y": 0,
+                                            "theme": None},
+                                )
+            self.input_zones = [self.input_zone, self.input_zone_blink]
+            clock = pg.time.Clock()
+            self.last_blink_time = pg.time.get_ticks()
+            self.last_zone_index = 0
 
         # Create the confirmation button
         self.confirmation_button = None
-        self.confirmation_dict = confirmation_dict
-        if type(confirmation_dict) is dict:
+        if self.style_dict.get("with_confirmation_button", TextInput.DEFAULT_OPTIONS["with_confirmation_button"]):
             # First, test to know if we need to do it in an image
-            idle_image = confirmation_dict.get("idle_image", TextInput.DEFAULT_CONFIRMATION_OPTIONS["idle_image"])
-            hover_image = confirmation_dict.get("hover_image", TextInput.DEFAULT_CONFIRMATION_OPTIONS["hover_image"])
+            idle_image = self.style_dict.get("idle_image", TextInput.DEFAULT_OPTIONS["idle_image"])
+            hover_image = self.style_dict.get("hover_image", TextInput.DEFAULT_OPTIONS["hover_image"])
             if idle_image:
                 self.confirmation_button = ImageButton(callback_function=self.confirmation,
                                                        image=idle_image,
                                                        image_hover=hover_image)
             else:
                 self.confirmation_button = TextButton(callback_function=self.confirmation,
-                                                      text=confirmation_dict.get("text",
-                                                                                 TextInput.DEFAULT_CONFIRMATION_OPTIONS[
-                                                                                     "text"]),
+                                                      text=self.style_dict.get("text",
+                                                                               TextInput.DEFAULT_OPTIONS[
+                                                                                   "text"]),
                                                       dimension=self.input_zone.rect.size,
                                                       grow_width_with_text=True,
                                                       grow_height_with_text=True,
                                                       style_dict={"text_align_x": "CENTER",
-                                                                  "theme_idle":Style.THEME_LIGHT_GRAY_SINGLE,
+                                                                  "theme_idle": Style.THEME_LIGHT_GRAY_SINGLE,
                                                                   "theme_hover": Style.THEME_DARK_GRAY_SINGLE})
-
 
         self._position_internal_rects()
         self.move(position[0], position[1])
@@ -1244,9 +1235,9 @@ class TextInput(Widget):
         size_x = self.input_zone.rect.width
         size_y = self.input_zone.rect.height
         position = None
-        if type(self.confirmation_dict) is dict:
-            position = self.confirmation_dict.get("position",
-                                                  TextInput.DEFAULT_CONFIRMATION_OPTIONS["position"])
+        if type(self.style_dict) is dict:
+            position = self.style_dict.get("position",
+                                           TextInput.DEFAULT_OPTIONS["position"])
             if position == "RIGHT" or position == "LEFT":
                 size_x += 10 + self.confirmation_button.rect.width
                 size_y = max(self.confirmation_button.rect.height, size_y)
@@ -1257,7 +1248,8 @@ class TextInput(Widget):
                 # Now we align the centers...
                 if self.input_zone.rect.height > self.confirmation_button.rect.height:
                     self.confirmation_button.move(0,
-                                                  int((self.input_zone.rect.height - self.confirmation_button.rect.height)/2))
+                                                  int((
+                                                              self.input_zone.rect.height - self.confirmation_button.rect.height) / 2))
                 else:
                     self.input_zone.move(0,
                                          int((self.confirmation_button.rect.height - self.input_zone.rect.height) / 2))
@@ -1269,9 +1261,10 @@ class TextInput(Widget):
                 else:
                     self.input_zone.move(0, self.confirmation_button.rect.height + 10)
                 if self.input_zone.rect.width > self.confirmation_button.rect.width:
-                    self.confirmation_button.move(int((self.input_zone.rect.width - self.confirmation_button.rect.width)/2), 0)
+                    self.confirmation_button.move(
+                        int((self.input_zone.rect.width - self.confirmation_button.rect.width) / 2), 0)
                 else:
-                    self.input_zone.move(int((self.confirmation_button.rect.width - self.input_zone.rect.width) / 2) , 0)
+                    self.input_zone.move(int((self.confirmation_button.rect.width - self.input_zone.rect.width) / 2), 0)
         self.rect = pg.Rect((0, 0), (size_x, size_y))
 
     def confirmation(self, *args, **kwargs):
@@ -1282,22 +1275,43 @@ class TextInput(Widget):
         if self.confirmation_button:
             self.confirmation_button.update()
         self.input_zone.update()
+        if self.blink_cursor:
+            self.input_zone_blink.update()
 
     def handle_event(self, event):
+        if event.type == pg.MOUSEMOTION and self.rect.collidepoint(event.pos):
+            self.selected = True
+
         if self.confirmation_button:
             self.confirmation_button.handle_event(event)
         self.input_zone.handle_event(event)
+        if self.blink_cursor:
+            self.input_zone_blink.handle_event(event)
 
     def draw(self, screen):
         if self.confirmation_button:
             self.confirmation_button.draw(screen)
-        self.input_zone.draw(screen)
+
+        if self.blink_cursor:
+            if self.selected:
+                if pg.time.get_ticks() - self.last_blink_time > 800:
+                    print("UUUU {}".format(self.last_zone_index))
+                    self.last_blink_time = pg.time.get_ticks()
+                    self.last_zone_index = (self.last_zone_index + 1) %2
+                self.input_zones[self.last_zone_index].draw(screen)
+            else:
+                self.input_zone.draw(screen)
+        else:
+            self.input_zone.draw(screen)
 
     def move(self, dx, dy):
         if self.confirmation_button:
             self.confirmation_button.move(dx, dy)
         self.input_zone.move(dx, dy)
+        if self.blink_cursor:
+            self.input_zone_blink.move(dx, dy)
         self.rect.move_ip(dx, dy)
+
 
 def display_single_message_on_screen(text, position="CENTER", font_size=18, erase_screen_first=True):
     """

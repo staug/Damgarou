@@ -172,7 +172,7 @@ class Launcher:
         self.widgets = line.widgets_as_list()
         self.widgets.append(TextInput(text="ABCDEFéHIJKLMNOP",
                                       position=(100,30),
-                                      confirmation_dict={}))
+                                      ))
 
     def draw(self):
         # Erase All
