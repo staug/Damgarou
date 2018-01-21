@@ -480,6 +480,14 @@ class Label(Widget):
         # And we finally move to the position
         self.rect.topleft = self.position
 
+    @property
+    def text_position(self):
+        """
+        Find the position of the text on screen (including the margin)
+        :return: a tuple
+        """
+        return self.position[0] + self.margin_x_left, self.position[1] + self.margin_y_top
+
     def _blit_text_on_image(self):
         # We test to know if we have extra space...
         position_to_blit_text = [self.margin_x_left, self.margin_y_top]
@@ -1194,17 +1202,14 @@ class TextInput(Widget):
                                 )
         self.blink_cursor = self.style_dict.get("blink_cursor", TextInput.DEFAULT_OPTIONS["blink_cursor"])
         if self.blink_cursor:
-            self.input_zone_blink = Label(text=text[:max_displayed_input-2] + "|",
-                                dimension=size,
-                                style_dict={"bg_color": bg_color,
-                                            "text_margin_x": 0,
-                                            "text_margin_y": 0,
-                                            "theme": None},
-                                )
-            self.input_zones = [self.input_zone, self.input_zone_blink]
-            clock = pg.time.Clock()
+            clock = pg.time.Clock()  # Hack to make sure we have a clock
             self.last_blink_time = pg.time.get_ticks()
-            self.last_zone_index = 0
+            self.cursor_surface = pg.Surface((int(self.font.size("W")[0] / 20 + 1), self.font.size("W")[1]))
+            self.cursor_surface.fill(self.input_zone.font_color)
+            self.cursor_position = 0  # Inside text
+            self.cursor_visible = True  # Switches every self.cursor_switch_ms ms
+            self.cursor_switch_ms = 500  # /|\
+            self.cursor_ms_counter = 0
 
         # Create the confirmation button
         self.confirmation_button = None
@@ -1248,8 +1253,7 @@ class TextInput(Widget):
                 # Now we align the centers...
                 if self.input_zone.rect.height > self.confirmation_button.rect.height:
                     self.confirmation_button.move(0,
-                                                  int((
-                                                              self.input_zone.rect.height - self.confirmation_button.rect.height) / 2))
+                                                  int((self.input_zone.rect.height - self.confirmation_button.rect.height) / 2))
                 else:
                     self.input_zone.move(0,
                                          int((self.confirmation_button.rect.height - self.input_zone.rect.height) / 2))
@@ -1275,8 +1279,11 @@ class TextInput(Widget):
         if self.confirmation_button:
             self.confirmation_button.update()
         self.input_zone.update()
-        if self.blink_cursor:
-            self.input_zone_blink.update()
+
+        if self.selected and self.blink_cursor:
+            if pg.time.get_ticks() - self.cursor_ms_counter >= self.cursor_switch_ms:
+                self.cursor_ms_counter = pg.time.get_ticks()
+                self.cursor_visible = not self.cursor_visible
 
     def handle_event(self, event):
         if event.type == pg.MOUSEMOTION and self.rect.collidepoint(event.pos):
@@ -1285,20 +1292,64 @@ class TextInput(Widget):
         if self.confirmation_button:
             self.confirmation_button.handle_event(event)
         self.input_zone.handle_event(event)
-        if self.blink_cursor:
-            self.input_zone_blink.handle_event(event)
+
+        if self.selected and event.type == pg.KEYDOWN:
+
+            if event.key == pg.K_BACKSPACE:  # FIXME: Delete at beginning of line?
+                self.text = self.text[:max(self.cursor_position - 1, 0)] + \
+                            self.text[self.cursor_position:]
+
+                # Subtract one from cursor_pos, but do not go below zero:
+                self.cursor_position = max(self.cursor_position - 1, 0)
+            elif event.key == pg.K_DELETE:
+                self.text = self.text[:self.cursor_position] + \
+                            self.text[self.cursor_position + 1:]
+
+            elif event.key == pg.K_RETURN:
+                # TODO do something
+                self.selected = False
+
+            elif event.key == pg.K_ESCAPE:
+                self.selected = False
+
+            elif event.key == pg.K_RIGHT:
+                # Add one to cursor_pos, but do not exceed len(input_string)
+                self.cursor_position = min(self.cursor_position + 1, len(self.text))
+
+            elif event.key == pg.K_LEFT:
+                # Subtract one from cursor_pos, but do not go below zero:
+                self.cursor_position = max(self.cursor_position - 1, 0)
+
+            elif event.key == pg.K_END:
+                self.cursor_position = len(self.text)
+
+            elif event.key == pg.K_HOME:
+                self.cursor_position = 0
+
+            else:
+                # If no special key is pressed, add unicode of key to input_string
+                self.text = self.text[:self.cursor_position] + \
+                            event.unicode + \
+                            self.text[self.cursor_position:]
+                self.cursor_position += len(event.unicode)  # Some are empty, e.g. K_UP
+
+            #TODO only a part of eth text (cursor position on the right!!) should be really updated
+            self.input_zone.set_text(self.text)
 
     def draw(self, screen):
         if self.confirmation_button:
             self.confirmation_button.draw(screen)
 
         if self.blink_cursor:
-            if self.selected:
-                if pg.time.get_ticks() - self.last_blink_time > 800:
-                    print("UUUU {}".format(self.last_zone_index))
-                    self.last_blink_time = pg.time.get_ticks()
-                    self.last_zone_index = (self.last_zone_index + 1) %2
-                self.input_zones[self.last_zone_index].draw(screen)
+            if self.selected and self.cursor_visible:
+                self.input_zone.draw(screen)
+                cursor_y_pos = self.font.size(self.text[:self.cursor_position])[0]
+                # Without this, the cursor is invisible when self.cursor_position > 0:
+                if self.cursor_position > 0:
+                    cursor_y_pos -= self.cursor_surface.get_width()
+                screen.blit(self.cursor_surface, (self.input_zone.text_position[0] + cursor_y_pos,
+                                                  self.input_zone.text_position[1]))
+
             else:
                 self.input_zone.draw(screen)
         else:
@@ -1308,8 +1359,6 @@ class TextInput(Widget):
         if self.confirmation_button:
             self.confirmation_button.move(dx, dy)
         self.input_zone.move(dx, dy)
-        if self.blink_cursor:
-            self.input_zone_blink.move(dx, dy)
         self.rect.move_ip(dx, dy)
 
 
