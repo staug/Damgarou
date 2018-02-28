@@ -170,7 +170,7 @@ class Launcher:
                                     space=100)
         line.move(0, int((pg.display.get_surface().get_rect().height - line.rect.height) / 2))
         self.widgets = line.widgets_as_list()
-        self.widgets.append(TextInput(text="ABCDEFéHIJKLMNOP",
+        self.widgets.append(TextInput(text="012345678901234567890",
                                       position=(100,30),
                                       ))
 

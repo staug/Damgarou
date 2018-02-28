@@ -1184,8 +1184,8 @@ class TextInput(Widget):
         self.font = GLOBAL.font(self.style_dict.get("font_name", TextInput.DEFAULT_OPTIONS["font_name"]),
                                 self.style_dict.get("font_size", TextInput.DEFAULT_OPTIONS["font_size"]))
         test = ''
-        for i in range(self.max_displayed_input - 1):
-            test += 'W'
+        for i in range(self.max_displayed_input):
+            test += '0'
         size = self.font.size(test)
 
         bg_color = self.style_dict.get("bg_color", TextInput.DEFAULT_OPTIONS["bg_color"])
@@ -1193,7 +1193,7 @@ class TextInput(Widget):
             theme = self.style_dict.get("theme", TextInput.DEFAULT_OPTIONS["theme"])
             bg_color = theme["bg_color"]
 
-        self.input_zone = Label(text=text[:max_displayed_input-2],
+        self.input_zone = Label(text=text[:max_displayed_input],
                                 dimension=size,
                                 style_dict={"bg_color": bg_color,
                                             "text_margin_x": 0,
@@ -1333,8 +1333,10 @@ class TextInput(Widget):
                             self.text[self.cursor_position:]
                 self.cursor_position += len(event.unicode)  # Some are empty, e.g. K_UP
 
-            #TODO only a part of eth text (cursor position on the right!!) should be really updated
-            self.input_zone.set_text(self.text)
+            if self.cursor_position < self.max_displayed_input:
+                self.input_zone.set_text(self.text[0:self.max_displayed_input])
+            else:
+                self.input_zone.set_text(self.text[self.cursor_position - self.max_displayed_input:self.cursor_position])
 
     def draw(self, screen):
         if self.confirmation_button:
@@ -1343,7 +1345,11 @@ class TextInput(Widget):
         if self.blink_cursor:
             if self.selected and self.cursor_visible:
                 self.input_zone.draw(screen)
-                cursor_y_pos = self.font.size(self.text[:self.cursor_position])[0]
+                cursor_y_pos = 0
+                if self.cursor_position < self.max_displayed_input:
+                    cursor_y_pos = self.font.size(self.text[:self.cursor_position])[0]
+                else:
+                    cursor_y_pos = self.font.size(self.text[self.cursor_position - self.max_displayed_input:self.cursor_position])[0]
                 # Without this, the cursor is invisible when self.cursor_position > 0:
                 if self.cursor_position > 0:
                     cursor_y_pos -= self.cursor_surface.get_width()
