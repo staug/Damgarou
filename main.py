@@ -170,9 +170,7 @@ class Launcher:
                                     space=100)
         line.move(0, int((pg.display.get_surface().get_rect().height - line.rect.height) / 2))
         self.widgets = line.widgets_as_list()
-        self.widgets.append(TextInput(text="012345678901234567890",
-                                      position=(100,30),
-                                      ))
+        self.widgets.append(TextInput(position=(100, 30), style_dict={"with_confirmation_button":False}))
 
     def draw(self):
         # Erase All

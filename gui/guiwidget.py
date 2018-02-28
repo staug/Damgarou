@@ -1165,16 +1165,31 @@ class TextInput(Widget):
     }
 
     def __init__(self,
-                 text=None,
+                 initial_displayed_text=None,
                  position=(0, 0),
-                 dimension=(10, 10),
                  max_displayed_input=10,
                  style_dict=None,
-                 ):
+                 callback_function=None,
+                 property_to_follow=None):
+        """
+        Display an input text, with a "OK" button at the bottom if with confirmation is set
+        :param initial_displayed_text: The initial text to display. If a property is passed, this is replaced by the property value as a string.
+        :param position: Position of the widget
+        :param max_displayed_input: Number of characters to display. 10 by default.
+        :param style_dict: Will be used by the widgets.
+        :param callback_function: Functions to be called when "OK" is pressed.
+        :param property_to_follow: The property to follow.
+        """
 
         Widget.__init__(self)
 
-        self.text = text or ""
+        self.property_to_follow = property_to_follow
+        if self.property_to_follow is not None:
+            self.text = str(property_to_follow) or ""
+        else:
+            self.text = initial_displayed_text or ""
+
+        self.callback_function = callback_function
         self.selected = False
 
         # Create the label
@@ -1193,7 +1208,7 @@ class TextInput(Widget):
             theme = self.style_dict.get("theme", TextInput.DEFAULT_OPTIONS["theme"])
             bg_color = theme["bg_color"]
 
-        self.input_zone = Label(text=text[:max_displayed_input],
+        self.input_zone = Label(text=self.text[:max_displayed_input],
                                 dimension=size,
                                 style_dict={"bg_color": bg_color,
                                             "text_margin_x": 0,
@@ -1211,7 +1226,7 @@ class TextInput(Widget):
             self.cursor_switch_ms = 500  # /|\
             self.cursor_ms_counter = 0
 
-        # Create the confirmation button
+        # Create the confirmation button if required
         self.confirmation_button = None
         if self.style_dict.get("with_confirmation_button", TextInput.DEFAULT_OPTIONS["with_confirmation_button"]):
             # First, test to know if we need to do it in an image
@@ -1233,6 +1248,7 @@ class TextInput(Widget):
                                                                   "theme_idle": Style.THEME_LIGHT_GRAY_SINGLE,
                                                                   "theme_hover": Style.THEME_DARK_GRAY_SINGLE})
 
+        # Now finalize the overall design
         self._position_internal_rects()
         self.move(position[0], position[1])
 
@@ -1240,7 +1256,7 @@ class TextInput(Widget):
         size_x = self.input_zone.rect.width
         size_y = self.input_zone.rect.height
         position = None
-        if type(self.style_dict) is dict:
+        if type(self.style_dict) is dict and self.confirmation_button is not None:
             position = self.style_dict.get("position",
                                            TextInput.DEFAULT_OPTIONS["position"])
             if position == "RIGHT" or position == "LEFT":
@@ -1272,8 +1288,10 @@ class TextInput(Widget):
         self.rect = pg.Rect((0, 0), (size_x, size_y))
 
     def confirmation(self, *args, **kwargs):
-        print(self.rect)
-        print("YOOO {} {}".format(args, kwargs))
+        if self.property_to_follow is not None and self.callback_function is not None:
+            self.callback_function(self.property_to_follow)
+        elif self.callback_function is not None:
+            self.callback_function()
 
     def update(self):
         if self.confirmation_button:
@@ -1306,8 +1324,11 @@ class TextInput(Widget):
                             self.text[self.cursor_position + 1:]
 
             elif event.key == pg.K_RETURN:
-                # TODO do something
                 self.selected = False
+                if self.property_to_follow is not None and self.callback_function is not None:
+                    self.callback_function(self.property_to_follow)
+                elif self.callback_function is not None:
+                    self.callback_function()
 
             elif event.key == pg.K_ESCAPE:
                 self.selected = False
