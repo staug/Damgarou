@@ -2,7 +2,6 @@ import pygame as pg
 import os
 import default
 import random
-from gui.guicontainer import LineAlignedContainer
 
 from shared import GLOBAL
 
@@ -290,7 +289,6 @@ class ProgressBar(Widget):
         self.image.blit(self.background_image, (0, 0))
 
         # Bar itself
-        computed = None
         if self.orientation == ProgressBar.HORIZONTAL:
             computed = max(0, int(float(self.current_value) / self.max_value * self.dimension[0]))
         else:
@@ -657,7 +655,8 @@ class Label(Widget):
                             ((pos_scrollable_x, y_arrow_up_ref + 12),
                              (pos_scrollable_x + 10, y_arrow_up_ref + 12),
                              (pos_scrollable_x + 5, y_arrow_up_ref)), 0)
-            self.scroll_top_rect = pg.Rect((pos_scrollable_x, self.margin_y_top), (10, 12)).move(self.position)
+            self.scroll_top_rect = pg.Rect((pos_scrollable_x, self.margin_y_top), (10, 12)).move(self.position[0],
+                                                                                                 self.position[1])
 
             # Bottom arrow - aligned with margin_y_bottom
             y_arrow_bottom_ref = self.background_image.get_rect().height - self.margin_y_bottom
@@ -665,7 +664,8 @@ class Label(Widget):
                 (pos_scrollable_x, y_arrow_bottom_ref - 12),
                 (pos_scrollable_x + 10, y_arrow_bottom_ref - 12),
                 (pos_scrollable_x + 5, y_arrow_bottom_ref)), 0)
-            self.scroll_bottom_rect = pg.Rect((pos_scrollable_x, y_arrow_bottom_ref - 12), (10, 12)).move(self.position)
+            self.scroll_bottom_rect = pg.Rect((pos_scrollable_x, y_arrow_bottom_ref - 12), (10, 12)).move(
+                self.position[0], self.position[1])
 
         if self.theme and "with_decoration" in self.theme and self.theme["with_decoration"]:
             if force_recreate_decoration:
@@ -1070,7 +1070,6 @@ class RadioButtonGroup(Widget):
 
         # Blit the images
         bg_color = self.style_dict.get("bg_color", RadioButtonGroup.DEFAULT_OPTIONS["bg_color"])
-        margin = 0  # Also used in decoration later
 
         if self.theme:
             rect = self.background_image.get_rect()
@@ -1173,7 +1172,8 @@ class TextInput(Widget):
                  property_to_follow=None):
         """
         Display an input text, with a "OK" button at the bottom if with confirmation is set
-        :param initial_displayed_text: The initial text to display. If a property is passed, this is replaced by the property value as a string.
+        :param initial_displayed_text: The initial text to display. If a property is passed, this is replaced by the
+        property value as a string.
         :param position: Position of the widget
         :param max_displayed_input: Number of characters to display. 10 by default.
         :param style_dict: Will be used by the widgets.
@@ -1217,7 +1217,7 @@ class TextInput(Widget):
                                 )
         self.blink_cursor = self.style_dict.get("blink_cursor", TextInput.DEFAULT_OPTIONS["blink_cursor"])
         if self.blink_cursor:
-            clock = pg.time.Clock()  # Hack to make sure we have a clock
+            pg.time.Clock()  # Hack to make sure we have a clock
             self.last_blink_time = pg.time.get_ticks()
             self.cursor_surface = pg.Surface((int(self.font.size("W")[0] / 20 + 1), self.font.size("W")[1]))
             self.cursor_surface.fill(self.input_zone.font_color)
@@ -1255,7 +1255,6 @@ class TextInput(Widget):
     def _position_internal_rects(self):
         size_x = self.input_zone.rect.width
         size_y = self.input_zone.rect.height
-        position = None
         if type(self.style_dict) is dict and self.confirmation_button is not None:
             position = self.style_dict.get("position",
                                            TextInput.DEFAULT_OPTIONS["position"])
@@ -1269,8 +1268,8 @@ class TextInput(Widget):
                 # Now we align the centers...
                 if self.input_zone.rect.height > self.confirmation_button.rect.height:
                     self.confirmation_button.move(0,
-                                                  int((
-                                                                  self.input_zone.rect.height - self.confirmation_button.rect.height) / 2))
+                                                  int((self.input_zone.rect.height -
+                                                       self.confirmation_button.rect.height) / 2))
                 else:
                     self.input_zone.move(0,
                                          int((self.confirmation_button.rect.height - self.input_zone.rect.height) / 2))
@@ -1305,7 +1304,7 @@ class TextInput(Widget):
                 self.cursor_visible = not self.cursor_visible
 
     def handle_event(self, event):
-        if event.type == pg.MOUSEMOTION and self.rect.collidepoint(event.pos):
+        if event.type == pg.MOUSEMOTION and self.rect.collidepoint(event.pos[0], event.pos[1]):
             self.selected = True
 
         if self.confirmation_button:
@@ -1371,12 +1370,12 @@ class TextInput(Widget):
         if self.blink_cursor:
             if self.selected and self.cursor_visible:
                 self.input_zone.draw(screen)
-                cursor_y_pos = 0
                 if self.cursor_position < self.max_displayed_input:
                     cursor_y_pos = self.font.size(self.text[:self.cursor_position])[0]
                 else:
                     cursor_y_pos = \
-                    self.font.size(self.text[self.cursor_position - self.max_displayed_input:self.cursor_position])[0]
+                        self.font.size(self.text[self.cursor_position - self.max_displayed_input:self.cursor_position])[
+                            0]
                 # Without this, the cursor is invisible when self.cursor_position > 0:
                 if self.cursor_position > 0:
                     cursor_y_pos -= self.cursor_surface.get_width()
@@ -1398,6 +1397,7 @@ class TextInput(Widget):
 def display_single_message_on_screen(text, position="CENTER", font_size=18, erase_screen_first=True):
     """
     Erase the screen, replace wit a simple message. Use for basic info.
+    :param text the text to display
     :param position the position of the message, default "CENTER", can also be "BOTTOM" or "TOP"
     :param font_size the font_size to use
     :param erase_screen_first if set to True, will erase the screen first
@@ -1406,9 +1406,9 @@ def display_single_message_on_screen(text, position="CENTER", font_size=18, eras
     # Maybe optimize the stuff below
     font = pg.font.Font(os.path.join(default.FONT_FOLDER, default.FONT_NAME), font_size)
 
+    screen = pg.display.get_surface()
     if erase_screen_first:
         # Erase the screen
-        screen = pg.display.get_surface()
         screen.fill(default.BLACK)
 
     text = font.render(text, True, default.WHITE)
