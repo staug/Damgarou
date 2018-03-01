@@ -1359,6 +1359,9 @@ class TextInput(Widget):
             else:
                 self.input_zone.set_text(self.text[self.cursor_position - self.max_displayed_input:self.cursor_position])
 
+            if self.property_to_follow is not None:
+                self.property_to_follow = self.text
+
     def draw(self, screen):
         if self.confirmation_button:
             self.confirmation_button.draw(screen)
