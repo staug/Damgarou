@@ -1269,7 +1269,8 @@ class TextInput(Widget):
                 # Now we align the centers...
                 if self.input_zone.rect.height > self.confirmation_button.rect.height:
                     self.confirmation_button.move(0,
-                                                  int((self.input_zone.rect.height - self.confirmation_button.rect.height) / 2))
+                                                  int((
+                                                                  self.input_zone.rect.height - self.confirmation_button.rect.height) / 2))
                 else:
                     self.input_zone.move(0,
                                          int((self.confirmation_button.rect.height - self.input_zone.rect.height) / 2))
@@ -1357,7 +1358,8 @@ class TextInput(Widget):
             if self.cursor_position < self.max_displayed_input:
                 self.input_zone.set_text(self.text[0:self.max_displayed_input])
             else:
-                self.input_zone.set_text(self.text[self.cursor_position - self.max_displayed_input:self.cursor_position])
+                self.input_zone.set_text(
+                    self.text[self.cursor_position - self.max_displayed_input:self.cursor_position])
 
             if self.property_to_follow is not None:
                 self.property_to_follow = self.text
@@ -1373,7 +1375,8 @@ class TextInput(Widget):
                 if self.cursor_position < self.max_displayed_input:
                     cursor_y_pos = self.font.size(self.text[:self.cursor_position])[0]
                 else:
-                    cursor_y_pos = self.font.size(self.text[self.cursor_position - self.max_displayed_input:self.cursor_position])[0]
+                    cursor_y_pos = \
+                    self.font.size(self.text[self.cursor_position - self.max_displayed_input:self.cursor_position])[0]
                 # Without this, the cursor is invisible when self.cursor_position > 0:
                 if self.cursor_position > 0:
                     cursor_y_pos -= self.cursor_surface.get_width()
