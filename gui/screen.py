@@ -169,7 +169,8 @@ class PlayingScreen(Screen):
         self.widgets.append(PlayingScreen.PlayableScreen((10, 10)))
 
     def post_init(self):
-        self.widgets.append(ProgressBar(
+        pass
+        '''self.widgets.append(ProgressBar(
             position=(10, 10),
             dimension=(100, 10),
             object_to_follow=GLOBAL.game.player,
@@ -182,7 +183,7 @@ class PlayingScreen(Screen):
                 "rounded": True,
                 "theme": Style.THEME_DARK_BROWN
             }
-        ))
+        ))'''
 
     def draw(self):
         # Erase All

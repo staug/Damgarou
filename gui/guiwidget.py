@@ -1313,7 +1313,7 @@ class TextInput(Widget):
 
         if self.selected and event.type == pg.KEYDOWN:
 
-            if event.key == pg.K_BACKSPACE:  # FIXME: Delete at beginning of line?
+            if event.key == pg.K_BACKSPACE:
                 self.text = self.text[:max(self.cursor_position - 1, 0)] + \
                             self.text[self.cursor_position:]
 
