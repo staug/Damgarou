@@ -2,65 +2,101 @@
 Roguelike in Python and Pygame, centered around merchant and exchanges.
 Idea from roguebasin (http://www.roguebasin.com/index.php?title=TraderRL).
 
-**Synopsis**
+## Synopsis
 
-_Story_
+### Story
 
-The player is a young merchant, from a poor class. A turn of fortune has pushed him to choose this carrier, but he wants to get back to nobility (for himself or his family). 
+The player is a young merchant, from a poor class. A turn of fortune has pushed him to choose this carrier, but he wants to get back to nobility (for himself and his family). 
 He is travelling from town to town to make profit by selling equipments. However, as he is weak he needs to hire other to carry the equipments.
 Towns and dungeons are scattered in the wilderness; dungeons lead to magic portals between wilderness (once a new wilderness or new town has been visited, the player will be able to move between towns using magic portals for a small fee).
 The dungeons also offer him the opportunity to loot enemies or discover treasure, but he has to be careful as he is ultra weak - so he needs to hire fighters.
 He may also do quests (mainly carry object from point A to B) to earn more money and experience.
 
 The player may be in situation to find a partner, get married and eventually have a child. Having a child will allow for a future in case of death.
+The game ends when the player reaches a certain wealth status, or if the player dies without having any heir.
 
-_Game goal_
+### Game goal
 
 The player has to become the richest possible. And survive. During his life, he will be able to buy a house, marry and attain the nobility status.
 The game may end:
 * If the player dies (either due to age, sickness, combat...), without heir
 * If the player reaches a certain nobility status
 
-#
-Setup:
-Initial screen: start new game, load game, options, exit.
-Start new game -> player setup screen, then regular game.
-Setup screen -> start with all random, possible to edit manually the figures
+## Rules
 
-Rules:
+### Become richer
 
-Become richer
-The base is to buy goods in some places, while selling them elsewhere. The number of slots a player has is limited ? in order to expand he has to hire some mules or buy some objects (better handbags for example). Each good takes x slot - if the player buys huge quantities the quantity can be spread across multiple, but the individual good cannot be split.
-The player may have an heir - if he dies, his "son" will be able to carry on. In order to get an heir, he needs to have a house and be married.
+The base is to buy goods in some places, while selling them elsewhere. The number of slots a player has is limited. In order to expand he has to hire some mules or buy some objects (better handbags for example). Each good takes x slot - if the player buys huge quantities the quantity can be spread across multiple, but the individual good cannot be split.
 
-Resources
+### Be married, Getting a heir
+
+The player may have an heir - if he dies, his "son" will be able to carry on. In order to get an heir, he needs to have a house and be married. And to be married, he needs to:
+* Have a given wealth level (or) a certain attractivity based on friendship + charisma (the more attractive, the lesser wealth needed), increased by age. The wealth is not lost when "meeting" the woman.
+* Be in a town that has available women - they might be found in tavern
+
+To be married, the player needs to be in a town with a townhall. This costs money (fix fee). The cost of the wedding includes the cost of formality, as well the house the player gets (if his parent did not have one).
+
+The heir is born a certain number of turn after the player is married, and the heir gets old enough after x more turn. The heir "inherits" from some of his father stats, while new one are generated. The race is always inherited. 
+Before he reaches adulthood a certain occupation is generated, which represents the trade the heir learns; this occupation gives bonus, and depends on the actual status (gold) of the parent. If the player dies before the heir is ready, a penalty in terms of money happens (to take care of the inheritance). Note that the heir once adult doesn't "age" until his parent dies...
+
+### What to do in the house
+
+In the house, it is possible to store resources. The content of the house is automatically gievn to the heir - but whatever the player had on himself (gold, equipment...) is not always (we consider that some of the equipments might be carried back by allies)
+
+The house is also a symbol of richness, the place for trophy and so on...
+
+### Resources
+
 Two resources are to be managed:
-?       Gold ? this is the basic trading quantity. Gold is decreased by taxes (each turn), by salary to allies, when losing battles (paying ranson), or by special events. Not being able to pay taxes will trigger bad events. Not being able to pay salary will trigger bad events (worst: the ally leaves the player)
+* Gold: this is the basic trading quantity. Gold is decreased by taxes (each turn), by salary to allies, when losing battles (paying ranson), or by special events. Not being able to pay taxes will trigger bad events. Not being able to pay salary will trigger bad events (worst: the ally leaves the player)
 Gold is increased by commerce, by interest in the bank, by special events
-
-?       Food ? this is used to feed the player and the allies. Not having food triggers desertion from allies and bad events for the player. Food takes place in the inventory.
+* Food: this is used to feed the player and the allies. Not having food triggers desertion from allies and bad events for the player. Food takes place in the inventory.
 Food is increased in taverns and in special events. Food is decreased when feeding players/allies
 
-Fighting
+### Death of old age
+
+The player is getting old as well... Note that his characteristics do not change over time.
+
+### Fighting
+
 The player can equip object and hire allies (mercenaries or mules) to help him become richer. The player cannot fight by himself (except via using objects, bribing or casting spells)! He can only defend himself (parry). This is also true for the mules ? only the mercenaries will attack.
 Fighting is a simple system to be defined. Fighting are automatically resolved, but at the end of each fighting turn the player will have the possibility to flee, with random consequence. If the fight is lost the player will have to pay a ranson using his bank account ? if no money in the bank then the party is finished.
-Travelling
+
+### Travelling
+
 Each town is linked with a limited number of other towns. Travelling may take several turns, and one food ration is decreased by turn. The tavern may be used to know the type of towns nearby ? once the player has been in a town, its type is retained.
 A way to view the town graph should be presented.
-General entity stats:
-* name
-* race:
-- help sell/buy from certain person
-- prevent the buy from certain products (note that for mule, that means that they will refuse to carry the products)
-- prevent the equipment of certain objects
-* previous occupation: gives bonus on equipment? Allow to craft?
-* charisma: gives bonus/malus to costs of sales, ability to bribe enemies
-* friendship: gives more/less friends, impact the loyalty of the people in the group. A low
-* objects: gives more/less objects slots
-* food consumption [impacted by strength, inverse].
+
+
+## Game details
+
+### General player or entities stats
+
+* name: chosen or automatically generated
+* race: 
+   * help sell/buy from certain person
+   * prevent the buy from certain products (note that for mule, that means that they will refuse to carry the products)
+   * prevent the equipment of certain objects
 * exposure to elements: there are 4 elements (fire/earth/water/ether). Any person is always either immune to 2 and double penalized to 2, equally attached to 4 (no bonus/malus) or immune to 1, pealized by one and equal to 2.
 * strength: gives more/less capacities to transport. More strength means more food is consumed!
-* erudition level: able to detect usage of objects, getting more gold (unidentified object will have 1/10th of the value). More erudition means more arrogant, so charisma going down!
+* health: 0 means... death.
+* _Player only_
+   * age
+   * wealth
+   * previous occupation: gives bonus on equipment? Allow to craft? give bonus on stats?
+   * charisma: gives bonus/malus to costs of sales, ability to bribe enemies
+   * friendship: gives more/less allies slots, impact the loyalty of the people in the group. A low number will also means that the salary of allies will increase, a high stat means that the salary will decrease
+   * erudition level: able to detect usage of objects, getting more gold (unidentified object will have 1/10th of the value). More erudition means more arrogant, so charisma going down!
+   * background story: just a recap of the high time of the year
+* _Fighter only_
+   * attack
+   * protection
+
+#### Derived stats
+* food need: impacted by strength, proportional.
+* _Allies only_ salary need: impacted by strength & attack characteristic, lowered by player friendliness
+
+#### Attached
  [to buy/sell merchandise]
 money level
 inventory slots
@@ -74,7 +110,7 @@ object slots
 friends slots
 curse/benediction: player may be cursed/blessed (limited time, impact one/several attributes)
 
-Friends:
+Allies:
 friends are of two sorts: mercenaries and mules. They follow the exposure to elements.
 mercenaries help attack/defend. they come fully equipped, you cannot modify their equipment. Some of them are magician, some pure warriors. They can be healed (cost money). They have a friendship level (the more friendly, the less powerful they are) which dictates their behaviour in case of lack of money (the more friendship teh less chance they could attack they could do to you in case of non payment)
 mules simply carry the equipments. They cannot attack, can be healed (cost money). In case of death, all attached objects are lost!. They have a friendship level that says to which point they can go away. Note that the more powerful mule may simply decide to leave out of spite (1 out of 10 chance?)
@@ -189,6 +225,13 @@ unequip(self)
 assign_to(self, player or ally) -> unequip then call the equip method
 buy/sell(self)
 destruct(self) -> transform the equipment into piece of bargaining goods.
+
+
+Setup:
+Initial screen: start new game, load game, options, exit.
+Start new game -> player setup screen, then regular game.
+Setup screen -> start with all random, possible to edit manually the figures
+
 
 
 ****
