@@ -76,7 +76,7 @@ class RegionFactory:
 
                 for door_characteristics in region.door_list:
                     door = Door((door_characteristics[1], door_characteristics[2]),
-                                    door_characteristics[0])
+                                door_characteristics[0])
                     door.assign_entity_to_region(region)
 
                 # Let's add some decoration inside...
@@ -84,7 +84,7 @@ class RegionFactory:
                 for building in attributes["building_list"]:
                     if building.size != (3, 3):
                         for north_wall_index in range(building.top_left_pos[0] + 1,
-                                                  building.top_left_pos[0] + building.size[0] - 1):
+                                                      building.top_left_pos[0] + building.size[0] - 1):
                             position = (north_wall_index, building.top_left_pos[1])
                             if region.position_without_entity(position):
                                 chance = random.randint(0, 100)
@@ -209,18 +209,18 @@ class Region:
         weight = 0
 
         if y == 0 or (y - 1 >= 0 and tiles[x][y - 1].tile_type in tile_type and
-                          (tile_subtype is None or tiles[x][y - 1].tile_subtype in tile_subtype)):
+                      (tile_subtype is None or tiles[x][y - 1].tile_subtype in tile_subtype)):
             weight += 1
         if x == 0 or (x - 1 >= 0 and tiles[x - 1][y].tile_type in tile_type and
-                          (tile_subtype is None or tiles[x - 1][y].tile_subtype in tile_subtype)):
+                      (tile_subtype is None or tiles[x - 1][y].tile_subtype in tile_subtype)):
             weight += 8
         if (y + 1 < self.tile_height and tiles[x][y + 1].tile_type in tile_type and
-                (tile_subtype is None or tiles[x][y + 1].tile_subtype in tile_subtype)) or \
-                        y == self.tile_height - 1:
+            (tile_subtype is None or tiles[x][y + 1].tile_subtype in tile_subtype)) or \
+                y == self.tile_height - 1:
             weight += 4
         if (x + 1 < self.tile_width and tiles[x + 1][y].tile_type in tile_type and
-                (tile_subtype is None or tiles[x + 1][y].tile_subtype in tile_subtype)) or \
-                        x == self.tile_width - 1:
+            (tile_subtype is None or tiles[x + 1][y].tile_subtype in tile_subtype)) or \
+                x == self.tile_width - 1:
             weight += 2
 
         # Correction on the side...
@@ -370,15 +370,14 @@ class Region:
             (current_position_x, current_position_y) = tiles_to_flood.pop()
             tiles_flooded.add((current_position_x, current_position_y))
             # Let's go in all direction
-            for (delta_x, delta_y) in ((-1,-1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1,-1), (1,0), (1,1)):
+            for (delta_x, delta_y) in ((-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)):
                 if 0 <= current_position_x + delta_x < self.tile_width and \
-                                        0 <= current_position_y + delta_y < self.tile_height:
+                        0 <= current_position_y + delta_y < self.tile_height:
                     if self.tiles[current_position_x + delta_x][current_position_y + delta_y].tile_type == \
                             starting_type_type:
                         pos_to_add = (current_position_x + delta_x, current_position_y + delta_y)
                         if pos_to_add not in tiles_to_flood and pos_to_add not in tiles_flooded:
                             tiles_to_flood.add(pos_to_add)
-
 
         # Last part: we check the length...
         nb_of_tiles_to_be_flooded = 0
@@ -606,6 +605,7 @@ class TownRegion(Region):
         """
         A building is a closed space, dedicated to a set of activities.
         """
+
         def __init__(self, size, name=None, position=None, one_connection=False):
             """
             Initialize the room
@@ -630,7 +630,7 @@ class TownRegion(Region):
         assert len(building_entity_list) < int(dimension[0] * dimension[1] / 81 * .9), "Too many buildings for the town"
 
         building_size_range = ((6, 6), (9, 9))
-        assert dimension[0] > building_size_range[1][0] and dimension[1] > building_size_range[1][1],\
+        assert dimension[0] > building_size_range[1][0] and dimension[1] > building_size_range[1][1], \
             "Dimensions too small for even one building"
 
         Region.__init__(self, name, dimension)
@@ -648,18 +648,21 @@ class TownRegion(Region):
         current_building = building_entity_list[0]
 
         _internal_buildings_list = {building_entity_list[0]: self._generate_building((3, 3),
-                                                                            (3, 3),
-                                                                            name=current_building.name,
-                                                                            one_connection=True)}
+                                                                                     (3, 3),
+                                                                                     name=current_building.name,
+                                                                                     one_connection=True)}
 
         self._place_building(_internal_buildings_list[building_entity_list[0]],
-                             (int(self.tile_width / 2 - (_internal_buildings_list[building_entity_list[0]].size[0] / 2)),
-                              int(self.tile_height / 2 - (_internal_buildings_list[building_entity_list[0]].size[1] / 2))))
+                             (
+                             int(self.tile_width / 2 - (_internal_buildings_list[building_entity_list[0]].size[0] / 2)),
+                             int(self.tile_height / 2 - (
+                                         _internal_buildings_list[building_entity_list[0]].size[1] / 2))))
 
         # all the others
         while len(_internal_buildings_list) != len(building_entity_list):
             current_building = building_entity_list[len(_internal_buildings_list)]
-            branching_building = _internal_buildings_list[random.choice(list(_internal_buildings_list.keys()))]  # This gives less a chain
+            branching_building = _internal_buildings_list[
+                random.choice(list(_internal_buildings_list.keys()))]  # This gives less a chain
             while branching_building.one_connection and len(branching_building.connecting_buildings) > 0:
                 # We want to ensure that some building like the Entrance are only linked to one
                 branching_building = _internal_buildings_list[
@@ -668,7 +671,8 @@ class TownRegion(Region):
             choice_wall = self._get_branching_position_direction(branching_building)
             branching_pos = (choice_wall[0], choice_wall[1])
             branching_dir = choice_wall[2]
-            new_building = self._generate_building(building_size_range[0], building_size_range[1], name=current_building.name)
+            new_building = self._generate_building(building_size_range[0], building_size_range[1],
+                                                   name=current_building.name)
             path_length = random.randint(3, 7)
             door_type = 'H'
             if branching_dir == 'N':
@@ -688,8 +692,8 @@ class TownRegion(Region):
 
             if self._space_for_new_building(new_building.size, new_building_pos):
                 self._place_building(new_building, new_building_pos)
-                building_entity_list[len(_internal_buildings_list)].x,\
-                building_entity_list[len(_internal_buildings_list)].y = new_building.get_center_pos()  # this is the game entity
+                building_entity_list[len(_internal_buildings_list)].x, building_entity_list[
+                    len(_internal_buildings_list)].y = new_building.get_center_pos()  # this is the game entity
                 _internal_buildings_list[building_entity_list[len(_internal_buildings_list)]] = new_building
 
                 # Now connecting room
@@ -788,7 +792,7 @@ class TownRegion(Region):
             building_entity.y = old_pos_y - remove_extreme_top
             old_left_x, old_top_y = _internal_buildings_list[building_entity].position
             building_entity.top_left_pos = (old_left_x - remove_extreme_left,
-                                        old_top_y - remove_extreme_top)
+                                            old_top_y - remove_extreme_top)
             building_entity.size = _internal_buildings_list[building_entity].size
             # let's adjust the doors
             doorlist = []
@@ -817,8 +821,10 @@ class TownRegion(Region):
         for y in range(self.tile_height):
             for x in range(self.tile_width):
                 if walls_building[x + remove_extreme_left][y + remove_extreme_top].tile_type != Tile.T_VOID:
-                    self.tiles[x][y].tile_type = walls_building[x + remove_extreme_left][y + remove_extreme_top].tile_type
-                    self.tiles[x][y].tile_subtype = walls_building[x + remove_extreme_left][y + remove_extreme_top].tile_subtype
+                    self.tiles[x][y].tile_type = walls_building[x + remove_extreme_left][
+                        y + remove_extreme_top].tile_type
+                    self.tiles[x][y].tile_subtype = walls_building[x + remove_extreme_left][
+                        y + remove_extreme_top].tile_subtype
                 else:
                     if reftiles[x][y] == 1:
                         self.tiles[x][y].tile_type = Tile.T_BLOCK
@@ -831,7 +837,6 @@ class TownRegion(Region):
 
         # Setup the player starting position near the entrance to wilderness
         self.last_player_position = building_entity_list[0].pos
-
 
     def _generate_building(self, min_size, max_size, modulo_rest=2, name=None, one_connection=False):
         """
@@ -858,7 +863,7 @@ class TownRegion(Region):
                     self._make_floor(x, y)
                 else:
                     if y in (grid_position[1], grid_position[1] + building.size[1] - 1) or \
-                                    x in (grid_position[0], grid_position[0] + building.size[0] - 1):
+                            x in (grid_position[0], grid_position[0] + building.size[0] - 1):
                         self._make_wall(x, y)
                     else:
                         self._make_floor(x, y)
@@ -882,10 +887,10 @@ class TownRegion(Region):
             y = target[1] + branching_building.position[1]
             if direction in ('N', 'S'):
                 if not (self.tiles[x - 1][y].tile_type == Tile.T_GROUND or
-                                self.tiles[x + 1][y].tile_type == Tile.T_GROUND):
+                        self.tiles[x + 1][y].tile_type == Tile.T_GROUND):
                     return x, y, direction
             if direction in ('E', 'W'):
-                if not (self.tiles[x][y-1].tile_type == Tile.T_GROUND or self.tiles[x][y+1].tile_type == Tile.T_GROUND):
+                if not (self.tiles[x][y - 1].tile_type == Tile.T_GROUND or self.tiles[x][y + 1].tile_type == Tile.T_GROUND):
                     return x, y, direction
 
     def _space_for_new_building(self, new_building_size, new_building_position, tiles_blocking=Tile.T_GROUND, border=1):

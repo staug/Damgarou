@@ -184,30 +184,36 @@ class GameEntity(Sprite):
             self.animate()
         self._reposition_rect()
 
-    def move(self, dx=0, dy=0, with_fight=False):
+    def move(self, dx=0, dy=0):
         """
         Try to move the entity.
         Return True if an action was done (either move or attack)
         """
 
         # Test if we enter the actionable zone of an entity
+        # Note: this can be a door to open, or a fight!
         for entity in GLOBAL.game.current_region.region_entities:
-            if entity != self and entity.actionable is not None and \
+            if entity != self and hasattr(entity, "actionable") and entity.actionable is not None and \
                             (self.x + dx, self.y + dy) in entity.actionable.action_field:
                 self.x += dx
                 self.y += dy
                 ok_to_move = entity.actionable.action(self)
                 self.x -= dx
                 self.y -= dy
-                if entity.blocks:
-                    if ok_to_move is not None and not ok_to_move:
-                        # We triggered an object, and it prevented the move (like a door not opening)
-                        return False
+                if ok_to_move is not None and not ok_to_move:
+                    # We triggered an object, and it prevented the move (like a door not opening)
+                    return False
 
-        # Test if we collide with an other enemy, then we enter in a fight mode
-        #TODO implement fight
-        if with_fight:
-            assert True, "FIGHT NOT IMPLEMENTED YET"
+            if entity != self and hasattr(entity, "fighter") and entity.fighter is not None and \
+                            (self.x + dx, self.y + dy) in entity.fighter.action_field:
+                self.x += dx
+                self.y += dy
+                ok_to_move = entity.fighter.action(self)
+                self.x -= dx
+                self.y -= dy
+                if ok_to_move is not None and not ok_to_move:
+                    # We came in a fight...
+                    return False
 
         # Test if we collide with the terrain, and terrain only
         destination_tile = GLOBAL.game.current_region.tiles[self.x + dx][self.y + dy]
@@ -274,7 +280,7 @@ class AIEntity:
         self.owner = None
         self.speed = speed  # the speed represents the time between two turns
 
-    def move_towards_position(self, pos, with_fight=False):
+    def move_towards_position(self, pos):
         # vector from this object to the target, and distance
         dx = pos[0] - self.owner.x
         dy = pos[1] - self.owner.y
@@ -287,10 +293,10 @@ class AIEntity:
             dy = int(round(dy / distance))
         else:
             dx = dy = 0
-        return self.owner.move(dx, dy, with_fight=with_fight)
+        return self.owner.move(dx, dy)
 
-    def move_towards_entity(self, other_entity, with_fight=False):
-        self.move_towards_position(other_entity.pos, with_fight=with_fight)
+    def move_towards_entity(self, other_entity):
+        self.move_towards_position(other_entity.pos)
 
     def move_randomly(self, with_fight=False):
         """
@@ -303,7 +309,7 @@ class AIEntity:
         x, y = self.owner.pos
         while len(delta) > 0:
             dx, dy = delta.pop()
-            if self.move_towards_position((x + dx, y + dy), with_fight=with_fight):
+            if self.move_towards_position((x + dx, y + dy)):
                 return
 
     def take_turn(self):
