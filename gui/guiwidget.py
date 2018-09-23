@@ -109,9 +109,15 @@ class Style:
             theme_default = Style.THEME_LIGHT_BROWN
             theme_default_hover = Style.THEME_DARK_BROWN
 
+        #TODO Keep below in line with all future widgets
+
         TextButton.DEFAULT_OPTIONS["font_name"] = font_name
         TextButton.DEFAULT_OPTIONS["theme_hover"] = theme_default_hover
         TextButton.DEFAULT_OPTIONS["theme_idle"] = theme_default
+
+        SelectButton.DEFAULT_OPTIONS["font_name"] = font_name
+        SelectButton.DEFAULT_OPTIONS["theme_hover"] = theme_default_hover
+        SelectButton.DEFAULT_OPTIONS["theme_idle"] = theme_default
 
         Label.DEFAULT_OPTIONS["font_name"] = font_name
         Label.DEFAULT_OPTIONS["theme"] = theme_default
@@ -894,6 +900,112 @@ class TextButton(Widget):
         self.rect.move_ip(dx, dy)
 
 
+class SelectButton(Widget):
+    """
+    A widget that allows to switch between values
+    It has a label, and two arrows to switch between values
+    """
+
+    DEFAULT_OPTIONS = {
+        "font_name": default.FONT_NAME,
+        "font_size": 14,
+
+        "text_margin_x": 5,  # Minimum margin on the right & left, only relevant if a background is set (Color/image)
+        "text_margin_y": 5,  # Minimum margin on the top & down, only relevant if a background is set (Color/image)
+        "text_align_x": "LEFT",
+        "text_align_y": "TOP",
+
+        "font_color_idle": (0, 0, 0),
+        "font_color_hover": (255, 0, 0),
+
+        "bg_color_idle": (255, 255, 255),
+        "bg_color_hover": (0, 255, 255),
+
+        # To set the theme
+        "theme_idle": None,  # the Theme to use when nothing is there
+        "theme_hover": None,  # the Theme to use when the mouse is over
+    }
+
+    def __init__(self,
+                 callback_function=None,
+                 texts=None,
+                 position=(0, 0),
+                 dimension=(10, 10),
+                 style_dict=None,
+                 grow_width_with_text=True,
+                 grow_height_with_text=True):
+
+        assert callback_function, "Button defined without callback function"
+        assert type(texts) is list, "Texts must be a list"
+
+        Widget.__init__(self)
+
+        self.position = position
+        self.callback_function = callback_function
+        self.dimension = dimension
+        self.style_dict = style_dict or {}
+
+        longest_label = max(texts, key=len)
+        self.text_labels = self.hover_text_labels = []
+
+        state = random.getstate()
+        self.style_dict["font_color"] = self.style_dict.get("font_color_idle",
+                                                            SelectButton.DEFAULT_OPTIONS["font_color_idle"])
+        self.style_dict["bg_color"] = self.style_dict.get("bg_color_idle", SelectButton.DEFAULT_OPTIONS["bg_color_idle"])
+        self.style_dict["theme"] = self.style_dict.get("theme_idle", SelectButton.DEFAULT_OPTIONS["theme_idle"])
+
+        for i in range(len(texts)):
+            random.setstate(state)  # To be sure to have the decoration on the same places...
+            self.text_labels.append(Label(text='<'+str.center(texts[i], len(longest_label))+'>',
+                      position=position,
+                      dimension=dimension,
+                      style_dict=self.style_dict,
+                      grow_width_with_text=grow_width_with_text,
+                      grow_height_with_text=grow_height_with_text, multiline=False))
+
+        self.style_dict["font_color"] = self.style_dict.get("font_color_hover",
+                                                            SelectButton.DEFAULT_OPTIONS["font_color_hover"])
+        self.style_dict["bg_color"] = self.style_dict.get("bg_color_hover",
+                                                          SelectButton.DEFAULT_OPTIONS["bg_color_hover"])
+        self.style_dict["theme"] = self.style_dict.get("theme_hover", SelectButton.DEFAULT_OPTIONS["theme_hover"])
+        for i in range(len(texts)):
+            random.setstate(state)  # To be sure to have the decoration on the same places...
+            self.hover_text_labels.append(Label(text="<"+str.center(texts[i], len(longest_label))+">",
+                      position=position,
+                      dimension=dimension,
+                      style_dict=self.style_dict,
+                      grow_width_with_text=grow_width_with_text,
+                      grow_height_with_text=grow_height_with_text, multiline=False))
+
+        self.index = 0
+
+        self.image = self.idle_image = self.text_labels[self.index].image
+        self.hover_image = self.hover_text_labels[self.index].image
+
+        self.rect = self.text_labels[self.index].rect
+        self.hover = False
+
+    def handle_event(self, event):
+        if event.type == pg.MOUSEBUTTONDOWN and self.hover:
+            self.hover = False
+            self.callback_function()
+            return True
+        elif event.type == pg.MOUSEMOTION:
+            if self.rect.collidepoint(event.pos):
+                self.hover = True
+            else:
+                self.hover = False
+
+    def update(self):
+        if self.hover:
+            self.image = self.hover_text_labels[0].image
+        else:
+            self.image = self.text_labels[0].image
+
+    def move(self, dx, dy):
+        self.rect.move_ip(dx, dy)
+
+
 class ImageButton(Widget):
     """
     A button with an image
@@ -962,16 +1074,17 @@ class RadioButtonGroup(Widget):
                  callback_function=None,
                  texts=None,
                  position=(0, 0),
-                 image=None,
-                 image_hover=None,
+                 icon_image_not_selected=None,
+                 icon_image_selected=None,
                  orientation=VERTICAL,
                  style_dict=None,
                  selected_index=0
                  ):
 
         assert callback_function, "Button defined without callback function"
-        assert type(image) is pg.Surface, "Image needs to be a Surface"
-        assert image_hover is None or type(image_hover) is pg.Surface, "Image hover needs to be a Surface"
+        assert type(icon_image_not_selected) is pg.Surface, "Icon not selected needs to be a Surface"
+        assert icon_image_selected is None or type(icon_image_selected) is pg.Surface, \
+            "Icon image selected needs to be a Surface"
 
         assert texts, "No text set"
         Widget.__init__(self)
@@ -999,18 +1112,18 @@ class RadioButtonGroup(Widget):
                                  "font_color": self.style_dict.get("font_name", Label.DEFAULT_OPTIONS["font_color"]),
                              })
                        for text in texts]
-        self.image_hover = image_hover or image
-        self.image_idle = image
+        self.image_hover = icon_image_selected or icon_image_not_selected
+        self.image_idle = icon_image_not_selected
 
         self.max_label_width = max([label.rect.width for label in self.labels])
         self.max_label_height = max([label.rect.height for label in self.labels])
         margin = self.style_dict.get("space_icon_label", RadioButtonGroup.DEFAULT_OPTIONS["space_icon_label"])
 
         self.width_ref = self.max_label_width + max(self.image_idle.get_rect().width,
-                                                    image_hover.get_rect().width) + margin
+                                                    self.image_hover.get_rect().width) + margin
         self.height_ref = max(self.max_label_height,
                               self.image_idle.get_rect().height,
-                              image_hover.get_rect().height) + self.style_dict.get("space_between_components",
+                              self.image_hover.get_rect().height) + self.style_dict.get("space_between_components",
                                                                                    RadioButtonGroup.DEFAULT_OPTIONS[
                                                                                        "space_between_components"])
 

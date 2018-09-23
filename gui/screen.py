@@ -1,8 +1,9 @@
 import dill as pick
 import pygame as pg
+import sys
 
 from default import *
-from gui.guiwidget import Widget, ProgressBar, Style
+from gui.guiwidget import Widget, ProgressBar, Style, SimpleLabel, RadioButtonGroup, SelectButton
 from shared import GLOBAL
 from utilities import FieldOfView
 
@@ -211,6 +212,68 @@ class PlayingScreen(Screen):
                 for widget in self.widgets:
                     if not handled:
                         handled = widget.handle_event(event)
+
+
+class PlayerCreationScreen(Screen):
+
+    def __init__(self, playershell):
+        Screen.__init__(self)
+        self.player_running = True
+        self.playershell = playershell
+        self.run()
+
+    def build_widgets(self):
+        Style.set_style()
+        label_gender = SimpleLabel(text="Gender")
+        genderchoice = RadioButtonGroup(texts=("Male", "Female", "Other"),
+                                        position=(0,50),
+                                        callback_function=self.gender_chosen,
+                                        icon_image_not_selected=GLOBAL.img("ICON_CHECK_BEIGE"),
+                                        icon_image_selected=GLOBAL.img("ICON_CIRCLE_BLUE"))
+
+        label_race = SelectButton(texts=["Race1", "Race2        "], callback_function=self.gender_chosen, position=(0,200))
+
+        self.widgets.append(label_gender)
+        self.widgets.append(genderchoice)
+        self.widgets.append(label_race)
+
+    def draw(self):
+        # Erase All
+        screen = pg.display.get_surface()
+        screen.fill(BGCOLOR)
+
+        for widget in self.widgets:
+            widget.draw(screen)
+
+        pg.display.flip()
+
+    def update(self):
+        for widget in self.widgets:
+            widget.update()
+
+    def events(self):
+        for event in pg.event.get():
+            if event.type == pg.QUIT:
+                if GLOBAL.game:
+                    GLOBAL.game.quit()
+                else:
+                    pg.quit()
+                    sys.exit()
+            else:
+                handled = False
+                for widget in self.widgets:
+                    if not handled:
+                        handled = widget.handle_event(event)
+
+    def run(self):
+        self.build_widgets()
+        while self.player_running:
+            self.events()
+            self.update()
+            self.draw()
+
+    def gender_chosen(self, *args, **kwargs):
+        print("yes" + str(args) +"--"+str(kwargs))
 
 
 def test(fighter):

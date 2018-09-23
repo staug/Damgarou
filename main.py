@@ -10,7 +10,7 @@ from entity.town import Entrance, Bank, GuildFighter, GuildMule, Shop, Tavern, T
 from gui import guiwidget
 from gui.guicontainer import LineAlignedContainer
 from gui.guiwidget import TextButton, Style, TextInput
-from gui.screen import PlayingScreen
+from gui.screen import PlayingScreen, PlayerCreationScreen
 from gui.buildingscreen import BuildingScreen
 from region.region import RegionFactory
 from shared import GLOBAL
@@ -211,9 +211,12 @@ class Launcher:
 
     def start(self):
         self.launcher_running = False
+        PlayerCreationScreen(None)
+        """
         GLOBAL.game = Game()
         GLOBAL.game.new()
         GLOBAL.game.start()
+        """
 
     def load(self):
         self.launcher_running = False
