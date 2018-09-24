@@ -946,7 +946,8 @@ class SelectButton(Widget):
         self.style_dict = style_dict or {}
 
         longest_label = max(texts, key=len)
-        self.text_labels = self.hover_text_labels = []
+        self.text_labels = []
+        self.hover_text_labels = []
 
         state = random.getstate()
         self.style_dict["font_color"] = self.style_dict.get("font_color_idle",
@@ -977,17 +978,20 @@ class SelectButton(Widget):
                       grow_width_with_text=grow_width_with_text,
                       grow_height_with_text=grow_height_with_text, multiline=False))
 
-        self.index = 0
+        self.index_list = 0
 
-        self.image = self.idle_image = self.text_labels[self.index].image
-        self.hover_image = self.hover_text_labels[self.index].image
+        self.image = self.idle_image = self.text_labels[self.index_list].image
+        self.hover_image = self.hover_text_labels[self.index_list].image
 
-        self.rect = self.text_labels[self.index].rect
+        self.rect = self.text_labels[self.index_list].rect
         self.hover = False
 
     def handle_event(self, event):
         if event.type == pg.MOUSEBUTTONDOWN and self.hover:
-            self.hover = False
+            if self.rect.left <= event.pos[0] < self.rect.centerx:
+                self.index_list = (self.index_list - 1) % len(self.text_labels)
+            else:
+                self.index_list = (self.index_list + 1) % len(self.text_labels)
             self.callback_function()
             return True
         elif event.type == pg.MOUSEMOTION:
@@ -998,9 +1002,9 @@ class SelectButton(Widget):
 
     def update(self):
         if self.hover:
-            self.image = self.hover_text_labels[0].image
+            self.image = self.hover_text_labels[self.index_list].image
         else:
-            self.image = self.text_labels[0].image
+            self.image = self.text_labels[self.index_list].image
 
     def move(self, dx, dy):
         self.rect.move_ip(dx, dy)

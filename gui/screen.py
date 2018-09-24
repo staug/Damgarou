@@ -231,7 +231,7 @@ class PlayerCreationScreen(Screen):
                                         icon_image_not_selected=GLOBAL.img("ICON_CHECK_BEIGE"),
                                         icon_image_selected=GLOBAL.img("ICON_CIRCLE_BLUE"))
 
-        label_race = SelectButton(texts=["Race1", "Race2        "], callback_function=self.gender_chosen, position=(0,200))
+        label_race = SelectButton(texts=["Race1", "Race2", "Race3", "Race4"], callback_function=self.gender_chosen, position=(0,200))
 
         self.widgets.append(label_gender)
         self.widgets.append(genderchoice)
