@@ -1260,6 +1260,9 @@ class RadioButtonGroup(Widget):
                 self.callback_function(self.texts[self.selected_index])
                 return True
 
+    def move(self, dx, dy):
+        self.rect.move_ip(dx, dy)
+
 
 class TextInput(Widget):
     DEFAULT_OPTIONS = {

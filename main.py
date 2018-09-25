@@ -168,7 +168,6 @@ class Launcher:
                                     alignment=LineAlignedContainer.VERTICAL_CENTER,
                                     widgets=(button_start, button_load, button_quit),
                                     space=100)
-        line.move(0, int((pg.display.get_surface().get_rect().height - line.rect.height) / 2))
         self.widgets = line.widgets_as_list()
 
     def draw(self):
@@ -211,7 +210,8 @@ class Launcher:
 
     def start(self):
         self.launcher_running = False
-        PlayerCreationScreen(None)
+        playershell = {}
+        PlayerCreationScreen(playershell)
         """
         GLOBAL.game = Game()
         GLOBAL.game.new()

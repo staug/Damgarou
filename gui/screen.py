@@ -1,9 +1,12 @@
 import dill as pick
 import pygame as pg
 import sys
+import random
 
 from default import *
-from gui.guiwidget import Widget, ProgressBar, Style, SimpleLabel, RadioButtonGroup, SelectButton
+from gui.guiwidget import Widget, ProgressBar, Style, SimpleLabel, \
+    RadioButtonGroup, SelectButton, TextInput, TextButton
+from gui.guicontainer import LineAlignedContainer
 from shared import GLOBAL
 from utilities import FieldOfView
 
@@ -219,23 +222,92 @@ class PlayerCreationScreen(Screen):
     def __init__(self, playershell):
         Screen.__init__(self)
         self.player_running = True
+
         self.playershell = playershell
+        self.name = ""
+
+        self.label_strength_value = None
+        self.label_charisma_value = None
+        self.label_friendship_value = None
+        self.label_erudition_value = None
+
         self.run()
 
     def build_widgets(self):
         Style.set_style()
-        label_gender = SimpleLabel(text="Gender")
+
+        label_gender = SimpleLabel(text="Gender:")
         genderchoice = RadioButtonGroup(texts=("Male", "Female", "Other"),
-                                        position=(0,50),
                                         callback_function=self.gender_chosen,
-                                        icon_image_not_selected=GLOBAL.img("ICON_CHECK_BEIGE"),
-                                        icon_image_selected=GLOBAL.img("ICON_CIRCLE_BLUE"))
+                                        icon_image_not_selected=GLOBAL.img("ICON_CHECK_BLUE"),
+                                        icon_image_selected=GLOBAL.img("ICON_CHECK_BEIGE"),
+                                        orientation=RadioButtonGroup.HORIZONTAL)
 
-        label_race = SelectButton(texts=["Race1", "Race2", "Race3", "Race4"], callback_function=self.gender_chosen, position=(0,200))
 
-        self.widgets.append(label_gender)
-        self.widgets.append(genderchoice)
-        self.widgets.append(label_race)
+        label_race = SimpleLabel(text="Race:")
+        racechoice = SelectButton(texts=["Race1", "Race2", "Race3", "Race4"],
+                                  callback_function=self.race_chosen)
+
+        label_characteristics = SimpleLabel(text="Characteristics")
+        label_strength = SimpleLabel(text="Strength")
+        label_charisma = SimpleLabel(text="Charisma")
+        label_friendship = SimpleLabel(text="Friendship")
+        label_erudition = SimpleLabel(text="Erudition")
+        self.label_strength_value = SimpleLabel(text="99")
+        self.label_charisma_value = SimpleLabel(text="99")
+        self.label_friendship_value = SimpleLabel(text="99")
+        self.label_erudition_value = SimpleLabel(text="99")
+
+        reroll = TextButton(callback_function=self.gender_chosen, text="Reroll",
+                            dimension=(pg.display.get_surface().get_rect().width - 200, 10),
+                            style_dict={"text_align_x":"CENTER"})
+
+        # First we align all widgets vertically
+        LineAlignedContainer((50, 100), end_position=(50, pg.display.get_surface().get_rect().height - 100),
+                             alignment=LineAlignedContainer.VERTICAL_LEFT, auto_space=True,
+                             widgets=(label_gender,
+                                      label_race,
+                                      label_characteristics,
+                                      label_strength,
+                                      label_charisma,
+                                      label_friendship,
+                                      label_erudition,
+                                      reroll))
+
+        # Now the lines (note we don't care about the y position on the end position)
+        LineAlignedContainer(label_gender.rect.topleft, widgets=(label_gender, genderchoice),
+                             alignment=LineAlignedContainer.HORIZONTAL_TOP,
+                             end_position=(pg.display.get_surface().get_rect().width - 50, 0), auto_space=True)
+        LineAlignedContainer(label_race.rect.topleft, widgets=(label_race, racechoice),
+                             alignment=LineAlignedContainer.HORIZONTAL_TOP,
+                             end_position=(pg.display.get_surface().get_rect().width - 50, 0), auto_space=True)
+        LineAlignedContainer(label_strength.rect.topleft, widgets=(label_strength, self.label_strength_value),
+                             alignment=LineAlignedContainer.HORIZONTAL_TOP,
+                             end_position=(pg.display.get_surface().get_rect().width - 50, 0), auto_space=True)
+        LineAlignedContainer(label_charisma.rect.topleft, widgets=(label_charisma, self.label_charisma_value),
+                             alignment=LineAlignedContainer.HORIZONTAL_TOP,
+                             end_position=(pg.display.get_surface().get_rect().width - 50, 0), auto_space=True)
+        LineAlignedContainer(label_friendship.rect.topleft, widgets=(label_friendship, self.label_friendship_value),
+                             alignment=LineAlignedContainer.HORIZONTAL_TOP,
+                             end_position=(pg.display.get_surface().get_rect().width - 50, 0), auto_space=True)
+        LineAlignedContainer(label_erudition.rect.topleft, widgets=(label_erudition, self.label_erudition_value),
+                             alignment=LineAlignedContainer.HORIZONTAL_TOP,
+                             end_position=(pg.display.get_surface().get_rect().width - 50, 0), auto_space=True)
+        # Last let's align the characteristics vertically for better effect
+        LineAlignedContainer(self.label_strength_value.rect.topright,
+                             alignment=LineAlignedContainer.VERTICAL_RIGHT,
+                             widgets=(self.label_strength_value, self.label_charisma_value,
+                                      self.label_friendship_value, self.label_erudition_value))
+
+        for w in (label_gender, genderchoice, label_race, racechoice,
+                  label_characteristics,
+                  label_strength, label_charisma, label_friendship, label_erudition,
+                  self.label_strength_value, self.label_charisma_value, self.label_friendship_value, self.label_erudition_value,
+                  reroll
+                  ):
+            self.widgets.append(w)
+
+        self.reroll_chosen()
 
     def draw(self):
         # Erase All
@@ -273,6 +345,17 @@ class PlayerCreationScreen(Screen):
             self.draw()
 
     def gender_chosen(self, *args, **kwargs):
+        self.playershell["Gender"] = str(args)
+        print(self.playershell)
+
+    def race_chosen(self, *args, **kwargs):
+        self.playershell["Race"] = str(args)
+        print(self.playershell)
+
+    def reroll_chosen(self, *args, **kwargs):
+        self.playershell["Strength"] = random.randint(10,20)
+
+        self.label_strength_value.set_text(str(self.playershell["Strength"]), recreate_background=False)
         print("yes" + str(args) +"--"+str(kwargs))
 
 
