@@ -222,9 +222,8 @@ class PlayerCreationScreen(Screen):
     def __init__(self, playershell):
         Screen.__init__(self)
         self.player_running = True
-
+        self.name="Zadig"
         self.playershell = playershell
-        self.name = ""
 
         self.label_strength_value = None
         self.label_charisma_value = None
@@ -258,9 +257,12 @@ class PlayerCreationScreen(Screen):
         self.label_friendship_value = SimpleLabel(text="99")
         self.label_erudition_value = SimpleLabel(text="99")
 
-        reroll = TextButton(callback_function=self.gender_chosen, text="Reroll",
+        reroll = TextButton(callback_function=self.reroll_chosen, text="Reroll",
                             dimension=(pg.display.get_surface().get_rect().width - 200, 10),
                             style_dict={"text_align_x":"CENTER"})
+
+        nameinput= TextInput(max_displayed_input=30, property_to_follow=self.name,
+                             callback_function=self.validate, style_dict={"text":"Let's go!"})
 
         # First we align all widgets vertically
         LineAlignedContainer((50, 100), end_position=(50, pg.display.get_surface().get_rect().height - 100),
@@ -272,7 +274,8 @@ class PlayerCreationScreen(Screen):
                                       label_charisma,
                                       label_friendship,
                                       label_erudition,
-                                      reroll))
+                                      reroll,
+                                      nameinput))
 
         # Now the lines (note we don't care about the y position on the end position)
         LineAlignedContainer(label_gender.rect.topleft, widgets=(label_gender, genderchoice),
@@ -299,11 +302,12 @@ class PlayerCreationScreen(Screen):
                              widgets=(self.label_strength_value, self.label_charisma_value,
                                       self.label_friendship_value, self.label_erudition_value))
 
+
         for w in (label_gender, genderchoice, label_race, racechoice,
                   label_characteristics,
                   label_strength, label_charisma, label_friendship, label_erudition,
                   self.label_strength_value, self.label_charisma_value, self.label_friendship_value, self.label_erudition_value,
-                  reroll
+                  reroll, nameinput
                   ):
             self.widgets.append(w)
 
@@ -345,18 +349,29 @@ class PlayerCreationScreen(Screen):
             self.draw()
 
     def gender_chosen(self, *args, **kwargs):
-        self.playershell["Gender"] = str(args)
+        self.playershell["Gender"] = str(args[0])
         print(self.playershell)
 
     def race_chosen(self, *args, **kwargs):
-        self.playershell["Race"] = str(args)
+        self.playershell["Race"] = str(args[0])
         print(self.playershell)
 
     def reroll_chosen(self, *args, **kwargs):
+
         self.playershell["Strength"] = random.randint(10,20)
+        self.playershell["Charisma"] = random.randint(10,20)
+        self.playershell["Friendship"] = random.randint(10,20)
+        self.playershell["Erudition"] = random.randint(10,20)
 
         self.label_strength_value.set_text(str(self.playershell["Strength"]), recreate_background=False)
-        print("yes" + str(args) +"--"+str(kwargs))
+        self.label_charisma_value.set_text(str(self.playershell["Charisma"]), recreate_background=False)
+        self.label_erudition_value.set_text(str(self.playershell["Erudition"]), recreate_background=False)
+        self.label_friendship_value.set_text(str(self.playershell["Friendship"]), recreate_background=False)
+
+    def validate(self, *args, **kwargs):
+        print(self.name)
+        self.playershell["Name"] = str(args[0])
+        print(self.playershell)
 
 
 def test(fighter):

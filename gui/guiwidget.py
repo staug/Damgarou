@@ -949,6 +949,8 @@ class SelectButton(Widget):
         self.text_labels = []
         self.hover_text_labels = []
 
+        self.texts = texts
+
         state = random.getstate()
         self.style_dict["font_color"] = self.style_dict.get("font_color_idle",
                                                             SelectButton.DEFAULT_OPTIONS["font_color_idle"])
@@ -992,7 +994,7 @@ class SelectButton(Widget):
                 self.index_list = (self.index_list - 1) % len(self.text_labels)
             else:
                 self.index_list = (self.index_list + 1) % len(self.text_labels)
-            self.callback_function()
+            self.callback_function(self.texts[self.index_list])
             return True
         elif event.type == pg.MOUSEMOTION:
             if self.rect.collidepoint(event.pos):
