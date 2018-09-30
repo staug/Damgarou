@@ -1,8 +1,9 @@
-import pygame as pg
 import os
-import default
 import random
 
+import pygame as pg
+
+import default
 from shared import GLOBAL
 
 
@@ -954,17 +955,18 @@ class SelectButton(Widget):
         state = random.getstate()
         self.style_dict["font_color"] = self.style_dict.get("font_color_idle",
                                                             SelectButton.DEFAULT_OPTIONS["font_color_idle"])
-        self.style_dict["bg_color"] = self.style_dict.get("bg_color_idle", SelectButton.DEFAULT_OPTIONS["bg_color_idle"])
+        self.style_dict["bg_color"] = self.style_dict.get("bg_color_idle",
+                                                          SelectButton.DEFAULT_OPTIONS["bg_color_idle"])
         self.style_dict["theme"] = self.style_dict.get("theme_idle", SelectButton.DEFAULT_OPTIONS["theme_idle"])
 
         for i in range(len(texts)):
             random.setstate(state)  # To be sure to have the decoration on the same places...
-            self.text_labels.append(Label(text='<'+str.center(texts[i], len(longest_label))+'>',
-                      position=position,
-                      dimension=dimension,
-                      style_dict=self.style_dict,
-                      grow_width_with_text=grow_width_with_text,
-                      grow_height_with_text=grow_height_with_text, multiline=False))
+            self.text_labels.append(Label(text='<  ' + str.center(texts[i], len(longest_label)) + '  >',
+                                          position=position,
+                                          dimension=dimension,
+                                          style_dict=self.style_dict,
+                                          grow_width_with_text=grow_width_with_text,
+                                          grow_height_with_text=grow_height_with_text, multiline=False))
 
         self.style_dict["font_color"] = self.style_dict.get("font_color_hover",
                                                             SelectButton.DEFAULT_OPTIONS["font_color_hover"])
@@ -973,12 +975,12 @@ class SelectButton(Widget):
         self.style_dict["theme"] = self.style_dict.get("theme_hover", SelectButton.DEFAULT_OPTIONS["theme_hover"])
         for i in range(len(texts)):
             random.setstate(state)  # To be sure to have the decoration on the same places...
-            self.hover_text_labels.append(Label(text="<"+str.center(texts[i], len(longest_label))+">",
-                      position=position,
-                      dimension=dimension,
-                      style_dict=self.style_dict,
-                      grow_width_with_text=grow_width_with_text,
-                      grow_height_with_text=grow_height_with_text, multiline=False))
+            self.hover_text_labels.append(Label(text="<  " + str.center(texts[i], len(longest_label)) + "  >",
+                                                position=position,
+                                                dimension=dimension,
+                                                style_dict=self.style_dict,
+                                                grow_width_with_text=grow_width_with_text,
+                                                grow_height_with_text=grow_height_with_text, multiline=False))
 
         self.index_list = 0
 

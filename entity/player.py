@@ -1,11 +1,15 @@
+import random
+
 from entity.gameentity import GameEntity
-from shared import GLOBAL
 from region.tile import Tile
+from shared import GLOBAL
 
 
 class Player(GameEntity):
 
     def __init__(self, player_dict=None):
+        assert player_dict is not None, "No data as part of the player dict"
+
         GameEntity.__init__(self, pos=(1, 1), image_ref="PLAYER_PALADIN", z_level=2, blocks=True)
 
         self.mule_list = []
@@ -25,16 +29,30 @@ class Player(GameEntity):
         self.erudition = player_dict["Erudition"]  # detect usage of object
         self.strength = player_dict["Strength"]  # capable of carrying more objects
 
-        self.money = 0
+        self.money = random.randint(10, 200)
         self.food_level = 0
+
+        self.age = 20
+        self.married_with = None
+        self.child = None
 
     @property
     def protection(self):
-        return None
+        prot = 0
+        for fighter in self.fighter_list:
+            prot += fighter.protection
+        return prot
 
     @property
     def attack(self):
-        return None
+        att = 0
+        for fighter in self.fighter_list:
+            att += fighter.attack
+        return att
+
+    @property
+    def max_allies(self):
+        return int(self.friendship / 10) + 2
 
     def __str__(self):
         return self.name

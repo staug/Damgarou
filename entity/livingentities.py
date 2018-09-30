@@ -10,3 +10,14 @@ class FriendlyEntity(GameEntity):
 
         GameEntity.__init__(self, name=name, pos=position, image_ref=image_ref, z_level=2, blocks=True,
                             ai=WanderingAIEntity(speed=10))
+
+
+class Fighter(FriendlyEntity):
+
+    def __init__(self, position, image_ref=None):
+        FriendlyEntity.__init__(self, "Fighter", position, image_ref=image_ref)
+
+        self.attack = 10
+        self.protection = 10
+
+        self.wage_base = 5

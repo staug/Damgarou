@@ -1,20 +1,21 @@
+import random
+import sys
+
 import dill as pick
 import pygame as pg
-import sys
-import random
 
 from default import *
-from gui.guiwidget import Widget, ProgressBar, Style, SimpleLabel, \
-    RadioButtonGroup, SelectButton, TextInput, TextButton
-from gui.guicontainer import LineAlignedContainer
-from shared import GLOBAL
-from utilities import FieldOfView
-
 from entity.player import Player
 from entity.town import Entrance, Bank, GuildFighter, GuildMule, Shop, Tavern, Trade, Townhall, Temple
 from gui import guiwidget
+from gui.guicontainer import LineAlignedContainer
+from gui.guiwidget import Widget, SimpleLabel, \
+    RadioButtonGroup, SelectButton, TextInput, TextButton
 from region.region import RegionFactory
+from shared import GLOBAL
+from utilities import FieldOfView
 from utilities import MName
+
 
 class Screen:
 
@@ -225,7 +226,7 @@ class PlayerCreationScreen(Screen):
 
     def __init__(self):
         Screen.__init__(self)
-        self.name="Zadig"
+        self.name = MName.person_name()
         self.playershell = {}
 
         self.label_strength_value = None
@@ -245,7 +246,7 @@ class PlayerCreationScreen(Screen):
         self.playershell["Gender"] = "Male"
 
         label_race = SimpleLabel(text="Race:")
-        racechoice = SelectButton(texts=["Race1", "Race2", "Race3", "Race4"],
+        racechoice = SelectButton(texts=["Human", "Dwarf", "Elf", "Hobbit"],
                                   callback_function=self.race_chosen)
         self.playershell["Race"] = "Race1"
 
