@@ -125,7 +125,7 @@ class GuildFighter(Building):
 
 def enter_fighter_guild(building_entity, entity_that_triggers):
     GLOBAL.game.screens[GLOBAL.game.GAME_STATE_BUILDING].attach_building(building_entity)
-    GLOBAL.game.game_state = GLOBAL.game.GAME_STATE_BUILDING
+    GLOBAL.game.update_state(GLOBAL.game.GAME_STATE_BUILDING)
 
     print("{} enter {}".format(entity_that_triggers, building_entity.name))
     return False
@@ -282,7 +282,7 @@ def enter_wilderness(building_entity, entity_that_triggers):
 
 def enter_building(building_entity, entity_that_triggers):
     GLOBAL.game.screens[GLOBAL.game.GAME_STATE_BUILDING].attach_building(building_entity)
-    GLOBAL.game.game_state = GLOBAL.game.GAME_STATE_BUILDING
+    GLOBAL.game.update_state(GLOBAL.game.GAME_STATE_BUILDING)
 
     print("{} enter {}".format(entity_that_triggers, building_entity.name))
     return False

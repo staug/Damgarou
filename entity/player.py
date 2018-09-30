@@ -5,7 +5,7 @@ from region.tile import Tile
 
 class Player(GameEntity):
 
-    def __init__(self):
+    def __init__(self, player_dict=None):
         GameEntity.__init__(self, pos=(1, 1), image_ref="PLAYER_PALADIN", z_level=2, blocks=True)
 
         self.mule_list = []
@@ -15,14 +15,15 @@ class Player(GameEntity):
 
         self.speed = 10
 
-        self.name = "PLAYER"
+        self.name = player_dict["Name"]
+        self.gender = player_dict["Gender"]
 
-        self.race = None
+        self.race = player_dict["Race"]
 
-        self.charisma = None  # cost of sales, ability to bribe enemy
-        self.friendship = None  # more or less friends, impact the loyalty of the group
-        self.erudition = None  # detect usage of object
-        self.strength = None  # capable of carrying more objects
+        self.charisma = player_dict["Charisma"]  # cost of sales, ability to bribe enemy
+        self.friendship = player_dict["Friendship"]  # more or less friends, impact the loyalty of the group
+        self.erudition = player_dict["Erudition"]  # detect usage of object
+        self.strength = player_dict["Strength"]  # capable of carrying more objects
 
         self.money = 0
         self.food_level = 0
@@ -34,35 +35,6 @@ class Player(GameEntity):
     @property
     def attack(self):
         return None
-
-    """
-        * name
-* race:
-- help sell/buy from certain person
-- prevent the buy from certain products (note that for mule, that means that they will refuse to carry the products)
-- prevent the equipment of certain objects
-* previous occupation: gives bonus on equipment? Allow to craft?
-* charisma: gives bonus/malus to costs of sales, ability to bribe enemies
-* friendship: gives more/less friends, impact the loyalty of the people in the group. A low
-* objects: gives more/less objects slots
-* food consumption [impacted by strength, inverse].
-* exposure to elements: there are 4 elements (fire/earth/water/ether). Any person is always either immune to 2 and double penalized to 2, equally attached to 4 (no bonus/malus) or immune to 1, pealized by one and equal to 2.
-* strength: gives more/less capacities to transport. More strength means more food is consumed!
-* erudition level: able to detect usage of objects, getting more gold (unidentified object will have 1/10th of the value). More erudition means more arrogant, so charisma going down!
- [to buy/sell merchandise]
-money level
-inventory slots
-[to survive]
-health
-protection
-attack (this doesn?t exist for player, this is low by default as he is supposed to be a merchant!)
-food level
-[attached to the player]
-object slots
-friends slots
-curse/benediction: player may be cursed/blessed (limited time, impact one/several attributes)
-
-        """
 
     def __str__(self):
         return self.name

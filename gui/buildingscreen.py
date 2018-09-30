@@ -25,7 +25,10 @@ class BuildingScreen(Screen):
         if self.building.is_guild_fighter():
             self.widgets = []
             for fighter in self.building.fighter_list:
-                button = TextButton(text=fighter.name, callback_function=lambda myfighter=fighter: test(myfighter), grow_width_with_text=True, grow_height_with_text=True)
+                button = TextButton(text=fighter.name,
+                                    callback_function=lambda myfighter=fighter: test(myfighter),
+                                    grow_width_with_text=True,
+                                    grow_height_with_text=True)
                 self.widgets.append(button)
 
             line = LineAlignedContainer(int(pg.display.get_surface().get_rect().width / 2),
@@ -61,7 +64,7 @@ class BuildingScreen(Screen):
             if event.type == pg.QUIT:
                 GLOBAL.game.quit()
             elif event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE:
-                GLOBAL.game.game_state = GLOBAL.game.GAME_STATE_PLAYING
+                GLOBAL.game.update_state(GLOBAL.game.GAME_STATE_PLAYING)
             else:
                 handled = False
                 for widget in self.widgets:

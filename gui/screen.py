@@ -10,6 +10,11 @@ from gui.guicontainer import LineAlignedContainer
 from shared import GLOBAL
 from utilities import FieldOfView
 
+from entity.player import Player
+from entity.town import Entrance, Bank, GuildFighter, GuildMule, Shop, Tavern, Trade, Townhall, Temple
+from gui import guiwidget
+from region.region import RegionFactory
+from utilities import MName
 
 class Screen:
 
@@ -20,10 +25,19 @@ class Screen:
         pass
 
     def update(self):
-        pass
+        for widget in self.widgets:
+            widget.update()
+
 
     def draw(self):
-        pass
+        # Erase All
+        screen = pg.display.get_surface()
+        screen.fill(BGCOLOR)
+
+        for widget in self.widgets:
+            widget.draw(screen)
+
+        pg.display.flip()
 
     def post_init(self):
         """
@@ -189,16 +203,6 @@ class PlayingScreen(Screen):
             }
         ))'''
 
-    def draw(self):
-        # Erase All
-        screen = pg.display.get_surface()
-        screen.fill(BGCOLOR)
-
-        for widget in self.widgets:
-            widget.draw(screen)
-
-        pg.display.flip()
-
     def update(self):
         # Update region
         GLOBAL.game.current_region.ticker.advance_ticks()
@@ -219,33 +223,31 @@ class PlayingScreen(Screen):
 
 class PlayerCreationScreen(Screen):
 
-    def __init__(self, playershell):
+    def __init__(self):
         Screen.__init__(self)
-        self.player_running = True
         self.name="Zadig"
-        self.playershell = playershell
+        self.playershell = {}
 
         self.label_strength_value = None
         self.label_charisma_value = None
         self.label_friendship_value = None
         self.label_erudition_value = None
 
-        self.run()
+        self.build_widgets()
 
     def build_widgets(self):
-        Style.set_style()
-
         label_gender = SimpleLabel(text="Gender:")
         genderchoice = RadioButtonGroup(texts=("Male", "Female", "Other"),
                                         callback_function=self.gender_chosen,
                                         icon_image_not_selected=GLOBAL.img("ICON_CHECK_BLUE"),
                                         icon_image_selected=GLOBAL.img("ICON_CHECK_BEIGE"),
                                         orientation=RadioButtonGroup.HORIZONTAL)
-
+        self.playershell["Gender"] = "Male"
 
         label_race = SimpleLabel(text="Race:")
         racechoice = SelectButton(texts=["Race1", "Race2", "Race3", "Race4"],
                                   callback_function=self.race_chosen)
+        self.playershell["Race"] = "Race1"
 
         label_characteristics = SimpleLabel(text="Characteristics")
         label_strength = SimpleLabel(text="Strength")
@@ -302,30 +304,16 @@ class PlayerCreationScreen(Screen):
                              widgets=(self.label_strength_value, self.label_charisma_value,
                                       self.label_friendship_value, self.label_erudition_value))
 
-
         for w in (label_gender, genderchoice, label_race, racechoice,
                   label_characteristics,
                   label_strength, label_charisma, label_friendship, label_erudition,
-                  self.label_strength_value, self.label_charisma_value, self.label_friendship_value, self.label_erudition_value,
+                  self.label_strength_value, self.label_charisma_value,
+                  self.label_friendship_value, self.label_erudition_value,
                   reroll, nameinput
                   ):
             self.widgets.append(w)
 
         self.reroll_chosen()
-
-    def draw(self):
-        # Erase All
-        screen = pg.display.get_surface()
-        screen.fill(BGCOLOR)
-
-        for widget in self.widgets:
-            widget.draw(screen)
-
-        pg.display.flip()
-
-    def update(self):
-        for widget in self.widgets:
-            widget.update()
 
     def events(self):
         for event in pg.event.get():
@@ -340,13 +328,6 @@ class PlayerCreationScreen(Screen):
                 for widget in self.widgets:
                     if not handled:
                         handled = widget.handle_event(event)
-
-    def run(self):
-        self.build_widgets()
-        while self.player_running:
-            self.events()
-            self.update()
-            self.draw()
 
     def gender_chosen(self, *args, **kwargs):
         self.playershell["Gender"] = str(args[0])
@@ -369,10 +350,54 @@ class PlayerCreationScreen(Screen):
         self.label_friendship_value.set_text(str(self.playershell["Friendship"]), recreate_background=False)
 
     def validate(self, *args, **kwargs):
-        print(self.name)
         self.playershell["Name"] = str(args[0])
         print(self.playershell)
+        GLOBAL.game.player = Player(player_dict=self.playershell)
+        GLOBAL.game.update_state(GLOBAL.game.GAME_STATE_WORLD_CREATION)
 
+class WorldCreationScreen(Screen):
+
+    def __init__(self):
+        Screen.__init__(self)
+
+    def update(self):
+
+        guiwidget.display_single_message_on_screen("Generating World")
+
+        guiwidget.display_single_message_on_screen("Generating World - Wilderness")
+        player_spawn_pos = None  # this will be a town on a wilderness
+
+        name = None
+        for _i in range(1):
+            name = MName.place_name()
+            town_list = []
+            for _j in range(random.randint(2, 6)):
+                name_town = "{}'s Town".format(MName.person_name())
+                town_region = RegionFactory.invoke(name_town,
+                                                   wilderness_index=name,
+                                                   region_type=RegionFactory.REGION_TOWN,
+                                                   building_list=(Entrance(),
+                                                                  Bank(),
+                                                                  GuildMule(),
+                                                                  GuildFighter(),
+                                                                  Shop(),
+                                                                  Tavern(), Trade(), Townhall(), Temple()))
+                town_list.append(town_region)
+                GLOBAL.game.world[name_town] = town_region
+
+            GLOBAL.game.world[name] = RegionFactory.invoke(name,
+                                                    region_type=RegionFactory.REGION_WILDERNESS,
+                                                    town_list=town_list)
+            player_spawn_pos = town_list[0].town.pos  # small hack
+
+        guiwidget.display_single_message_on_screen("World ok")
+
+        GLOBAL.game.current_region = GLOBAL.game.world[name]
+        # We start the player, and we add it at his spawning position (a town of hte latest wilderness)
+        #self.player = Player()
+        GLOBAL.game.player.assign_entity_to_region(GLOBAL.game.current_region)
+        (GLOBAL.game.player.x, GLOBAL.game.player.y) = player_spawn_pos
+        GLOBAL.game.update_state(GLOBAL.game.GAME_STATE_PLAYING)
 
 def test(fighter):
     print("YO" + fighter.name)

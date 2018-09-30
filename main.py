@@ -5,79 +5,47 @@ import dill as pick
 import pygame as pg
 
 import default
-from entity.player import Player
-from entity.town import Entrance, Bank, GuildFighter, GuildMule, Shop, Tavern, Trade, Townhall, Temple
-from gui import guiwidget
+
 from gui.guicontainer import LineAlignedContainer
-from gui.guiwidget import TextButton, Style, TextInput
-from gui.screen import PlayingScreen, PlayerCreationScreen
+from gui.guiwidget import TextButton, Style
+from gui.screen import PlayingScreen, PlayerCreationScreen, WorldCreationScreen
 from gui.buildingscreen import BuildingScreen
-from region.region import RegionFactory
+
 from shared import GLOBAL
-from utilities import MName
 
 
 class Game:
     GAME_STATE_PLAYING = 'Playing'
+    GAME_STATE_PLAYER_CREATION = 'Player_Creation'
+    GAME_STATE_WORLD_CREATION = 'World_Creation'
     GAME_STATE_INVENTORY = 'Inventory'
     GAME_STATE_MAP = 'Map'
     GAME_STATE_CHARACTER = 'Character'
     GAME_STATE_BUILDING = 'Building'
 
     def __init__(self):
+        self._state = None
+        self._switching_state = None
 
-        self.game_state = Game.GAME_STATE_PLAYING
         self.player_took_action = False
         self.minimap_enabled = False
         self.game_running = True
-        self.screens = {Game.GAME_STATE_PLAYING: PlayingScreen(), Game.GAME_STATE_BUILDING: BuildingScreen()}
+        self.screens = {Game.GAME_STATE_PLAYING: PlayingScreen(),
+                        Game.GAME_STATE_PLAYER_CREATION: PlayerCreationScreen(),
+                        Game.GAME_STATE_WORLD_CREATION: WorldCreationScreen(),
+                        Game.GAME_STATE_BUILDING: BuildingScreen()}
         self.current_region = None
         self.player = None
         self.invalidate_fog_of_war = True
 
         self.world = {}  # The world contains all the wilderness regions and all towns
 
-    def new(self):
-
-        guiwidget.display_single_message_on_screen("Generating World")
-
-        guiwidget.display_single_message_on_screen("Generating World - Wilderness")
-        player_spawn_pos = None  # this will be a town on a wilderness
-
-        name = None
-        for _i in range(1):
-            name = MName.place_name()
-            town_list = []
-            for _j in range(random.randint(2, 6)):
-                name_town = "{}'s Town".format(MName.person_name())
-                town_region = RegionFactory.invoke(name_town,
-                                                   wilderness_index=name,
-                                                   region_type=RegionFactory.REGION_TOWN,
-                                                   building_list=(Entrance(),
-                                                                  Bank(),
-                                                                  GuildMule(),
-                                                                  GuildFighter(),
-                                                                  Shop(),
-                                                                  Tavern(), Trade(), Townhall(), Temple()))
-                town_list.append(town_region)
-                self.world[name_town] = town_region
-
-            self.world[name] = RegionFactory.invoke(name,
-                                                    region_type=RegionFactory.REGION_WILDERNESS,
-                                                    town_list=town_list)
-            player_spawn_pos = town_list[0].town.pos  # small hack
-
-        guiwidget.display_single_message_on_screen("World ok")
-
-        self.current_region = self.world[name]
-        # We start the player, and we add it at his spawning position (a town of hte latest wilderness)
-        self.player = Player()
-        self.player.assign_entity_to_region(self.current_region)
-        (self.player.x, self.player.y) = player_spawn_pos
-
         # Post init on screens
         for screen_name in self.screens:
             self.screens[screen_name].post_init()
+
+    def new(self):
+        self.update_state(Game.GAME_STATE_PLAYER_CREATION)
 
     def start(self):
         self.run()
@@ -86,9 +54,16 @@ class Game:
         clock = pg.time.Clock()
 
         while self.game_running:
-            self.screens[self.game_state].events()
-            self.screens[self.game_state].update()
-            self.screens[self.game_state].draw()
+            if self._switching_state is not None:
+                self._state = self._switching_state
+                self._switching_state = None
+
+            if self._switching_state is None:
+                self.screens[self._state].events()
+            if self._switching_state is None:
+                self.screens[self._state].update()
+            if self._switching_state is None:
+                self.screens[self._state].draw()
             clock.tick(40)  # the program will never run at more than 40 frames per second
 
     def reinit_graphics_after_save(self):
@@ -101,6 +76,9 @@ class Game:
             for entity in self.world[region_name].region_entities:
                 entity.clean_before_save()
             self.world[region_name].clean_before_save()
+
+    def update_state(self, new_state):
+        self._switching_state = new_state
 
     @staticmethod
     def quit():
@@ -119,7 +97,10 @@ class Launcher:
         self.widgets = None
         Launcher.init_pygame_subsystem()
         Launcher.load_data()
+
         self.launcher_running = True
+        Style.set_style()
+        self.implement_menu()
 
     @staticmethod
     def init_pygame_subsystem():
@@ -140,7 +121,6 @@ class Launcher:
         GLOBAL.logger.trace("Loading Fonts - Done")
 
     def implement_menu(self):
-        Style.set_style()
         button_start = TextButton(position=(20, 10),
                                   dimension=(200, 0),
                                   grow_height_with_text=True,
@@ -202,21 +182,15 @@ class Launcher:
                         handled = widget.handle_event(event)
 
     def run(self):
-        self.implement_menu()
         while self.launcher_running:
             self.events()
             self.update()
             self.draw()
 
     def start(self):
-        self.launcher_running = False
-        playershell = {}
-        PlayerCreationScreen(playershell)
-        """
         GLOBAL.game = Game()
         GLOBAL.game.new()
         GLOBAL.game.start()
-        """
 
     def load(self):
         self.launcher_running = False
