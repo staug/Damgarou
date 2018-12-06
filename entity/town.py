@@ -1,5 +1,7 @@
 from entity.gameentity import GameEntity, ActionableEntity
 from entity.livingentities import FriendlyEntity
+from nonentity.fighters import Fighter
+from utilities import MName
 import random
 
 from shared import GLOBAL
@@ -111,13 +113,17 @@ class GuildFighter(Building):
 
     def post_init(self):
         """
-        Add entities to the guild of fighter
+        Add some wandering entities
+        Add fighters to the guild of fighter-Warning, fighters are not like living  entities
         :return: None
         """
-        for i in range(4):
-            fighter = FriendlyEntity("Fighter friendly {}".format(i), self.get_position_inside())
-            fighter.assign_entity_to_region(self.region)
-            self.fighter_list.append(fighter)
+        for i in range(random.randint(1, 2)):
+            wandering = FriendlyEntity(MName.person_name(), self.get_position_inside())
+            wandering.assign_entity_to_region(self.region)
+
+        for i in range(random.randint(1, 7)):
+            self.fighter_list.append(Fighter())
+
 
     def is_guild_fighter(self):
         return True

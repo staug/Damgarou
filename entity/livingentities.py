@@ -12,7 +12,7 @@ class FriendlyEntity(GameEntity):
                             ai=WanderingAIEntity(speed=10))
 
 
-class Fighter(FriendlyEntity):
+class FighterEntity(FriendlyEntity):
 
     def __init__(self, position, image_ref=None):
         FriendlyEntity.__init__(self, "Fighter", position, image_ref=image_ref)
