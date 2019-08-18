@@ -36,6 +36,10 @@ class BuildingScreen(Screen):
                                         widgets=self.widgets, space=50)
             line.move(0, int((pg.display.get_surface().get_rect().height - line.rect.height) / 2))
 
+    def detach_building(self, building):
+        self.building = None
+        self.widgets = []
+
     def draw(self):
         # Erase All
         screen = pg.display.get_surface()
@@ -64,6 +68,7 @@ class BuildingScreen(Screen):
             if event.type == pg.QUIT:
                 GLOBAL.game.quit()
             elif event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE:
+                GLOBAL.game.screens[GLOBAL.game.GAME_STATE_BUILDING].detach_building(self)
                 GLOBAL.game.update_state(GLOBAL.game.GAME_STATE_PLAYING)
             else:
                 handled = False
