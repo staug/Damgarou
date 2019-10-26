@@ -64,6 +64,8 @@ class BuildingScreen(Screen):
             if event.type == pg.QUIT:
                 GLOBAL.game.quit()
             elif event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE:
+                self.building = None
+                self.widgets = []
                 GLOBAL.game.update_state(GLOBAL.game.GAME_STATE_PLAYING)
             else:
                 handled = False

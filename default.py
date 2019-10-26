@@ -3,7 +3,7 @@ import os
 # List of fix data and variable
 # GAME
 GAME_TITLE = "Damgarou"
-GAME_VER = "0.04"
+GAME_VER = "0.05"
 
 # define some colors (R, G, B)
 WHITE = (255, 255, 255)
@@ -32,7 +32,7 @@ ICON_FOLDER = os.path.join(IMG_FOLDER, "Icons")
 UI_FOLDER = os.path.join(IMG_FOLDER, "UIPack")
 
 # Graphical Settings
-TILESIZE_SCREEN = (16, 16)
+TILESIZE_SCREEN = (32, 32)
 
 # game settings
 PLAYABLE_WIDTH = 512  # 16 * 64 or 32 * 32 or 64 * 16
