@@ -115,3 +115,7 @@ class Player(GameEntity):
             return True
 
         return False
+
+    def add_fighter(self, fighter):
+        self.fighter_list.append(fighter)
+        fighter.remove_entity_from_region(fighter.region)

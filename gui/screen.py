@@ -378,11 +378,13 @@ class WorldCreationScreen(Screen):
                                                    wilderness_index=name,
                                                    region_type=RegionFactory.REGION_TOWN,
                                                    building_list=(Entrance(),
-                                                                  Bank(),
-                                                                  GuildMule(),
+                                                                  # Bank(),
+                                                                  # GuildMule(),
                                                                   GuildFighter(),
-                                                                  Shop(),
-                                                                  Tavern(), Trade(), Townhall(), Temple()))
+                                                                  # Shop(),
+                                                                  # Tavern(), Trade(), Townhall(), Temple()
+                                                                  )
+                                                   )
                 town_list.append(town_region)
                 GLOBAL.game.world[name_town] = town_region
 
@@ -400,5 +402,12 @@ class WorldCreationScreen(Screen):
         (GLOBAL.game.player.x, GLOBAL.game.player.y) = player_spawn_pos
         GLOBAL.game.update_state(GLOBAL.game.GAME_STATE_PLAYING)
 
-def test(fighter):
-    print("YO" + fighter.name)
+
+## ACTIONS FOR WIDGETS
+
+def enroll_fighter(fighter, buildingscreen):
+    print(fighter.name + " joined the player")
+    GLOBAL.game.player.add_fighter(fighter)  # this removes from the world
+    buildingscreen.building.fighter_list.remove(fighter)  # we remove the fighter from eth building as well
+    buildingscreen.attach_building(
+        buildingscreen.building)  #   and ask to redraw the widgets (seem there is a pb for the  last  fighter)

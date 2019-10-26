@@ -5,7 +5,7 @@ import pygame as pg
 from default import BGCOLOR, FONT_FOLDER, FONT_NAME, WHITE
 from gui.guicontainer import LineAlignedContainer
 from gui.guiwidget import TextButton
-from gui.screen import Screen, test
+from gui.screen import Screen, enroll_fighter
 from shared import GLOBAL
 
 
@@ -21,12 +21,13 @@ class BuildingScreen(Screen):
 
     def attach_building(self, building):
         self.building = building
+        self.widgets = []
 
-        if self.building.is_guild_fighter():
-            self.widgets = []
+        if self.building.is_guild_fighter() and len(self.building.fighter_list) > 0:
             for fighter in self.building.fighter_list:
                 button = TextButton(text=fighter.name,
-                                    callback_function=lambda myfighter=fighter: test(myfighter),
+                                    callback_function=lambda myfighter=fighter, buildingscreen=self: enroll_fighter(
+                                        myfighter, buildingscreen),
                                     grow_width_with_text=True,
                                     grow_height_with_text=True)
                 self.widgets.append(button)
