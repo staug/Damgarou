@@ -406,8 +406,10 @@ class WorldCreationScreen(Screen):
 ## ACTIONS FOR WIDGETS
 
 def enroll_fighter(fighter, buildingscreen):
-    print(fighter.name + " joined the player")
-    GLOBAL.game.player.add_fighter(fighter)  # this removes from the world
-    buildingscreen.building.fighter_list.remove(fighter)  # we remove the fighter from eth building as well
-    buildingscreen.attach_building(
-        buildingscreen.building)  #   and ask to redraw the widgets (seem there is a pb for the  last  fighter)
+    if GLOBAL.game.player.add_fighter(fighter):  # this removes from the world
+        print(fighter.name + " joined the player")
+        buildingscreen.building.fighter_list.remove(fighter)  # we remove the fighter from eth building as well
+        buildingscreen.attach_building(
+            buildingscreen.building)  # and ask to redraw the widgets (seem there is a pb for the  last  fighter)
+    else:
+        print("Impossible to add the player to player list!")

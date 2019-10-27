@@ -10,7 +10,10 @@ class Player(GameEntity):
     def __init__(self, player_dict=None):
         assert player_dict is not None, "No data as part of the player dict"
 
-        GameEntity.__init__(self, pos=(1, 1), image_ref="PLAYER_PALADIN", z_level=2, blocks=True)
+        image_ref = random.choice(
+            ("PLAYER_ENGINEER", "PLAYER_MAGE", "PLAYER_PALADIN", "PLAYER_ROGUE", "PLAYER_WARRIOR"))
+
+        GameEntity.__init__(self, pos=(1, 1), image_ref=image_ref, z_level=2, blocks=True)
 
         self.mule_list = []
         self.fighter_list = []
@@ -117,5 +120,14 @@ class Player(GameEntity):
         return False
 
     def add_fighter(self, fighter):
-        self.fighter_list.append(fighter)
-        fighter.remove_entity_from_region(fighter.region)
+        """
+        Try to add the fighter to the list. Return False if not possible due to max allies, gold...
+        # TODO: test if gold is enough
+        :param fighter: the fighter to add
+        :return: True in case of success, False otherwise
+        """
+        if len(self.fighter_list) < self.max_allies:
+            self.fighter_list.append(fighter)
+            fighter.remove_entity_from_region(fighter.region)
+            return True
+        return False

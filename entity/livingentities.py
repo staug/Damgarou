@@ -16,6 +16,9 @@ class FriendlyEntity(GameEntity):
 class FighterEntity(FriendlyEntity):
 
     def __init__(self, name, position, image_ref=None, fighter_dict={}):
+        if not image_ref:
+            image_ref = "GUARD_" + str(random.randint(1, 9))
+
         FriendlyEntity.__init__(self, name, position, image_ref=image_ref)
 
         self.attack = 10

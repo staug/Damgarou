@@ -905,6 +905,15 @@ def load_all_images():
 
     # Folder: Live Entities
     images["HUMANOID_1"] = load_image_list_dawnlike(image_src_list, LIVE_FOLDER, "Humanoid0.png", "Humanoid1.png", 7, 0)
+    images["GUARD_1"] = load_image_list_dawnlike(image_src_list, LIVE_FOLDER, "Humanoid0.png", "Humanoid1.png", 0, 4)
+    images["GUARD_2"] = load_image_list_dawnlike(image_src_list, LIVE_FOLDER, "Humanoid0.png", "Humanoid1.png", 1, 4)
+    images["GUARD_3"] = load_image_list_dawnlike(image_src_list, LIVE_FOLDER, "Humanoid0.png", "Humanoid1.png", 2, 4)
+    images["GUARD_4"] = load_image_list_dawnlike(image_src_list, LIVE_FOLDER, "Humanoid0.png", "Humanoid1.png", 3, 4)
+    images["GUARD_5"] = load_image_list_dawnlike(image_src_list, LIVE_FOLDER, "Humanoid0.png", "Humanoid1.png", 4, 4)
+    images["GUARD_6"] = load_image_list_dawnlike(image_src_list, LIVE_FOLDER, "Humanoid0.png", "Humanoid1.png", 5, 4)
+    images["GUARD_7"] = load_image_list_dawnlike(image_src_list, LIVE_FOLDER, "Humanoid0.png", "Humanoid1.png", 0, 1)
+    images["GUARD_8"] = load_image_list_dawnlike(image_src_list, LIVE_FOLDER, "Humanoid0.png", "Humanoid1.png", 2, 0)
+    images["GUARD_9"] = load_image_list_dawnlike(image_src_list, LIVE_FOLDER, "Humanoid0.png", "Humanoid1.png", 4, 7)
 
     # Buildings
     images["BUILDING_BANK"] = load_image(image_src_list, ICON_FOLDER, "bank.png", 0, 0, width=64, height=64)
