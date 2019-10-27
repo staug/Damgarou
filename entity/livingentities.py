@@ -1,5 +1,6 @@
 from entity.gameentity import GameEntity, WanderingAIEntity
-
+from utilities import MName, roll
+import random
 
 class FriendlyEntity(GameEntity):
 
@@ -14,10 +15,29 @@ class FriendlyEntity(GameEntity):
 
 class FighterEntity(FriendlyEntity):
 
-    def __init__(self, position, image_ref=None):
-        FriendlyEntity.__init__(self, "Fighter", position, image_ref=image_ref)
+    def __init__(self, name, position, image_ref=None, fighter_dict={}):
+        if not image_ref:
+            image_ref = "GUARD_" + str(random.randint(1, 9))
+
+        FriendlyEntity.__init__(self, name, position, image_ref=image_ref)
 
         self.attack = 10
         self.protection = 10
 
         self.wage_base = 5
+
+        self.inventory = fighter_dict.get("Inventory", [])
+        self.equipment = fighter_dict.get("Equipment", [])
+
+        self.name = fighter_dict.get("Name", MName.person_name())
+        self.gender = fighter_dict.get("Gender", random.choice(("Male", "Female", "Other")))
+        self.race = fighter_dict.get("Race", random.choice(("Human", "Dwarf", "Elf", "Hobbit")))
+
+        self.friendship = fighter_dict.get("Friendship",
+                                           roll(6, 3))  # more or less friends, impact the loyalty of the group
+        self.strength = fighter_dict.get("Strength", roll(6, 3))  # capable of carrying more objects
+
+        self.money = random.randint(10, 200)
+        self.food_level = 0
+
+        self.age = 20
