@@ -8,7 +8,7 @@ import default
 
 from gui.guicontainer import LineAlignedContainer
 from gui.guiwidget import TextButton, Style
-from gui.screen import PlayingScreen, PlayerCreationScreen, WorldCreationScreen
+from gui.screen import PlayingScreen, PlayerCreationScreen, WorldCreationScreen, MainTextAreaWidget
 from gui.buildingscreen import BuildingScreen
 
 from shared import GLOBAL
@@ -30,10 +30,14 @@ class Game:
         self.player_took_action = False
         self.minimap_enabled = False
         self.game_running = True
+        self.shared_widgets = {
+            "TextArea": None
+        }
         self.screens = {Game.GAME_STATE_PLAYING: PlayingScreen(),
                         Game.GAME_STATE_PLAYER_CREATION: PlayerCreationScreen(),
                         Game.GAME_STATE_WORLD_CREATION: WorldCreationScreen(),
                         Game.GAME_STATE_BUILDING: BuildingScreen()}
+
         self.current_region = None
         self.player = None
         self.invalidate_fog_of_war = True

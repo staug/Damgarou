@@ -10,7 +10,7 @@ from entity.town import Entrance, Bank, GuildFighter, GuildMule, Shop, Tavern, T
 from gui import guiwidget
 from gui.guicontainer import LineAlignedContainer
 from gui.guiwidget import Widget, SimpleLabel, \
-    RadioButtonGroup, SelectButton, TextInput, TextButton
+    RadioButtonGroup, SelectButton, TextInput, TextButton, Label
 from region.region import RegionFactory
 from shared import GLOBAL
 from utilities import FieldOfView
@@ -141,6 +141,8 @@ class PlayingScreen(Screen):
 
             # Playable background commit
             screen.blit(playable_background, pg.Rect(self.top_left, (PLAYABLE_WIDTH, PLAYABLE_HEIGHT)))
+
+            MainTextAreaWidget.draw(screen)
 
         def handle_event(self, event):
 
@@ -402,6 +404,42 @@ class WorldCreationScreen(Screen):
         (GLOBAL.game.player.x, GLOBAL.game.player.y) = player_spawn_pos
         GLOBAL.game.update_state(GLOBAL.game.GAME_STATE_PLAYING)
 
+
+## Shared Widgets
+
+
+class MainTextAreaWidget(Label):
+
+    HEIGHT = 60
+
+    def __init__(self):
+        Label.__init__(self, text="Welcome", multiline=True,
+                       scrollable=True,
+                       dimension=(pg.display.get_surface().get_width(), MainTextAreaWidget.HEIGHT),
+                       position=(0, pg.display.get_surface().get_height() - MainTextAreaWidget.HEIGHT))
+
+        GLOBAL.bus.register(self, function_to_call=MainTextAreaWidget.add_text_to_box)
+
+    def add_text_to_box(self, text):
+        self.add_text(text)
+
+    @staticmethod
+    def get_area():
+        if GLOBAL.game.shared_widgets["TextArea"] is None:
+            GLOBAL.game.shared_widgets["TextArea"] = MainTextAreaWidget()
+        return GLOBAL.game.shared_widgets["TextArea"]
+
+    @staticmethod
+    def update():
+        MainTextAreaWidget.get_area().update()
+
+    @staticmethod
+    def handle_event(event):
+        MainTextAreaWidget.get_area().handle_event(event)
+
+    @staticmethod
+    def draw(screen):
+        MainTextAreaWidget.get_area().draw(screen)
 
 ## ACTIONS FOR WIDGETS
 
