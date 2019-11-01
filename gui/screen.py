@@ -142,8 +142,6 @@ class PlayingScreen(Screen):
             # Playable background commit
             screen.blit(playable_background, pg.Rect(self.top_left, (PLAYABLE_WIDTH, PLAYABLE_HEIGHT)))
 
-            MainTextAreaWidget.draw(screen)
-
         def handle_event(self, event):
 
             if event.type == pg.KEYDOWN:
@@ -190,6 +188,7 @@ class PlayingScreen(Screen):
         self.widgets.append(PlayingScreen.PlayableScreen((10, 10)))
 
     def post_init(self):
+        self.widgets.append(MainTextAreaWidget.get_widget())
         pass
         '''self.widgets.append(ProgressBar(
             position=(10, 10),
@@ -358,6 +357,7 @@ class PlayerCreationScreen(Screen):
         GLOBAL.game.player = Player(player_dict=self.playershell)
         GLOBAL.game.update_state(GLOBAL.game.GAME_STATE_WORLD_CREATION)
 
+
 class WorldCreationScreen(Screen):
 
     def __init__(self):
@@ -420,32 +420,23 @@ class MainTextAreaWidget(Label):
 
         GLOBAL.bus.register(self, function_to_call=MainTextAreaWidget.add_text_to_box)
 
-    def add_text_to_box(self, text):
-        self.add_text(text)
+    @staticmethod
+    def add_text_to_box(text):
+        GLOBAL.game.shared_widgets["TextArea"].add_text(str(text))
 
     @staticmethod
-    def get_area():
+    def get_widget():
         if GLOBAL.game.shared_widgets["TextArea"] is None:
             GLOBAL.game.shared_widgets["TextArea"] = MainTextAreaWidget()
         return GLOBAL.game.shared_widgets["TextArea"]
 
-    @staticmethod
-    def update():
-        MainTextAreaWidget.get_area().update()
-
-    @staticmethod
-    def handle_event(event):
-        MainTextAreaWidget.get_area().handle_event(event)
-
-    @staticmethod
-    def draw(screen):
-        MainTextAreaWidget.get_area().draw(screen)
 
 ## ACTIONS FOR WIDGETS
 
 def enroll_fighter(fighter, buildingscreen):
     if GLOBAL.game.player.add_fighter(fighter):  # this removes from the world
-        print(fighter.name + " joined the player")
+        GLOBAL.logger.inform(fighter.name + " joined the player")
+        GLOBAL.bus.publish(buildingscreen, {"text":"YOYOYO"})
         buildingscreen.building.fighter_list.remove(fighter)  # we remove the fighter from eth building as well
         buildingscreen.attach_building(
             buildingscreen.building)  # and ask to redraw the widgets (seem there is a pb for the  last  fighter)

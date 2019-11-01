@@ -44,6 +44,7 @@ class Game:
 
         self.world = {}  # The world contains all the wilderness regions and all towns
 
+    def post_init(self):
         # Post init on screens
         for screen_name in self.screens:
             self.screens[screen_name].post_init()
@@ -193,6 +194,7 @@ class Launcher:
 
     def start(self):
         GLOBAL.game = Game()
+        GLOBAL.game.post_init()
         GLOBAL.game.new()
         GLOBAL.game.start()
 
