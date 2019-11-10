@@ -167,7 +167,7 @@ class Logger:
         print(message)
 
     def handle_published_message(self, message):
-        self.out("[MESSAGE] " + message)
+        self.out("[MESSAGE] " + str(message))
 
     def trace(self, message):
         self.log(message, level=Logger.TRACE)

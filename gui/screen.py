@@ -10,7 +10,7 @@ from entity.town import Entrance, Bank, GuildFighter, GuildMule, Shop, Tavern, T
 from gui import guiwidget
 from gui.guicontainer import LineAlignedContainer
 from gui.guiwidget import Widget, SimpleLabel, \
-    RadioButtonGroup, SelectButton, TextInput, TextButton
+    RadioButtonGroup, SelectButton, TextInput, TextButton, Label
 from region.region import RegionFactory
 from shared import GLOBAL
 from utilities import FieldOfView
@@ -188,6 +188,7 @@ class PlayingScreen(Screen):
         self.widgets.append(PlayingScreen.PlayableScreen((10, 10)))
 
     def post_init(self):
+        self.widgets.append(MainTextAreaWidget.get_widget())
         pass
         '''self.widgets.append(ProgressBar(
             position=(10, 10),
@@ -356,6 +357,7 @@ class PlayerCreationScreen(Screen):
         GLOBAL.game.player = Player(player_dict=self.playershell)
         GLOBAL.game.update_state(GLOBAL.game.GAME_STATE_WORLD_CREATION)
 
+
 class WorldCreationScreen(Screen):
 
     def __init__(self):
@@ -403,11 +405,38 @@ class WorldCreationScreen(Screen):
         GLOBAL.game.update_state(GLOBAL.game.GAME_STATE_PLAYING)
 
 
+## Shared Widgets
+
+
+class MainTextAreaWidget(Label):
+
+    HEIGHT = 60
+
+    def __init__(self):
+        Label.__init__(self, text="Welcome", multiline=True,
+                       scrollable=True,
+                       dimension=(pg.display.get_surface().get_width(), MainTextAreaWidget.HEIGHT),
+                       position=(0, pg.display.get_surface().get_height() - MainTextAreaWidget.HEIGHT))
+
+        GLOBAL.bus.register(self, function_to_call=MainTextAreaWidget.add_text_to_box)
+
+    @staticmethod
+    def add_text_to_box(text):
+        GLOBAL.game.shared_widgets["TextArea"].add_text(str(text))
+
+    @staticmethod
+    def get_widget():
+        if GLOBAL.game.shared_widgets["TextArea"] is None:
+            GLOBAL.game.shared_widgets["TextArea"] = MainTextAreaWidget()
+        return GLOBAL.game.shared_widgets["TextArea"]
+
+
 ## ACTIONS FOR WIDGETS
 
 def enroll_fighter(fighter, buildingscreen):
     if GLOBAL.game.player.add_fighter(fighter):  # this removes from the world
-        print(fighter.name + " joined the player")
+        GLOBAL.logger.inform(fighter.name + " joined the player")
+        GLOBAL.bus.publish(buildingscreen, {"text":"YOYOYO"})
         buildingscreen.building.fighter_list.remove(fighter)  # we remove the fighter from eth building as well
         buildingscreen.attach_building(
             buildingscreen.building)  # and ask to redraw the widgets (seem there is a pb for the  last  fighter)
