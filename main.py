@@ -1,16 +1,14 @@
-import random
+# import random
 import sys
 
 import dill as pick
 import pygame as pg
 
 import default
-
+from gui.buildingscreen import BuildingScreen
 from gui.guicontainer import LineAlignedContainer
 from gui.guiwidget import TextButton, Style
-from gui.screen import PlayingScreen, PlayerCreationScreen, WorldCreationScreen, MainTextAreaWidget
-from gui.buildingscreen import BuildingScreen
-
+from gui.screen import PlayingScreen, PlayerCreationScreen, WorldCreationScreen
 from shared import GLOBAL
 
 
